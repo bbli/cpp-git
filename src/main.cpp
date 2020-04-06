@@ -22,5 +22,7 @@ int main(void) {
     std::cout << fs::exists(Path) << std::endl;
     //gets parent path of the path object
     std::cout << Path.parent_path() << std::endl;
+    //adds two paths together
+    std::cout << Path / fs::path("hello") << std::endl;
 
 }

@@ -1,15 +1,17 @@
 #ifndef HELPER_HPP
 #define HELPER_HPP
-#endif
 #include <string>
+#include <filesystem>
+namespace fs = std::filesystem;
 
 int test_function(void);
 
 class Repo{
     private:
-        std::string worktree;
-        std::string gitdir;
 
     public:
+        fs::path worktree;
+        fs::path gitdir;
         Repo(std::string path, bool force);
 };
+#endif
