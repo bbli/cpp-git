@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.10)
 file(GLOB helpers "*.cpp" )
 add_library(helper_library ${helpers})
+target_include_directories(helper_library PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 install(TARGETS helper_library DESTINATION ${PROJECT_SOURCE_DIR}/lib/${CMAKE_PROJECT_NAME})
