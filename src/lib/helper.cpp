@@ -22,13 +22,23 @@ void create_file(fs::path file_path,std::string message){
     outfile.close();
 }
 
+//if force=true -> empty git directory
+Repo::Repo(std::string source_path, bool force = false){
+    worktree = fs::path(source_path);
+    gitdir = worktree / ".cpp-git";
+
+    if (!force && !fs::is_empty(gitdir)){
+        throw "Repo class constructor error: Not an empty path";
+    }
+}
+
 /* ********* Main Functions	********* */
 Repo git_init(std::string source_path){
 
     // check that .git doesn't exist or is empty directory
     fs::path git_path(source_path);
-    git_path /= ".git";
-    if (!fs::is_empty(git_path)){
+    git_path /= ".cpp-git";
+    if (fs::exists(git_path)){
         throw "init error: Not an empty path";
     }
     // initialize a repo object
@@ -47,13 +57,4 @@ Repo git_init(std::string source_path){
     return repo;
 }
 
-//if force=true -> empty git directory
-Repo::Repo(std::string source_path, bool force = false){
-    worktree = fs::path(source_path);
-    gitdir = worktree / ".git";
-
-    if (!force && !fs::is_empty(gitdir)){
-        throw "Repo class constructor error: Not an empty path";
-    }
-}
 #endif

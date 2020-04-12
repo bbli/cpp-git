@@ -6,6 +6,7 @@
 namespace fs = std::filesystem;
 
 int main(void) {
+    /* ********* Scratch	********* */
     test_function();
     try {
         auto val = fs::file_size("test.file");
@@ -24,5 +25,8 @@ int main(void) {
     std::cout << Path.parent_path() << std::endl;
     //adds two paths together
     std::cout << Path / fs::path("hello") << std::endl;
+
+    /* ********* Main	********* */
+    git_init(fs::current_path());
 
 }

@@ -15,3 +15,5 @@ class Repo{
         Repo(std::string path, bool force);
 };
 #endif
+
+Repo git_init(std::string source_path);
