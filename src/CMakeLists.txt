@@ -8,6 +8,6 @@ add_executable(EXEC main.cpp)
 # target_compile_features(EXEC PUBLIC cxx_std_17)
 
 # hopefully cmake will be able to find
-target_link_libraries(EXEC PUBLIC helper_library)
+target_link_libraries(EXEC PUBLIC command_library)
 
 install(TARGETS EXEC DESTINATION ${INSTALL_BIN_DIR})

@@ -1,9 +1,6 @@
 #include <iostream>
-#include <filesystem>
 
-#include <helper.hpp>
-#include "main.hpp"
-namespace fs = std::filesystem;
+#include <commands.hpp>
 
 int main(void) {
     /* ********* Scratch	********* */

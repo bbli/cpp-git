@@ -3,17 +3,21 @@
 #include <string>
 #include <filesystem>
 namespace fs = std::filesystem;
-
-int test_function(void);
-
+/* ********* Data Structures	********* */
+//if force=true -> empty git directory
 class Repo{
     private:
 
     public:
         fs::path worktree;
         fs::path gitdir;
-        Repo(std::string path, bool force);
+        Repo(fs::path path, bool force);
 };
-#endif
 
-Repo git_init(std::string source_path);
+/* ********* Helper Functions	********* */
+
+
+void create_file(fs::path file_path,std::string message);
+fs::path repo_find(fs::path file_path,bool required);
+
+#endif

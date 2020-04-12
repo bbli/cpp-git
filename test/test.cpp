@@ -1,4 +1,5 @@
 #include <helper.hpp>
+#include <commands.hpp>
 #include <gtest/gtest.h>
 
 TEST(Suite,test1){

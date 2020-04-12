@@ -8,5 +8,5 @@ add_executable(TEST ${sources})
 # target_include_directories(TEST PUBLIC ${PROJECT_SOURCE_DIR}/lib/gtest/googletest/include)
 target_compile_features(TEST PUBLIC cxx_std_17)
 
-target_link_libraries(TEST PUBLIC helper_library gtest)
+target_link_libraries(TEST PUBLIC command_library gtest)
 install(TARGETS TEST DESTINATION ${INSTALL_BIN_DIR})
