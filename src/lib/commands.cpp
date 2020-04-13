@@ -11,7 +11,7 @@ int test_function(void){
     return 0;
 }
 
-Repo git_init(fs::path source_path){
+void git_init(fs::path source_path){
     fs::path git_path = source_path;
     // check that .git doesn't exist or is empty directory
     git_path /= ".cpp-git";
@@ -19,17 +19,16 @@ Repo git_init(fs::path source_path){
         throw "init error: Not an empty path";
     }
     // initialize a repo object
-    Repo repo(source_path,true);
+    /* Repo repo(source_path,true); */
 
     //create object dir
-    fs::create_directories(repo.gitdir / "objects");
+    fs::create_directories(git_path / "objects");
     //create HEAD file with "ref: refs/heads/master"
-    create_file(repo.gitdir / "heads" / "master","ref: refs/heads/master");
+    create_file(git_path / "heads" / "master","ref: refs/heads/master");
     //create branches dir
-    fs::create_directories(repo.gitdir / "branches");
+    fs::create_directories(git_path / "branches");
     //create refs dir with tags+heads subdirectory
-    fs::create_directories(repo.gitdir / "refs" / "tags");
-    fs::create_directories(repo.gitdir / "refs" / "heads");
+    fs::create_directories(git_path / "refs" / "tags");
+    fs::create_directories(git_path / "refs" / "heads");
 
-    return repo;
 }

@@ -10,5 +10,5 @@ namespace fs = std::filesystem;
 
 /* ********* Functions	********* */
 int test_function(void);
-Repo git_init(fs::path git_path);
+void git_init(fs::path git_path);
 #endif

@@ -5,19 +5,54 @@
 namespace fs = std::filesystem;
 /* ********* Data Structures	********* */
 //if force=true -> empty git directory
-class Repo{
-    private:
+/* class Repo{ */
+/*     private: */
 
+/*     public: */
+/*         fs::path worktree; */
+/*         fs::path gitdir; */
+/*         Repo(fs::path path, bool force); */
+/* }; */
+
+class GitObject{
+    private:
     public:
-        fs::path worktree;
-        fs::path gitdir;
-        Repo(fs::path path, bool force);
+        fs::path git_path;
+        std::string data;
+        GitObject(fs::path git_path,std::string data);
+        void serialize(void);
+        void deserialize(void);
 };
 
+class GitCommit: public GitObject{
+    private:
+    public:
+        GitCommit(fs::path git_path,std::string data):GitObject( git_path ,data){};
+};
+
+class GitTree: public GitObject{
+    private:
+    public:
+        GitTree(fs::path git_path,std::string data):GitObject( git_path ,data){};
+};
+
+class GitTag: public GitObject{
+    private:
+    public:
+        GitTag(fs::path git_path,std::string data):GitObject( git_path ,data){};
+};
+
+class GitBlob: public GitObject{
+    private:
+    public:
+        GitBlob(fs::path git_path,std::string data):GitObject( git_path ,data){};
+};
 /* ********* Helper Functions	********* */
 
 
 void create_file(fs::path file_path,std::string message);
-fs::path repo_find(fs::path file_path,bool required);
+GitObject object_read(fs::path git_path, std::string hash);
 
+fs::path repo_find(fs::path file_path,bool required);
+void object_find(void);
 #endif

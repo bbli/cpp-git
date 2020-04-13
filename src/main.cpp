@@ -24,6 +24,6 @@ int main(void) {
     std::cout << Path / fs::path("hello") << std::endl;
 
     /* ********* Main	********* */
-    git_init(fs::current_path());
+    /* git_init(fs::current_path()); */
 
 }
