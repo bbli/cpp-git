@@ -19,7 +19,8 @@ class GitObject{
     public:
         fs::path git_path;
         std::string data;
-        GitObject(fs::path git_path,std::string data);
+        const static inline std::string fmt;
+        GitObject(fs::path git_path,std::string& data);
         void serialize(void);
         void deserialize(void);
 };
@@ -27,24 +28,28 @@ class GitObject{
 class GitCommit: public GitObject{
     private:
     public:
+        const static inline std::string fmt = "commit";
         GitCommit(fs::path git_path,std::string data):GitObject( git_path ,data){};
 };
 
 class GitTree: public GitObject{
     private:
     public:
+        const static inline std::string fmt = "tree";
         GitTree(fs::path git_path,std::string data):GitObject( git_path ,data){};
 };
 
 class GitTag: public GitObject{
     private:
     public:
+        const static inline std::string fmt = "tag";
         GitTag(fs::path git_path,std::string data):GitObject( git_path ,data){};
 };
 
 class GitBlob: public GitObject{
     private:
     public:
+        const static inline std::string fmt = "blob";
         GitBlob(fs::path git_path,std::string data):GitObject( git_path ,data){};
 };
 /* ********* Helper Functions	********* */
