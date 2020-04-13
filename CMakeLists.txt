@@ -12,4 +12,5 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS YES)
 
 add_subdirectory(src)
 add_subdirectory(lib/gtest)
+add_subdirectory(lib/sha1)
 add_subdirectory(test)
