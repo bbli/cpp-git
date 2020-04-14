@@ -31,12 +31,12 @@ int main(void) {
         std::cout << "Project path " << project_path << std::endl;
 
         GitBlob blob(git_path," version");
-        std::string return_hash = object_write(blob);
+        std::string return_hash = writeObject(blob);
 
 
         std::cout << "Return hash: " << return_hash << std::endl;
-        GitObject* read_blob = object_read(git_path,return_hash);
-        std::cout << "Data: " << read_blob->data << std::endl;
+        GitObject* gitobject = readObject(git_path,return_hash);
+        std::cout << "Data: " << gitobject->to_filesystem() << std::endl;
     } catch (char const*e){
         std::cout << e << std::endl;
     }

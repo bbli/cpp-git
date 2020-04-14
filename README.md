@@ -8,8 +8,13 @@
 4. run `make`
 
 ## TODO
-* change throws to classes
+* add interpreter
 * define destructor for GitObject
+* move all gitobject code to its own file
+
+* define our own "range" for strings which can be used with STL algorithms
+* change throws to classes
+* change get_fmt back to member variable
 
 ## External Libraries
 * Testing from GoogleTest framework(https://github.com/google/googletest)

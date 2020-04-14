@@ -18,11 +18,51 @@ namespace fs = std::filesystem;
 /*     } */
 /* } */
 
-GitObject::GitObject(fs::path git_path, std::string& data) {
+GitObject::GitObject(fs::path git_path) {
     this->git_path = git_path;
     // implicity change to string
-    this->data = data;
 }
+GitCommit::GitCommit(fs::path git_path,const std::string& data):GitObject(git_path){
+    to_internal(data);
+}
+GitTree::GitTree(fs::path git_path,const std::string& data):GitObject(git_path){
+    to_internal(data);
+}
+GitTag::GitTag(fs::path git_path,const std::string& data):GitObject(git_path){
+    to_internal(data);
+}
+GitBlob::GitBlob(fs::path git_path,const std::string& data):GitObject(git_path){
+    to_internal(data);
+}
+
+
+void GitCommit::to_internal(const std::string& data){
+    //TODO
+}
+void GitTree::to_internal(const std::string& data){
+    //TODO
+}
+void GitTag::to_internal(const std::string& data){
+    //TODO
+}
+void GitBlob::to_internal(const std::string& data){
+    this-> data = data;
+}
+
+
+std::string GitCommit::to_filesystem(void){
+    return "TODO";
+}
+std::string GitTree::to_filesystem(void){
+    return "TODO";
+}
+std::string GitTag::to_filesystem(void){
+    return "TODO";
+}
+std::string GitBlob::to_filesystem(void){
+    return data;
+}
+
 
 std::string GitCommit::get_fmt(void){
     return "commit";
@@ -39,6 +79,7 @@ std::string GitTag::get_fmt(void){
 std::string GitBlob::get_fmt(void){
     return "blob";
 }
+
 
 /* ********* Functions	********* */
 // Creates file and all parent directories if it does not exist
@@ -83,30 +124,31 @@ GitObject* create_object(std::string type, std::string& data, fs::path git_path)
     throw "Something is wrong with the type";
 }
 
-GitObject* object_read(fs::path git_path, std::string hash) {
+GitObject* readObject(fs::path git_path, std::string hash) {
     fs::path object_path = git_path / "objects" / hash.substr(0, 2) / hash.substr(2);
     std::string content = read_file(object_path);
 
     // Assumes type is the first line of the hashed file
-    /* auto split_point = std::find_if(content.begin(),content.end(),[](auto x){return x == '\n';});
+    /* auto split_point = std::find_if(content.begin(),content.end(),[](auto x){return x == '\0';});
      */
-    auto split_index = content.find('\n');
+    auto split_index = content.find('\0');
     std::cout << "Split index: " << split_index << std::endl;
     if (split_index == content.length() - 1) {
         throw "not a valid file";
     }
     /* std::string_view type(content.begin(),split_point); */
+    // it's too bad string_view cannot be used in STL algorithms
     std::string type = content.substr(0, split_index);
     std::string data = content.substr(split_index + 1);
 
     return create_object(type, data, git_path);
 }
 
-std::string object_write(GitObject& obj,bool write){
-    std::string total = obj.get_fmt() + '\n' + obj.data;
+std::string writeObject(GitObject& obj,bool write){
+    std::string total = obj.get_fmt() + '\0' + obj.to_filesystem();
     std::cout << "Total: " << total << std::endl;
-    /* std::string hash = SHA1::from_file("test"); */
 
+    /* std::string hash = SHA1::from_file("test"); */
     SHA1 checksum;
     checksum.update(total);
     std::string hash = checksum.final();
@@ -114,6 +156,5 @@ std::string object_write(GitObject& obj,bool write){
     if (write){
         create_file(obj.git_path / "objects" / hash.substr(0,2) / hash.substr(2),total);
     }
-
     return hash;
 }
