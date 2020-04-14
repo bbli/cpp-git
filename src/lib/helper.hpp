@@ -19,45 +19,48 @@ class GitObject{
     public:
         fs::path git_path;
         std::string data;
-        const static inline std::string fmt;
+        /* const static inline std::string fmt; */
         GitObject(fs::path git_path,std::string& data);
         void serialize(void);
         void deserialize(void);
+        virtual std::string get_fmt(void)=0;
 };
 
 class GitCommit: public GitObject{
     private:
     public:
-        const static inline std::string fmt = "commit";
+        virtual std::string get_fmt(void);
         GitCommit(fs::path git_path,std::string data):GitObject( git_path ,data){};
 };
 
 class GitTree: public GitObject{
     private:
     public:
-        const static inline std::string fmt = "tree";
+        virtual std::string get_fmt(void);
         GitTree(fs::path git_path,std::string data):GitObject( git_path ,data){};
 };
 
 class GitTag: public GitObject{
     private:
     public:
-        const static inline std::string fmt = "tag";
+        virtual std::string get_fmt(void);
         GitTag(fs::path git_path,std::string data):GitObject( git_path ,data){};
 };
 
 class GitBlob: public GitObject{
     private:
     public:
-        const static inline std::string fmt = "blob";
+        virtual std::string get_fmt(void);
         GitBlob(fs::path git_path,std::string data):GitObject( git_path ,data){};
+        /* std::string get_fmt(void); */
 };
 /* ********* Helper Functions	********* */
 
 
 void create_file(fs::path file_path,std::string message);
-GitObject object_read(fs::path git_path, std::string hash);
-
 fs::path repo_find(fs::path file_path);
+GitObject* object_read(fs::path git_path, std::string hash);
+std::string object_write(GitObject& obj,bool write=true);
+
 void object_find(void);
 #endif

@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include <commands.hpp>
+#include <helper.hpp>
 
 int main(void) {
     /* ********* Scratch	********* */
@@ -26,7 +27,14 @@ int main(void) {
     try{
         /* git_init(); */
         fs::path project_path = repo_find(fs::current_path());
-        std::cout << project_path << std::endl;
+        fs::path git_path = project_path / ".cpp-git";
+        std::cout << "Project path " << project_path << std::endl;
+
+        GitBlob blob(git_path,"secon version");
+        std::string return_hash = object_write(blob);
+        std::cout << "Return hash: " << return_hash << std::endl;
+        GitObject* read_blob = object_read(git_path,return_hash);
+        std::cout << "Data: " << read_blob->data << std::endl;
     } catch (char const*e){
         std::cout << e << std::endl;
     }

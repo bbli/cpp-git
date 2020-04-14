@@ -9,6 +9,7 @@
 
 ## TODO
 * change throws to classes
+* define destructor for GitObject
 
 ## External Libraries
 * Testing from GoogleTest framework(https://github.com/google/googletest)

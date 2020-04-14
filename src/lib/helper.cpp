@@ -8,7 +8,6 @@
 #include <sha1.hpp>
 namespace fs = std::filesystem;
 
-#if 1
 /* ********* Member Functions	********* */
 /* Repo::Repo(fs::path source_path, bool force = false){ */
 /*     worktree = source_path; */
@@ -23,6 +22,22 @@ GitObject::GitObject(fs::path git_path, std::string& data) {
     this->git_path = git_path;
     // implicity change to string
     this->data = data;
+}
+
+std::string GitCommit::get_fmt(void){
+    return "commit";
+}
+
+std::string GitTree::get_fmt(void){
+    return "tree";
+}
+
+std::string GitTag::get_fmt(void){
+    return "tag";
+}
+
+std::string GitBlob::get_fmt(void){
+    return "blob";
 }
 
 /* ********* Functions	********* */
@@ -60,15 +75,15 @@ std::string read_file(fs::path path) {
     }
 }
 
-GitObject create_object(std::string type, std::string& data, fs::path git_path) {
-    if (type == std::string("commit")) return GitCommit(git_path, data);
-    if (type == std::string("tree")) return GitTree(git_path, data);
-    if (type == std::string("tag")) return GitTag(git_path, data);
-    if (type == std::string("blob")) return GitBlob(git_path, data);
+GitObject* create_object(std::string type, std::string& data, fs::path git_path) {
+    if (type == std::string("commit")) return new GitCommit(git_path, data);
+    if (type == std::string("tree")) return new GitTree(git_path, data);
+    if (type == std::string("tag")) return new GitTag(git_path, data);
+    if (type == std::string("blob")) return new GitBlob(git_path, data);
     throw "Something is wrong with the type";
 }
 
-GitObject object_read(fs::path git_path, std::string hash) {
+GitObject* object_read(fs::path git_path, std::string hash) {
     fs::path object_path = git_path / "objects" / hash.substr(0, 2) / hash.substr(2);
     std::string content = read_file(object_path);
 
@@ -76,6 +91,7 @@ GitObject object_read(fs::path git_path, std::string hash) {
     /* auto split_point = std::find_if(content.begin(),content.end(),[](auto x){return x == '\n';});
      */
     auto split_index = content.find('\n');
+    std::cout << "Split index: " << split_index << std::endl;
     if (split_index == content.length() - 1) {
         throw "not a valid file";
     }
@@ -86,8 +102,9 @@ GitObject object_read(fs::path git_path, std::string hash) {
     return create_object(type, data, git_path);
 }
 
-std::string object_write(GitObject obj,bool write){
-    std::string total = obj.fmt + '\n' + obj.data;
+std::string object_write(GitObject& obj,bool write){
+    std::string total = obj.get_fmt() + '\n' + obj.data;
+    std::cout << "Total: " << total << std::endl;
     std::string hash = SHA1::from_file(total);
 
     if (write){
@@ -96,5 +113,3 @@ std::string object_write(GitObject obj,bool write){
 
     return hash;
 }
-
-#endif

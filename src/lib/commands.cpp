@@ -32,7 +32,3 @@ void git_init(void){
     fs::create_directories(git_path / "refs" / "heads");
 
 }
-
-void git_cat_file(std::string hash){
-
-}
