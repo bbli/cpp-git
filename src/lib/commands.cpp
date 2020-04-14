@@ -11,8 +11,8 @@ int test_function(void){
     return 0;
 }
 
-void git_init(fs::path source_path){
-    fs::path git_path = source_path;
+void git_init(void){
+    fs::path git_path = fs::current_path();
     // check that .git doesn't exist or is empty directory
     git_path /= ".cpp-git";
     if (fs::exists(git_path)){
@@ -30,5 +30,9 @@ void git_init(fs::path source_path){
     //create refs dir with tags+heads subdirectory
     fs::create_directories(git_path / "refs" / "tags");
     fs::create_directories(git_path / "refs" / "heads");
+
+}
+
+void git_cat_file(std::string hash){
 
 }

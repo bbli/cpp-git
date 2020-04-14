@@ -35,8 +35,17 @@ void create_file(fs::path file_path, std::string message) {
     outfile << message << std::endl;
 }
 
-fs::path repo_find(fs::path file_path, bool required = true) {
-    // get back to project root
+// get back to project root
+fs::path repo_find(fs::path file_path) {
+    if (file_path.parent_path()==file_path){
+        throw "No git directory";
+    }
+    if (fs::exists(file_path / ".cpp-git")){
+        return file_path;
+    }
+    else{
+        return repo_find(file_path.parent_path());
+    }
 }
 
 std::string read_file(fs::path path) {

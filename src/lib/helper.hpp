@@ -58,6 +58,6 @@ class GitBlob: public GitObject{
 void create_file(fs::path file_path,std::string message);
 GitObject object_read(fs::path git_path, std::string hash);
 
-fs::path repo_find(fs::path file_path,bool required);
+fs::path repo_find(fs::path file_path);
 void object_find(void);
 #endif
