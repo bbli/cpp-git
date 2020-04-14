@@ -30,8 +30,10 @@ int main(void) {
         fs::path git_path = project_path / ".cpp-git";
         std::cout << "Project path " << project_path << std::endl;
 
-        GitBlob blob(git_path,"secon version");
+        GitBlob blob(git_path," version");
         std::string return_hash = object_write(blob);
+
+
         std::cout << "Return hash: " << return_hash << std::endl;
         GitObject* read_blob = object_read(git_path,return_hash);
         std::cout << "Data: " << read_blob->data << std::endl;

@@ -105,7 +105,11 @@ GitObject* object_read(fs::path git_path, std::string hash) {
 std::string object_write(GitObject& obj,bool write){
     std::string total = obj.get_fmt() + '\n' + obj.data;
     std::cout << "Total: " << total << std::endl;
-    std::string hash = SHA1::from_file(total);
+    /* std::string hash = SHA1::from_file("test"); */
+
+    SHA1 checksum;
+    checksum.update(total);
+    std::string hash = checksum.final();
 
     if (write){
         create_file(obj.git_path / "objects" / hash.substr(0,2) / hash.substr(2),total);
