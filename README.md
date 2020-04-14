@@ -14,9 +14,9 @@
 
 * define our own "range" for strings which can be used with STL algorithms
 * change throws to classes
-* change get_fmt back to member variable
+* make strings into binary
 
 ## External Libraries
 * Testing from GoogleTest framework(https://github.com/google/googletest)
-* Sha1 hash functionality taken from (https://github.com/vog/sha1)
-
+* Sha1 hash functionality(https://github.com/vog/sha1)
+* Range-v3 library(https://github.com/ericniebler/range-v3)
