@@ -11,6 +11,7 @@
 * add interpreter
 * define destructor for GitObject
 * move all gitobject code to its own file
+* move scratch in main exec to test.cpp
 
 * define our own "range" for strings which can be used with STL algorithms
 * change throws to classes

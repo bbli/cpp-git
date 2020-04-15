@@ -6,7 +6,17 @@
 #include <iostream>
 #include <vector>
 #include <sha1.hpp>
+#include <range/v3/algorithm.hpp>
+#include <range/v3/range/conversion.hpp>
 namespace fs = std::filesystem;
+
+template<typename T>
+void printer(T container){
+    for(auto x:container){
+        std::cout << x << " ";
+    }
+    std::cout << std::endl;
+}
 
 /* ********* Member Functions	********* */
 /* Repo::Repo(fs::path source_path, bool force = false){ */
@@ -39,8 +49,56 @@ GitBlob::GitBlob(fs::path git_path,const std::string& data):GitObject(git_path){
 void GitCommit::to_internal(const std::string& data){
     //TODO
 }
+
+/* template<typename T> */
+/* set_part(std::string &member, T range){ */
+/*     std::transform() */
+/* } */
+
+std::ostream& operator<<(std::ostream& os, GitTreeNode& t){
+    os << "Name: " << t.name << " Type: " << t.type << " Hash: " << t.hash << std::endl;
+    return os;
+}
+
 void GitTree::to_internal(const std::string& data){
-    //TODO
+    using namespace ranges;
+    std::vector<char> no_null(data.length()+1);
+    std::copy(data.begin(),data.end(),no_null.begin());
+    std::cout << "Before remove:" << std::endl;
+    printer(no_null);
+    no_null.pop_back();
+    std::cout << "After remove:" << std::endl;
+    printer(no_null);
+
+    auto entry_list = no_null | views::split('\n');
+    for(auto entry:entry_list){
+        // extract the parts
+        auto entry_parts = entry | views::split(' ');
+        GitTreeNode tmp;
+        for (auto [idx,part]: views::enumerate(entry_parts)){
+            if (idx==0){
+                /* set_part(tmp.name,part); */
+                /* tmp.name = std::string(part.begin(),part.end()); */
+                tmp.name = to<std::string>(part);
+            }
+            else if (idx==1){
+                /* set_part(tmp.type,part); */
+                /* tmp.type = std::string(part.begin(),part.end()); */
+                tmp.type = to<std::string>(part);
+            }
+            else if (idx ==2){
+                /* set_part(tmp.hash,part); */
+                /* tmp.hash = std::string(part.begin(),part.end()); */
+                tmp.hash = to<std::string>(part);
+            }
+            else{
+                throw "should not have more than 3 parts";
+            }
+        }
+        // update vector
+        directory.push_back(tmp);
+    }
+    printer(directory);
 }
 void GitTag::to_internal(const std::string& data){
     //TODO
@@ -54,7 +112,11 @@ std::string GitCommit::to_filesystem(void){
     return "TODO";
 }
 std::string GitTree::to_filesystem(void){
-    return "TODO";
+    std::string data;
+    for(auto node:directory){
+        data += node.name + ' ' + node.type + ' ' + node.hash + '\n';
+    }
+    return data;
 }
 std::string GitTag::to_filesystem(void){
     return "TODO";
@@ -158,3 +220,4 @@ std::string writeObject(GitObject& obj,bool write){
     }
     return hash;
 }
+
