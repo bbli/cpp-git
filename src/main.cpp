@@ -33,7 +33,7 @@ int main(void) {
         std::cout << "Project path " << project_path << std::endl;
 
         GitBlob blob(git_path," version");
-        std::string return_hash = writeObject(blob);
+        std::string return_hash = writeObject(&blob);
 
 
         std::cout << "Return hash: " << return_hash << std::endl;

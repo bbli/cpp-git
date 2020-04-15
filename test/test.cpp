@@ -47,7 +47,9 @@ class GitTreeTest: public ::testing::Test{
         std::string null_string;
         std::string content;
         std::vector<char> no_null;
+        fs::path git_path;
         void SetUp() override{
+            git_path = fs::current_path() / ".cpp-git";
             // Create and then read in the file
             null_string =  "ab cd ef\ngh ij kl";
             create_file(fs::current_path() / "file.txt",null_string);
@@ -82,6 +84,27 @@ TEST_F(GitTreeTest, enumerate_range_check){
 
 TEST_F(GitTreeTest, to_internal){
     GitTree obj(fs::current_path(),content);
+}
+
+TEST_F(GitTreeTest, to_internal_and_to_filesystem){
+    // check that reading from 
+    std::string data = "blob apple.txt dfa11";
+    GitTree tree_obj(git_path,data);
+    ASSERT_EQ(data,(&tree_obj)->to_filesystem());
+
+}
+
+TEST_F(GitTreeTest, writeObject_and_readObject){
+    // check that writing and then reading an object 
+    // is still the same
+    std::string message = "blob apple.txt dfa11\nblob orange.txt k12aq";
+    std::cout << "Original Data Length: " << message.length() << std::endl;
+    std::cout << message << std::endl;
+
+    GitTree tree_obj(git_path,message);
+    std::string hash = writeObject(&tree_obj);
+    GitObject* read_result = readObject(git_path,hash);
+    ASSERT_EQ(hash,writeObject(read_result,false));
 }
 /* ********* Git Init	********* */
 // Test throw if not empty path

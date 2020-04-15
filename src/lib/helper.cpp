@@ -64,11 +64,11 @@ void GitTree::to_internal(const std::string& data){
     using namespace ranges;
     std::vector<char> no_null(data.length()+1);
     std::copy(data.begin(),data.end(),no_null.begin());
-    std::cout << "Before remove:" << std::endl;
-    printer(no_null);
+    /* std::cout << "Before remove:" << std::endl; */
+    /* printer(no_null); */
     no_null.pop_back();
-    std::cout << "After remove:" << std::endl;
-    printer(no_null);
+    /* std::cout << "After remove:" << std::endl; */
+    /* printer(no_null); */
 
     auto entry_list = no_null | views::split('\n');
     for(auto entry:entry_list){
@@ -79,12 +79,12 @@ void GitTree::to_internal(const std::string& data){
             if (idx==0){
                 /* set_part(tmp.name,part); */
                 /* tmp.name = std::string(part.begin(),part.end()); */
-                tmp.name = to<std::string>(part);
+                tmp.type = to<std::string>(part);
             }
             else if (idx==1){
                 /* set_part(tmp.type,part); */
                 /* tmp.type = std::string(part.begin(),part.end()); */
-                tmp.type = to<std::string>(part);
+                tmp.name = to<std::string>(part);
             }
             else if (idx ==2){
                 /* set_part(tmp.hash,part); */
@@ -98,7 +98,7 @@ void GitTree::to_internal(const std::string& data){
         // update vector
         directory.push_back(tmp);
     }
-    printer(directory);
+    /* printer(directory); */
 }
 void GitTag::to_internal(const std::string& data){
     //TODO
@@ -114,8 +114,10 @@ std::string GitCommit::to_filesystem(void){
 std::string GitTree::to_filesystem(void){
     std::string data;
     for(auto node:directory){
-        data += node.name + ' ' + node.type + ' ' + node.hash + '\n';
+        data += node.type + ' ' + node.name + ' ' + node.hash + '\n';
     }
+    // to account for extra '\n'
+    data.pop_back();
     return data;
 }
 std::string GitTag::to_filesystem(void){
@@ -189,26 +191,29 @@ GitObject* create_object(std::string type, std::string& data, fs::path git_path)
 GitObject* readObject(fs::path git_path, std::string hash) {
     fs::path object_path = git_path / "objects" / hash.substr(0, 2) / hash.substr(2);
     std::string content = read_file(object_path);
+    // remove EOF
+    content.pop_back();
+    /* std::cout << "Read(File After EOF Remove): " << content.length() << std::endl; */
 
-    // Assumes type is the first line of the hashed file
-    /* auto split_point = std::find_if(content.begin(),content.end(),[](auto x){return x == '\0';});
-     */
     auto split_index = content.find('\0');
-    std::cout << "Split index: " << split_index << std::endl;
+    /* std::cout << "Split index: " << split_index << std::endl; */
     if (split_index == content.length() - 1) {
         throw "not a valid file";
     }
-    /* std::string_view type(content.begin(),split_point); */
     // it's too bad string_view cannot be used in STL algorithms
+    /* std::string_view type(content.begin(),split_point); */
     std::string type = content.substr(0, split_index);
     std::string data = content.substr(split_index + 1);
+    /* std::cout << "Read in Data Length: " << data.length() << std::endl; */
+    /* std::cout << data << std::endl; */
 
     return create_object(type, data, git_path);
 }
 
-std::string writeObject(GitObject& obj,bool write){
-    std::string total = obj.get_fmt() + '\0' + obj.to_filesystem();
-    std::cout << "Total: " << total << std::endl;
+std::string writeObject(GitObject* obj,bool write){
+    std::string total = obj -> get_fmt() + '\0' + obj -> to_filesystem();
+    /* std::cout << "Write(String): " << total.length() << std::endl; */
+    /* std::cout << total << std::endl; */
 
     /* std::string hash = SHA1::from_file("test"); */
     SHA1 checksum;
@@ -216,7 +221,7 @@ std::string writeObject(GitObject& obj,bool write){
     std::string hash = checksum.final();
 
     if (write){
-        create_file(obj.git_path / "objects" / hash.substr(0,2) / hash.substr(2),total);
+        create_file(obj->git_path / "objects" / hash.substr(0,2) / hash.substr(2),total);
     }
     return hash;
 }

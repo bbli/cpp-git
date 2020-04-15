@@ -39,8 +39,8 @@ class GitCommit: public GitObject{
 };
 
 struct GitTreeNode{
-    std::string name;
     std::string type;
+    std::string name;
     std::string hash;
     friend std::ostream& operator<<(std::ostream& os, GitTreeNode& t);
 };
@@ -92,7 +92,7 @@ class GitBlob: public GitObject{
 void create_file(fs::path file_path,std::string message);
 fs::path repo_find(fs::path file_path);
 GitObject* readObject(fs::path git_path, std::string hash);
-std::string writeObject(GitObject& obj,bool write=true);
+std::string writeObject(GitObject* obj,bool write=true);
 
 void object_find(void);
 #endif
