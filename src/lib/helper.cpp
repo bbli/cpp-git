@@ -146,10 +146,8 @@ std::string GitBlob::get_fmt(void) { return "blob"; }
 
 /* ********* Functions	********* */
 void GitTree::add_entry(std::string type, std::string file_name, std::string hash) {
-    if (type == "blob") {
+    if (type == "blob" || type == "tree"){
         directory.push_back({type, file_name, hash});
-    } else if (type == "tree") {
-        // TODO:
     } else {
         throw "Type should only be blob or tree";
     }
@@ -215,7 +213,7 @@ GitObject* readObject(fs::path git_path, std::string hash) {
     std::string type = content.substr(0, split_index);
     std::string data = content.substr(split_index + 1);
     /* std::cout << "Read in Data Length: " << data.length() << std::endl; */
-    /* std::cout << data << std::endl; */
+    /* std::cout << "Data: " << data << std::endl; */
 
     return create_object(type, data, git_path);
 }
@@ -249,12 +247,14 @@ void walkTreeAndReplace(fs::path tree_write_path, GitObject* obj) {
     fs::path git_path = repo_find(tree_write_path) / ".cpp-git";
     
     GitTree* tree_obj = dynamic_cast<GitTree*>(obj);
+    std::cout << "Tree listing: " << std::endl;
+    printer(tree_obj->directory);
     for (auto node : tree_obj->directory) {
         if (node.type == "blob") {
-            /* std::cout << (tree_write_path / node.name) << std::endl; */
+            /* std::cout << "Write Path: "<< (tree_write_path / node.name) << std::endl; */
             chkout_blob(tree_write_path / node.name, node.hash);
         } else if (node.type == "tree") {
-            std::cout << "Got here" << std::endl;
+            /* std::cout << "Got here" << std::endl; */
             GitObject* obj = readObject(git_path, node.hash);
             walkTreeAndReplace(tree_write_path / node.name, obj);
         } else {
