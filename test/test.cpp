@@ -11,6 +11,21 @@ using namespace ranges;
 /*     EXPECT_EQ(test_function(),0); */
 /* } */
 // sd
+
+TEST(Helper, does_write_file_overwrite){
+    fs::path file_path = fs::current_path() / "overwrite.txt";
+    std::string message = "one";
+    write_file(file_path,message);
+    /* std::cout << "Before overwrite: " << read_file(file_path) << std::endl; */
+    std::string message2 = "two";
+    write_file(file_path,message2);
+    std::string read_result = read_file(file_path);
+    // get rid of EOF
+    read_result.pop_back();
+    /* std::cout << "After overwrite: " << read_result << std::endl; */
+    ASSERT_EQ(message2, read_result);
+}
+
 TEST(Scratch, basic_range){
     auto new_range = "ab\ncd" | views::split('\n');
     std::cout << new_range << std::endl;
@@ -52,7 +67,7 @@ class GitTreeTest: public ::testing::Test{
             git_path = fs::current_path() / ".cpp-git";
             // Create and then read in the file
             null_string =  "ab cd ef\ngh ij kl";
-            create_file(fs::current_path() / "file.txt",null_string);
+            write_file(fs::current_path() / "file.txt",null_string);
             content = read_file("file.txt");
             no_null = std::vector(content.begin(),content.end());
             no_null.pop_back(); 

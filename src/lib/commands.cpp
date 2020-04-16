@@ -24,7 +24,7 @@ void git_init(void){
     //create object dir
     fs::create_directories(git_path / "objects");
     //create HEAD file with "ref: refs/heads/master"
-    create_file(git_path / "heads" / "master","ref: refs/heads/master");
+    write_file(git_path / "heads" / "master","ref: refs/heads/master");
     //create branches dir
     fs::create_directories(git_path / "branches");
     //create refs dir with tags+heads subdirectory

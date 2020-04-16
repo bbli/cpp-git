@@ -165,12 +165,23 @@ std::string GitBlob::get_fmt(void){
 
 /* ********* Functions	********* */
 // Creates file and all parent directories if it does not exist
-void create_file(fs::path file_path, std::string message) {
+void write_file(fs::path file_path, std::string message) {
     auto dir_path = file_path.parent_path();
     fs::create_directories(dir_path);
 
     std::ofstream outfile(file_path.string());
     outfile << message << std::endl;
+}
+std::string read_file(fs::path path) {
+    std::ifstream object_file;
+    // Weakly typed, so should convert to string
+    object_file.open(path);
+    if (object_file.is_open()) {
+        return std::string((std::istreambuf_iterator<char>(object_file)),
+                           std::istreambuf_iterator<char>());
+    } else {
+        throw "Couldn't open the file";
+    }
 }
 
 // get back to project root
@@ -186,17 +197,6 @@ fs::path repo_find(fs::path file_path) {
     }
 }
 
-std::string read_file(fs::path path) {
-    std::ifstream object_file;
-    // Weakly typed, so should convert to string
-    object_file.open(path);
-    if (object_file.is_open()) {
-        return std::string((std::istreambuf_iterator<char>(object_file)),
-                           std::istreambuf_iterator<char>());
-    } else {
-        throw "Couldn't open the file";
-    }
-}
 
 GitObject* create_object(std::string type, std::string& data, fs::path git_path) {
     if (type == std::string("commit")) return new GitCommit(git_path, data);
@@ -239,8 +239,52 @@ std::string writeObject(GitObject* obj,bool write){
     std::string hash = checksum.final();
 
     if (write){
-        create_file(obj->git_path / "objects" / hash.substr(0,2) / hash.substr(2),total);
+        write_file(obj->git_path / "objects" / hash.substr(0,2) / hash.substr(2),total);
     }
     return hash;
 }
 
+void chkout_blob(fs::path blob_path,std::string blob_hash){
+    fs::path git_path = repo_find(blob_path);
+    GitObject* obj = readObject(git_path,blob_hash);
+    GitBlob* blob_obj = dynamic_cast<GitBlob*>(obj);
+    write_file(blob_path,blob_obj->data);
+}
+
+void walkTreeAndReplace(fs::path git_path,GitObject* obj){
+    GitTree* tree_obj = dynamic_cast<GitTree*>(obj);
+    for(auto node:tree_obj->directory){
+        if (node.type == "blob"){
+            chkout_blob(git_path / node.name, node.hash);
+        }
+        else if (node.type == "tree"){
+            GitObject* obj = readObject(git_path,node.hash);
+            walkTreeAndReplace(git_path / node.name, obj);
+        }
+        else {
+            throw "Node type should only be tree or blob";
+        }
+    }
+}
+
+void howToGetAbsolutePath(fs::path git_path,GitObject* obj){
+    //HMM???
+}
+
+void chkout_obj(fs::path git_path, std::string hash){
+    GitObject* obj = readObject(git_path,hash);
+    std::string fmt = obj->get_fmt();
+    if (fmt == "commit"){
+        GitCommit* commit_obj = dynamic_cast<GitCommit*>(obj);
+        chkout_obj(git_path,commit_obj->tree_hash);
+    }
+    else if (fmt == "tree"){
+        walkTreeAndReplace(git_path,obj);
+    }
+    else if (fmt == "blob"){
+        howToGetAbsolutePath(git_path,obj);
+    }
+    else {
+        throw "Shouldn't reach here";
+    }
+}
