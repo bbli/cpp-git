@@ -21,7 +21,7 @@ TEST(Helper, does_write_file_overwrite){
     write_file(file_path,message2);
     std::string read_result = read_file(file_path);
     // get rid of EOF
-    read_result.pop_back();
+    /* read_result.pop_back(); */
     /* std::cout << "After overwrite: " << read_result << std::endl; */
     ASSERT_EQ(message2, read_result);
 }
@@ -132,6 +132,40 @@ TEST(GitCommit, to_internal_and_to_filesystem){
     std::string data = "jk18da\nua914q\nFirst commit";
     GitCommit commit_obj(fs::current_path() / ".cpp-git", data);
     ASSERT_EQ(data,(&commit_obj)->to_filesystem());
+}
+
+TEST(TreeTraversal, one_level_tree){
+    fs::path current_path = fs::current_path();
+    if (!fs::exists(current_path)){
+        git_init();
+    }
+    fs::path git_path = current_path / ".cpp-git";
+
+    // Create a tree
+    std::string message_1 = "file1";
+    std::string message_2 = "file2";
+    GitBlob file_1(git_path,message_1);
+    GitBlob file_2(git_path, message_2);
+    /* std::cout << "File 1:" << std::endl; */
+    std::string hash_1 = writeObject(&file_1);
+    /* std::cout << "File 2:" << std::endl; */
+    std::string hash_2 = writeObject(&file_2);
+    GitTree root_tree_obj(git_path);
+    root_tree_obj.add_entry("blob","file1.txt",hash_1);
+    root_tree_obj.add_entry("blob","file2.txt",hash_2);
+    /* std::cout << "Tree: " << std::endl; */
+    std::string tree_hash = writeObject(&root_tree_obj);
+
+    /* // Now walk */
+    chkout_obj(git_path,tree_hash);
+
+    // Check that we have written to project's path and that content is the same
+    std::string final_message_1 = read_file(current_path / "file1.txt");
+    /* final_message_1.pop_back(); */
+    std::string final_message_2 = read_file(current_path / "file2.txt");
+    /* final_message_2.pop_back(); */
+    ASSERT_EQ(message_1,final_message_1);
+    ASSERT_EQ(message_2,final_message_2);
 }
 /* ********* Git Init	********* */
 // Test throw if not empty path

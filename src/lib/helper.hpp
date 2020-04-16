@@ -54,8 +54,10 @@ class GitTree: public GitObject{
         std::vector<GitTreeNode> directory;
         virtual std::string get_fmt(void);
         GitTree(fs::path git_path,const std::string& data);
+        GitTree(fs::path git_path);
         void to_internal(const std::string& data);
         virtual std::string to_filesystem(void);
+        void add_entry(std::string type, std::string file_name, std::string hash);
 };
 
 class GitTag: public GitObject{
