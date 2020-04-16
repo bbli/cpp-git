@@ -251,12 +251,14 @@ void walkTreeAndReplace(fs::path tree_write_path, GitObject* obj) {
     GitTree* tree_obj = dynamic_cast<GitTree*>(obj);
     for (auto node : tree_obj->directory) {
         if (node.type == "blob") {
+            /* std::cout << (tree_write_path / node.name) << std::endl; */
             chkout_blob(tree_write_path / node.name, node.hash);
         } else if (node.type == "tree") {
             std::cout << "Got here" << std::endl;
             GitObject* obj = readObject(git_path, node.hash);
             walkTreeAndReplace(tree_write_path / node.name, obj);
         } else {
+            std::cout << "Node should only be tree or blob" << std::endl;
             throw "Node type should only be tree or blob";
         }
     }
@@ -273,8 +275,8 @@ void chkout_obj(fs::path git_path, std::string hash) {
         GitCommit* commit_obj = dynamic_cast<GitCommit*>(obj);
         chkout_obj(git_path, commit_obj->tree_hash);
     } else if (fmt == "tree") {
-        fs::path project_base_path = repo_find(fs::current_path());
-        walkTreeAndReplace(project_base_path, obj);
+        fs::path repo_base_path = repo_find(fs::current_path());
+        walkTreeAndReplace(repo_base_path, obj);
     } else if (fmt == "blob") {
         howToGetAbsolutePath(git_path, obj);
     } else {

@@ -23,6 +23,7 @@ class GitObject{
         fs::path git_path;
         /* std::string data; */
         /* const static inline std::string fmt; */
+        GitObject(){};
         GitObject(fs::path git_path);
         virtual void to_internal(const std::string& data)=0; // filesystem -> lift to internal representation
         virtual std::string to_filesystem(void)=0; // internal representation -> write to filesystem
@@ -53,6 +54,7 @@ class GitTree: public GitObject{
     public:
         std::vector<GitTreeNode> directory;
         virtual std::string get_fmt(void);
+        GitTree(){};
         GitTree(fs::path git_path,const std::string& data);
         GitTree(fs::path git_path);
         void to_internal(const std::string& data);

@@ -134,28 +134,40 @@ TEST(GitCommit, to_internal_and_to_filesystem){
     ASSERT_EQ(data,(&commit_obj)->to_filesystem());
 }
 
-TEST(TreeTraversal, one_level_tree){
-    fs::path current_path = fs::current_path();
-    if (!fs::exists(current_path)){
-        git_init();
-    }
-    fs::path git_path = current_path / ".cpp-git";
+class TreeTraversal: public ::testing::Test{
+    protected:
+        std::string message_1;
+        std::string message_2;
+        std::string tree_hash;
+        fs::path git_path;
+        fs::path current_path;
+        GitTree tree_obj;
+        void SetUp() override{
+            //Set up the repo
+            current_path = fs::current_path();
+            if (!fs::exists(current_path)){
+                git_init();
+            }
+            git_path = current_path / ".cpp-git";
 
-    // Create a tree
-    std::string message_1 = "file1";
-    std::string message_2 = "file2";
-    GitBlob file_1(git_path,message_1);
-    GitBlob file_2(git_path, message_2);
-    /* std::cout << "File 1:" << std::endl; */
-    std::string hash_1 = writeObject(&file_1);
-    /* std::cout << "File 2:" << std::endl; */
-    std::string hash_2 = writeObject(&file_2);
-    GitTree root_tree_obj(git_path);
-    root_tree_obj.add_entry("blob","file1.txt",hash_1);
-    root_tree_obj.add_entry("blob","file2.txt",hash_2);
-    /* std::cout << "Tree: " << std::endl; */
-    std::string tree_hash = writeObject(&root_tree_obj);
+            // Create a tree
+            message_1 = "file1";
+            message_2 = "file2";
+            GitBlob file_1(git_path,message_1);
+            GitBlob file_2(git_path, message_2);
+            /* std::cout << "File 1:" << std::endl; */
+            std::string hash_1 = writeObject(&file_1);
+            /* std::cout << "File 2:" << std::endl; */
+            std::string hash_2 = writeObject(&file_2);
+            tree_obj = GitTree(git_path);
+            tree_obj.add_entry("blob","file1.txt",hash_1);
+            tree_obj.add_entry("blob","file2.txt",hash_2);
+            /* std::cout << "Tree: " << std::endl; */
+            tree_hash = writeObject(&tree_obj);
+        }
+};
 
+TEST_F(TreeTraversal, one_level_tree){
     /* // Now walk */
     chkout_obj(git_path,tree_hash);
 
@@ -164,6 +176,28 @@ TEST(TreeTraversal, one_level_tree){
     /* final_message_1.pop_back(); */
     std::string final_message_2 = read_file(current_path / "file2.txt");
     /* final_message_2.pop_back(); */
+    ASSERT_EQ(message_1,final_message_1);
+    ASSERT_EQ(message_2,final_message_2);
+}
+
+TEST_F(TreeTraversal, two_level_tree){
+    // Create root tree
+    std::string message_3 = "file3";
+    GitBlob file_3(git_path,message_3);
+    std::string hash_3 = writeObject(&file_3);
+    GitTree root_tree_obj(git_path);
+    // Take tree from above and append to this tree    
+    root_tree_obj.add_entry("blob","file3.txt",hash_3);
+    root_tree_obj.add_entry("tree","folder",tree_hash);
+    std::string root_hash = writeObject(&root_tree_obj);
+
+    // Now walk
+    chkout_obj(git_path,root_hash);
+
+    // Check that everything is the same
+    ASSERT_EQ(message_3,read_file(current_path / "file3.txt"));
+    std::string final_message_1 = read_file(current_path / "folder" / "file1.txt");
+    std::string final_message_2 = read_file(current_path / "folder" / "file2.txt");
     ASSERT_EQ(message_1,final_message_1);
     ASSERT_EQ(message_2,final_message_2);
 }
