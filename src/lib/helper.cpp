@@ -47,7 +47,25 @@ GitBlob::GitBlob(fs::path git_path,const std::string& data):GitObject(git_path){
 
 
 void GitCommit::to_internal(const std::string& data){
-    //TODO
+    // extract tree_hash
+    auto tree_hash_point = std::find_if(data.begin(),data.end(),[](auto x){return x=='\n';});
+    if (tree_hash_point == data.end()){
+        throw "sommething wrong with commit file";
+    }
+    std::copy(data.begin(),tree_hash_point,std::back_inserter(tree_hash));
+    /* std::cout << "Tree hash length: " << tree_hash.length() << std::endl; */
+    // extract parent hash
+    tree_hash_point = tree_hash_point+1;
+    auto parent_hash_point = std::find_if(tree_hash_point,data.end(),[](auto x){return x == '\n';});
+    if (parent_hash_point == data.end()){
+        throw "sommething wrong with commit file";
+    }
+    std::copy(tree_hash_point,parent_hash_point,std::back_inserter(parent_hash));
+    /* std::cout << "Parent hash length: " << parent_hash.length() << std::endl; */
+    // extract commit_message
+    parent_hash_point = parent_hash_point+1;
+    std::copy(parent_hash_point,data.end(),std::back_inserter(commit_message));
+    /* std::cout << "Commit message length: " << commit_message.length() << std::endl; */
 }
 
 /* template<typename T> */
@@ -109,7 +127,7 @@ void GitBlob::to_internal(const std::string& data){
 
 
 std::string GitCommit::to_filesystem(void){
-    return "TODO";
+    return tree_hash + '\n' + parent_hash + '\n' + commit_message;
 }
 std::string GitTree::to_filesystem(void){
     std::string data;

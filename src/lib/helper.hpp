@@ -32,9 +32,12 @@ class GitObject{
 class GitCommit: public GitObject{
     private:
     public:
+        std::string tree_hash;
+        std::string parent_hash;
+        std::string commit_message;
         virtual std::string get_fmt(void);
         GitCommit(fs::path git_path,const std::string& data);
-        virtual void to_internal(const std::string& data);
+        void to_internal(const std::string& data);
         virtual std::string to_filesystem(void);
 };
 
@@ -51,7 +54,7 @@ class GitTree: public GitObject{
         std::vector<GitTreeNode> directory;
         virtual std::string get_fmt(void);
         GitTree(fs::path git_path,const std::string& data);
-        virtual void to_internal(const std::string& data);
+        void to_internal(const std::string& data);
         virtual std::string to_filesystem(void);
 };
 
@@ -60,7 +63,7 @@ class GitTag: public GitObject{
     public:
         virtual std::string get_fmt(void);
         GitTag(fs::path git_path,const std::string& data);
-        virtual void to_internal(const std::string& data);
+        void to_internal(const std::string& data);
         virtual std::string to_filesystem(void);
 };
 
@@ -71,7 +74,7 @@ class GitBlob: public GitObject{
         virtual std::string get_fmt(void);
         GitBlob(fs::path git_path,const std::string& data);
         /* std::string get_fmt(void); */
-        virtual void to_internal(const std::string& data);
+        void to_internal(const std::string& data);
         virtual std::string to_filesystem(void);
 };
 /* ********* Helper Functions	********* */

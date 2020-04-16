@@ -106,5 +106,17 @@ TEST_F(GitTreeTest, writeObject_and_readObject){
     GitObject* read_result = readObject(git_path,hash);
     ASSERT_EQ(hash,writeObject(read_result,false));
 }
+
+TEST(GitBlob, to_internal_and_to_filesystem){
+    std::string data = "#include <iostream>";
+    GitBlob blob_obj(fs::current_path() / ".cpp-git", data);
+    ASSERT_EQ(data,(&blob_obj)->to_filesystem());
+}
+
+TEST(GitCommit, to_internal_and_to_filesystem){
+    std::string data = "jk18da\nua914q\nFirst commit";
+    GitCommit commit_obj(fs::current_path() / ".cpp-git", data);
+    ASSERT_EQ(data,(&commit_obj)->to_filesystem());
+}
 /* ********* Git Init	********* */
 // Test throw if not empty path

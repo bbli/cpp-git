@@ -8,12 +8,14 @@
 4. run `make`
 
 ## TODO
+### Can be done in Isolation Right now
 * add interpreter
-* define destructor for GitObject
+* define destructor/rest of the constructors for GitObjects
+* finish writing writeObject_and_readObject tests for the rest of the GitObjects
+
+### Future Work
 * move all gitobject code to its own file
 * move scratch in main exec to test.cpp
-
-* define our own "range" for strings which can be used with STL algorithms
 * change throws to classes
 * make strings into binary
 
