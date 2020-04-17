@@ -235,7 +235,7 @@ std::string writeObject(GitObject* obj, bool write) {
     return hash;
 }
 
-void chkout_blob(fs::path project_blob_path, std::string blob_hash) {
+void blob_to_file(fs::path project_blob_path, std::string blob_hash) {
     fs::path git_path = repo_find(project_blob_path) / ".cpp-git";
     GitObject* obj = readObject(git_path, blob_hash);
 
@@ -252,7 +252,7 @@ void walkTreeAndReplace(fs::path tree_write_path, GitObject* obj) {
     for (auto node : tree_obj->directory) {
         if (node.type == "blob") {
             /* std::cout << "Write Path: "<< (tree_write_path / node.name) << std::endl; */
-            chkout_blob(tree_write_path / node.name, node.hash);
+            blob_to_file(tree_write_path / node.name, node.hash);
         } else if (node.type == "tree") {
             /* std::cout << "Got here" << std::endl; */
             GitObject* obj = readObject(git_path, node.hash);

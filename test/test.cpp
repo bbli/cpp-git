@@ -201,5 +201,23 @@ TEST_F(TreeTraversal, two_level_tree){
     ASSERT_EQ(message_1,final_message_1);
     ASSERT_EQ(message_2,final_message_2);
 }
+
+TEST(Staging, basePath_git_add){
+    // NOTE: this will not be a faitful representation,as we are
+    // mapping from within test_stage folder
+    // This is done since current_directory is a build folder for extra things
+    fs::path project_base_path = repo_find(fs::current_path());
+
+    fs::path test_stage_path  = project_base_path / "test_stage";
+    if(!fs::exists(test_stage_path)){
+        fs::create_directory(test_stage_path);
+    }
+    write_file(test_stage_path / "stage1.txt","stage1");
+    write_file(test_stage_path / "stage2.txt","stage2");
+    write_file(test_stage_path / "fold" / "stage3.txt","stage3");
+    std::string stage_tree_hash = git_add(test_stage_path,true);
+    std::string index_hash = read_file(project_base_path / ".cpp-git" / "index");
+    ASSERT_EQ(index_hash,stage_tree_hash);
+}
 /* ********* Git Init	********* */
 // Test throw if not empty path

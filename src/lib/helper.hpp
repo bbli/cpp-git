@@ -96,6 +96,7 @@ class GitBlob: public GitObject{
 /*     } */
 /* } */
 
+std::string read_file(fs::path path);
 void write_file(fs::path file_path,std::string message);
 fs::path repo_find(fs::path file_path);
 GitObject* readObject(fs::path git_path, std::string hash);

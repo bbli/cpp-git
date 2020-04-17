@@ -32,3 +32,38 @@ void git_init(void){
     fs::create_directories(git_path / "refs" / "heads");
 
 }
+
+// BC: For now, can only add from project root
+// since initial git_add will start on project's root
+// and add all blobs relative to it
+std::string git_add(const fs::path& adding_directory, bool root){
+    fs::path git_path = repo_find(adding_directory) / ".cpp-git";
+
+    GitTree tree_obj;
+    for (auto entry: fs::directory_iterator(adding_directory)){
+        fs::path path = entry.path();
+        std::cout << "Entry path: " << path << std::endl;
+        if (fs::is_regular_file(entry)){
+            // read in and make GitBlob
+            std::string content = read_file(path);
+            GitBlob blob_obj = GitBlob(git_path,content);
+            // write to object folder
+            std::string blob_hash = writeObject(&blob_obj);
+            // append to tree object
+            tree_obj.add_entry("blob",path.filename(),blob_hash);
+        }
+        else if (fs::is_directory(path)){
+            std::string tree_hash = git_add(path);
+            tree_obj.add_entry("tree",path.filename(),tree_hash);
+        }
+        else {
+            throw "cpp-git cannot handle this file";
+        }
+    }
+    std::string output =  writeObject(&tree_obj);
+    if (root){
+        std::cout << "Should write to index now" << std::endl;
+        write_file(git_path / "index",output);
+    }
+    return output;
+}

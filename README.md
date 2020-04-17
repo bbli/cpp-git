@@ -12,6 +12,9 @@
 * add interpreter
 * define destructor/rest of the constructors for GitObjects
 * finish writing writeObject_and_readObject tests for the rest of the GitObjects
+* Add references/tags
+* add lazy write optimization to writeObject + write test for it
+* Define TearDown to delete created files from testing
 
 ### Future Work
 * move all gitobject code to its own file
