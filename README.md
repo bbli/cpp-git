@@ -15,6 +15,10 @@
 * Add references/tags
 * add lazy write optimization to writeObject + write test for it
 * Define TearDown to delete created files from testing
+* conversion between relative to absolute path in interpreter code
+* git_path speedup optimization
+
+* implement git update-ref
 
 ### Future Work
 * move all gitobject code to its own file

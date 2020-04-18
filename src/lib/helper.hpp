@@ -101,6 +101,8 @@ void write_file(fs::path file_path,std::string message);
 fs::path repo_find(fs::path file_path);
 GitObject* readObject(fs::path git_path, std::string hash);
 std::string writeObject(GitObject* obj,bool write=true);
+GitTree* getTreeObjectOfHEAD(void);
+void printTree(std::string tree_hash);
 
 void object_find(void);
 #endif

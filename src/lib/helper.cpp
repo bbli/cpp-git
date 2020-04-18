@@ -18,6 +18,11 @@ void printer(T container) {
     std::cout << std::endl;
 }
 
+void printTree(std::string tree_hash){
+    fs::path git_path = repo_find(fs::current_path()) / ".cpp-git";
+    GitTree* tree_obj = dynamic_cast<GitTree*>(readObject(git_path,tree_hash));
+    printer(tree_obj->directory);
+}
 /* ********* Member Functions	********* */
 /* Repo::Repo(fs::path source_path, bool force = false){ */
 /*     worktree = source_path; */
@@ -282,4 +287,19 @@ void chkout_obj(fs::path git_path, std::string hash) {
     } else {
         throw "Shouldn't reach here";
     }
+}
+
+void dereference_if_indirect(std::string& commit_string){
+    auto idx = commit_string.find(' ');
+    if (idx != std::string::npos){
+        commit_string.erase(0,idx+1);
+    }
+}
+
+GitTree* getTreeObjectOfHEAD(void){
+    fs::path project_base_path = repo_find(fs::current_path());
+    std::string content = read_file(project_base_path / ".cpp-git" / "HEAD");
+    dereference_if_indirect(content);
+    GitObject* obj = readObject(project_base_path / ".cpp-git", content);
+    return dynamic_cast<GitTree*>(obj);
 }

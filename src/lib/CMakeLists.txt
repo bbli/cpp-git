@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 file(GLOB helpers "*.cpp" )
 add_library(command_library ${helpers})
+# add_library(command_library SHARED ${helpers})
+# target_compile_options(command_library PUBLIC -fPIC)
 target_include_directories(command_library PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(command_library PRIVATE sha1_library)
 target_link_libraries(command_library PUBLIC range_v3)
