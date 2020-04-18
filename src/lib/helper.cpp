@@ -18,8 +18,7 @@ void printer(T container) {
     std::cout << std::endl;
 }
 
-void printTree(std::string tree_hash){
-    fs::path git_path = repo_find(fs::current_path()) / ".cpp-git";
+void printTree(fs::path git_path, std::string tree_hash){
     GitTree* tree_obj = dynamic_cast<GitTree*>(readObject(git_path,tree_hash));
     printer(tree_obj->directory);
 }
@@ -296,16 +295,15 @@ void dereference_if_indirect(std::string& commit_string){
     }
 }
 
-GitTree* getTreeObjectOfHEAD(void){
-    fs::path project_base_path = repo_find(fs::current_path());
-    std::string content = read_file(project_base_path / ".cpp-git" / "HEAD");
+std::string getTreeHashOfHead(fs::path git_path){
+    std::string content = read_file(git_path/ "HEAD");
     dereference_if_indirect(content);
-    GitObject* obj = readObject(project_base_path / ".cpp-git", content);
-    return dynamic_cast<GitTree*>(obj);
+    /* GitObject* obj = readObject(project_base_path / ".cpp-git", content); */
+    /* return dynamic_cast<GitTree*>(obj); */
+    return content;
 }
 
-std::string readFileAndWriteObject(const fs::path& file_path){
-    fs::path git_path = repo_find(fs::current_path()) / ".cpp-git";
+std::string readFileAndWriteObject(const fs::path git_path, const fs::path& file_path){
     // read in and make GitBlob
     std::string content = read_file(file_path);
     GitBlob blob_obj = GitBlob(git_path,content);
