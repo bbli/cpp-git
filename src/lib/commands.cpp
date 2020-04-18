@@ -48,19 +48,37 @@ std::string git_add_file(const fs::path& file_path, bool root){
     fs::path git_path = project_base_path / ".cpp-git";
     GitTree tree_obj(git_path);
 
+    bool found = false;
     GitTree* previous_commit_tree = getTreeObjectOfHEAD();
     for (auto node:previous_commit_tree->directory){
+        // Case 1: Same branch as file
         if(node.name==file_path.filename()){
-            std::cout << "File Path: " << file_path << std::endl;
+            // SubCase 1 : node is a tree
+            
+
+            // SubCase 2: node is blob -> this should be the desired file then
+            // TODO
+            /* if (node.name== file_path.filename()) */
+
             //create GitBlob object and write to .git
             std::string blob_hash = readFileAndWriteObject(file_path);
             // add to new_tree
             tree_obj.add_entry(node.type,node.name,blob_hash);
+            found = true;
         }
+        // Case 2: Not what we want to add
         else{
             tree_obj.add_entry(node.type,node.name,node.hash);
         }
     }
+    // EC: if file is new file
+    if (!found){
+        //create GitBlob object and write to .git
+        std::string blob_hash = readFileAndWriteObject(file_path);
+        // add to new_tree
+        tree_obj.add_entry("blob",file_path.filename(),blob_hash);
+    }
+
     std::string output =  writeObject(&tree_obj);
     if (root){
         std::cout << "Should write to index now" << std::endl;

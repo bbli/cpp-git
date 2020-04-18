@@ -42,6 +42,13 @@ TEST(Scratch, nested_range){
         std::cout << "New range: " << x_parts << std::endl;
     }
 }
+TEST(Scratch, enumerate_range_seeWhichComesFirst){
+    auto test_range = "ab cd ef\ngh ij kl" | views::split('\n');
+    /* std::cout << test_range << std::endl; */
+    for (auto [idx,part]: views::enumerate(test_range)){
+        std::cout << "Idx: " << idx << "Part: " << part << std::endl;
+    }
+}
 
 TEST(Scratch, nest_vector_range){
     std::string null_string =  "ab cd ef\ngh ij kl";
@@ -70,31 +77,15 @@ class GitTreeTest: public ::testing::Test{
             write_file(fs::current_path() / "file.txt",null_string);
             content = read_file("file.txt");
             no_null = std::vector(content.begin(),content.end());
-            no_null.pop_back(); 
         }
 };
 
-TEST_F(GitTreeTest, reading_file_EOF_check){
+TEST_F(GitTreeTest, read_file_eofCheck){
     /* std::cout << (std::vector(content.begin(),content.end())[5] == EOF)<< std::endl; */
-    std::cout << "Length of original string: " << 17  << std::endl;
-    std::cout << "Length of string: " << content.length() << std::endl;
-    std::cout << " Length of vector: " << no_null.size() << std::endl;
-    std::cout << "String: ";
-    printer(content);
-    std::cout << "Vector: ";
-    printer(no_null);
-}
-
-TEST_F(GitTreeTest, enumerate_range_check){
-    auto entry_list = no_null | views::split('\n');
-    std::cout << entry_list << std::endl;
-    for (auto entry: entry_list){
-        auto entry_parts =  entry | views::split(' ');
-        /* createNode(entry_parts); */
-        for (auto [idx,part]: views::enumerate(entry_parts)){
-            std::cout << "Idx: " << idx << "Part: " << part << std::endl;
-        }
-    }
+    ASSERT_EQ(17,content.length());
+    /* std::cout << "Length of original string: " << 17  << std::endl; */
+    /* std::cout << "Length of string: " << content.length() << std::endl; */
+    /* printer(content); */
 }
 
 TEST_F(GitTreeTest, to_internal){
@@ -106,7 +97,6 @@ TEST_F(GitTreeTest, to_internal_and_to_filesystem){
     std::string data = "blob apple.txt dfa11";
     GitTree tree_obj(git_path,data);
     ASSERT_EQ(data,(&tree_obj)->to_filesystem());
-
 }
 
 TEST_F(GitTreeTest, writeObject_and_readObject){
@@ -256,6 +246,32 @@ TEST(Staging, git_add_file_oneLevelOneModifiedFile){
     std::cout << "New Tree Hash" << std::endl;
     printTree(new_tree_hash);
 
+    fs::remove_all(test_stage_path);
+}
+
+TEST(Staging, git_add_file_oneLevelnewFile){
+    // Create a folder + files -> write to tree
+    fs::path project_base_path = repo_find(fs::current_path());
+    fs::path git_path = project_base_path / ".cpp-git";
+
+    fs::path test_stage_path  = project_base_path / "oneLevelOneModifiedFile";
+    if(!fs::exists(test_stage_path)){
+        fs::create_directory(test_stage_path);
+    }
+    write_file(test_stage_path / "stage1.txt","stage1");
+    write_file(test_stage_path / "stage2.txt","stage2");
+
+    std::string tree_hash = createIndexTreeFromFolder(test_stage_path,true);
+    std::cout << "Old Tree Listing" << std::endl;
+    printTree(tree_hash);
+    write_file(project_base_path / ".cpp-git" / "HEAD",tree_hash);
+    // Modify stage2.txt and then add to index
+    write_file(test_stage_path / "stage3.txt", "stage3");
+    std::string new_tree_hash = git_add_file(test_stage_path / "stage3.txt",true);
+    // compare the two tree objects
+    std::cout << "New Tree Listing" << std::endl;
+    printTree(new_tree_hash);
+    fs::remove_all(test_stage_path);
 }
 /* ********* Git Init	********* */
 // Test throw if not empty path
