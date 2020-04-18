@@ -303,3 +303,22 @@ GitTree* getTreeObjectOfHEAD(void){
     GitObject* obj = readObject(project_base_path / ".cpp-git", content);
     return dynamic_cast<GitTree*>(obj);
 }
+
+std::string readFileAndWriteObject(const fs::path& file_path){
+    fs::path git_path = repo_find(fs::current_path()) / ".cpp-git";
+    // read in and make GitBlob
+    std::string content = read_file(file_path);
+    GitBlob blob_obj = GitBlob(git_path,content);
+    // write to object folder
+    return writeObject(&blob_obj);
+}
+
+bool isGitRepo(const fs::path& path){
+    std::string name = path.filename();
+    if (name==".cpp-git"){
+        return true;
+    }
+    else{
+        return false;
+    }
+}

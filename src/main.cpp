@@ -27,7 +27,6 @@ int main(void) {
 
     /* ********* Main	********* */
     try{
-        /* git_init(); */
         fs::path project_path = repo_find(fs::current_path());
         fs::path git_path = project_path / ".cpp-git";
         std::cout << "Project path " << project_path << std::endl;

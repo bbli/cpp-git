@@ -103,6 +103,9 @@ GitObject* readObject(fs::path git_path, std::string hash);
 std::string writeObject(GitObject* obj,bool write=true);
 GitTree* getTreeObjectOfHEAD(void);
 void printTree(std::string tree_hash);
+bool isGitRepo(const fs::path& path);
+std::string readFileAndWriteObject(const fs::path& file_path);
+
 
 void object_find(void);
 #endif

@@ -11,10 +11,9 @@ int test_function(void){
     return 0;
 }
 
-void git_init(void){
-    fs::path git_path = fs::current_path();
+void git_init(fs::path project_base_path){
     // check that .git doesn't exist or is empty directory
-    git_path /= ".cpp-git";
+    fs::path git_path = project_base_path / ".cpp-git";
     if (fs::exists(git_path)){
         throw "init error: Not an empty path";
     }
@@ -33,20 +32,34 @@ void git_init(void){
 
 }
 
-std::string readFileAndWriteObject(const fs::path& file_path){
-    fs::path git_path = repo_find(fs::current_path()) / ".cpp-git";
-    // read in and make GitBlob
-    std::string content = read_file(file_path);
-    GitBlob blob_obj = GitBlob(git_path,content);
-    // write to object folder
-    return writeObject(&blob_obj);
-}
 
 #if 1
 std::string git_add_file(const fs::path& file_path, bool root){
     fs::path project_base_path = repo_find(file_path);
     fs::path git_path = project_base_path / ".cpp-git";
     GitTree tree_obj(git_path);
+    
+    // Run file_it to first entry relative to project_base_path
+    auto base_it = project_base_path.begin();
+    auto file_it = file_path.begin();
+    while(base_it != project_base_path.end()){
+        base_it++;
+        file_it++;
+    }
+
+    // Get remaining iteration count till we reach desired file
+    int remain_count = 0;
+    auto tmp_it = file_it;
+    while(tmp_it != file_path.end()){
+        tmp_it++;
+        remain_count++;
+    }
+    remain_count--;
+    std::cout << "File Iterator is currently at: " << *file_it << std::endl;
+    std::cout << "Remaining Count: " << remain_count << std::endl;
+    // Paths are unique, but individual names arn't
+    // EC: if file is one_level
+    // TC??
 
     bool found = false;
     GitTree* previous_commit_tree = getTreeObjectOfHEAD();
@@ -100,6 +113,9 @@ std::string createIndexTreeFromFolder(const fs::path& adding_directory, bool roo
     GitTree tree_obj(git_path);
     for (auto entry: fs::directory_iterator(adding_directory)){
         fs::path path = entry.path();
+        if (isGitRepo(path)){
+            continue;
+        }
         std::cout << "Entry path: " << path << std::endl;
         if (fs::is_regular_file(entry)){
             std::string blob_hash = readFileAndWriteObject(path);
