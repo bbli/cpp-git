@@ -100,7 +100,7 @@ std::string git_add_file(const fs::path& file_path) {
     // Paths are unique, but individual names arn't
     // EC: if file is one_level
     // EC: if file is new file
-    std::string old_tree_hash = getTreeHashOfHead(git_path);
+    std::string old_tree_hash = getTreeHashOfIndex(git_path);
     std::cout << "HashOfHead:" << old_tree_hash << std::endl;
     std::string new_tree_hash =
         git_add_file_helper(old_tree_hash, file_it, file_path.end(), git_path, file_path);
@@ -178,7 +178,7 @@ std::string git_add_folder(const fs::path folder_path) {
     // Paths are unique, but individual names arn't
     // EC: if file is one_level
     // EC: if file is new file
-    std::string old_tree_hash = getTreeHashOfHead(git_path);
+    std::string old_tree_hash = getTreeHashOfIndex(git_path);
     std::cout << "HashOfHead:" << old_tree_hash << std::endl;
     std::string new_tree_hash =
         git_add_folder_helper(old_tree_hash, file_it, folder_path.end(), git_path, folder_path);

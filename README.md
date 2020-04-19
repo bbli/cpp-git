@@ -18,6 +18,9 @@
 * conversion between relative to absolute path in interpreter code
 * git_path speedup optimization
 
+* git reset --medium = just change index file to point to HEAD commit
+* git reset --hard = do above + walkTreeAndReplace on HEAD commit
+
 * implement git update-ref
 
 ### Future Work

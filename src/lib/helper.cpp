@@ -295,8 +295,8 @@ void dereference_if_indirect(std::string& commit_string) {
     }
 }
 
-std::string getTreeHashOfHead(fs::path git_path) {
-    std::string content = read_file(git_path / "HEAD");
+std::string getTreeHashOfIndex(fs::path git_path) {
+    std::string content = read_file(git_path / "index");
     dereference_if_indirect(content);
     /* GitObject* obj = readObject(project_base_path / ".cpp-git", content); */
     /* return dynamic_cast<GitTree*>(obj); */
@@ -358,7 +358,7 @@ GitTree* findFolderFromTree(std::string tree_hash, fs::path relative_path,
                             const fs::path git_path) {
     auto path_it = relative_path.begin();
     auto end_it = relative_path.end();
-    std::cout << "Starting" << std::endl;
+    std::cout << "Starting Folder Find" << std::endl;
     std::string file_hash = find_hash_helper(tree_hash, path_it, end_it, git_path);
     GitObject* obj = readObject(git_path, file_hash);
     return dynamic_cast<GitTree*>(obj);

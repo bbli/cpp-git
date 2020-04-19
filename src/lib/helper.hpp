@@ -102,7 +102,7 @@ void write_file(fs::path file_path, std::string message);
 fs::path repo_find(fs::path file_path);
 GitObject* readObject(fs::path git_path, std::string hash);
 std::string writeObject(GitObject* obj, bool write = true);
-std::string getTreeHashOfHead(fs::path git_path);
+std::string getTreeHashOfIndex(fs::path git_path);
 void printTree(fs::path git_path, std::string tree_hash);
 bool isGitRepo(const fs::path& path);
 std::string readFileAndWriteObject(const fs::path git_path, const fs::path& file_path);
