@@ -303,7 +303,7 @@ std::string getTreeHashOfIndex(fs::path git_path) {
     return content;
 }
 
-std::string readFileAndWriteObject(const fs::path git_path, const fs::path& file_path) {
+std::string readProjectFileAndWriteObject(const fs::path git_path, const fs::path& file_path) {
     // read in and make GitBlob
     std::string content = read_file(file_path);
     GitBlob blob_obj = GitBlob(git_path, content);
@@ -319,6 +319,7 @@ bool isGitRepo(const fs::path& path) {
         return false;
     }
 }
+
 #if 1
 std::string find_hash_helper(std::string tree_hash, typename fs::path::iterator file_it,
                              const typename fs::path::iterator end_it, const fs::path git_path) {

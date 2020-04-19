@@ -105,7 +105,8 @@ std::string writeObject(GitObject* obj, bool write = true);
 std::string getTreeHashOfIndex(fs::path git_path);
 void printTree(fs::path git_path, std::string tree_hash);
 bool isGitRepo(const fs::path& path);
-std::string readFileAndWriteObject(const fs::path git_path, const fs::path& file_path);
+std::string readProjectFileAndWriteObject(const fs::path git_path, const fs::path& file_path);
+typename fs::path::iterator get_first_mismatch(fs::path project_base_path, fs::path folder_path);
 
 void object_find(void);
 #endif
