@@ -18,8 +18,8 @@ void printer(T container) {
     std::cout << std::endl;
 }
 
-void printTree(fs::path git_path, std::string tree_hash){
-    GitTree* tree_obj = dynamic_cast<GitTree*>(readObject(git_path,tree_hash));
+void printTree(fs::path git_path, std::string tree_hash) {
+    GitTree* tree_obj = dynamic_cast<GitTree*>(readObject(git_path, tree_hash));
     printer(tree_obj->directory);
 }
 /* ********* Member Functions	********* */
@@ -150,7 +150,7 @@ std::string GitBlob::get_fmt(void) { return "blob"; }
 
 /* ********* Functions	********* */
 void GitTree::add_entry(std::string type, std::string file_name, std::string hash) {
-    if (type == "blob" || type == "tree"){
+    if (type == "blob" || type == "tree") {
         directory.push_back({type, file_name, hash});
     } else {
         throw "Type should only be blob or tree";
@@ -249,7 +249,7 @@ void blob_to_file(fs::path project_blob_path, std::string blob_hash) {
 
 void walkTreeAndReplace(fs::path tree_write_path, GitObject* obj) {
     fs::path git_path = repo_find(tree_write_path) / ".cpp-git";
-    
+
     GitTree* tree_obj = dynamic_cast<GitTree*>(obj);
     std::cout << "Tree listing: " << std::endl;
     printer(tree_obj->directory);
@@ -288,79 +288,79 @@ void chkout_obj(fs::path git_path, std::string hash) {
     }
 }
 
-void dereference_if_indirect(std::string& commit_string){
+void dereference_if_indirect(std::string& commit_string) {
     auto idx = commit_string.find(' ');
-    if (idx != std::string::npos){
-        commit_string.erase(0,idx+1);
+    if (idx != std::string::npos) {
+        commit_string.erase(0, idx + 1);
     }
 }
 
-std::string getTreeHashOfHead(fs::path git_path){
-    std::string content = read_file(git_path/ "HEAD");
+std::string getTreeHashOfHead(fs::path git_path) {
+    std::string content = read_file(git_path / "HEAD");
     dereference_if_indirect(content);
     /* GitObject* obj = readObject(project_base_path / ".cpp-git", content); */
     /* return dynamic_cast<GitTree*>(obj); */
     return content;
 }
 
-std::string readFileAndWriteObject(const fs::path git_path, const fs::path& file_path){
+std::string readFileAndWriteObject(const fs::path git_path, const fs::path& file_path) {
     // read in and make GitBlob
     std::string content = read_file(file_path);
-    GitBlob blob_obj = GitBlob(git_path,content);
+    GitBlob blob_obj = GitBlob(git_path, content);
     // write to object folder
     return writeObject(&blob_obj);
 }
 
-bool isGitRepo(const fs::path& path){
+bool isGitRepo(const fs::path& path) {
     std::string name = path.filename();
-    if (name==".cpp-git"){
+    if (name == ".cpp-git") {
         return true;
-    }
-    else{
+    } else {
         return false;
     }
 }
 #if 1
-std::string find_hash_helper(std::string tree_hash,typename fs::path::iterator file_it, const typename fs::path::iterator end_it, const fs::path git_path){
-    GitTree* tree_obj = dynamic_cast<GitTree*>(readObject(git_path,tree_hash));
-    for(auto node: tree_obj->directory){
-        if (node.name == *file_it){
+std::string find_hash_helper(std::string tree_hash, typename fs::path::iterator file_it,
+                             const typename fs::path::iterator end_it, const fs::path git_path) {
+    GitTree* tree_obj = dynamic_cast<GitTree*>(readObject(git_path, tree_hash));
+    for (auto node : tree_obj->directory) {
+        if (node.name == *file_it) {
             std::cout << "Node name: " << node.name << std::endl;
             auto check_it = file_it;
-            //reached end, so this should be the file
-            if(++check_it == end_it){
+            // reached end, so this should be the file
+            if (++check_it == end_it) {
                 /* if (node.type != "blob"){ */
                 /*     throw "this isn't a blob"; */
                 /* } */
                 return node.hash;
             }
             // continue down
-            else{
+            else {
                 file_it++;
-                if (node.type != "tree"){
+                if (node.type != "tree") {
                     throw "this isn't a tree";
                 }
-                return find_hash_helper(node.hash,file_it,end_it,git_path);
+                return find_hash_helper(node.hash, file_it, end_it, git_path);
             }
         }
     }
     throw "Couldn't find file in this tree";
 }
-GitBlob* findFileFromTree(std::string tree_hash, fs::path relative_path, const fs::path git_path){
+GitBlob* findFileFromTree(std::string tree_hash, fs::path relative_path, const fs::path git_path) {
     auto path_it = relative_path.begin();
     auto end_it = relative_path.end();
-    std::string file_hash = find_hash_helper(tree_hash, path_it,end_it,git_path);
-    GitObject* obj = readObject(git_path,file_hash);
+    std::string file_hash = find_hash_helper(tree_hash, path_it, end_it, git_path);
+    GitObject* obj = readObject(git_path, file_hash);
     return dynamic_cast<GitBlob*>(obj);
 }
 
-GitTree* findFolderFromTree(std::string tree_hash, fs::path relative_path, const fs::path git_path){
+GitTree* findFolderFromTree(std::string tree_hash, fs::path relative_path,
+                            const fs::path git_path) {
     auto path_it = relative_path.begin();
     auto end_it = relative_path.end();
     std::cout << "Starting" << std::endl;
-    std::string file_hash = find_hash_helper(tree_hash, path_it,end_it,git_path);
-    GitObject* obj = readObject(git_path,file_hash);
+    std::string file_hash = find_hash_helper(tree_hash, path_it, end_it, git_path);
+    GitObject* obj = readObject(git_path, file_hash);
     return dynamic_cast<GitTree*>(obj);
 }
 #endif
-
