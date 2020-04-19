@@ -320,3 +320,38 @@ bool isGitRepo(const fs::path& path){
         return false;
     }
 }
+#if 1
+std::string find_FileFromTree_helper(std::string tree_hash,typename fs::path::iterator file_it, const typename fs::path::iterator end_it, const fs::path git_path){
+    GitTree* tree_obj = dynamic_cast<GitTree*>(readObject(git_path,tree_hash));
+    for(auto node: tree_obj->directory){
+        if (node.name == *file_it){
+            /* std::cout << "Node name: " << node.name << std::endl; */
+            auto check_it = file_it;
+            //reached end, so this should be the file
+            if(++check_it == end_it){
+                if (node.type != "blob"){
+                    throw "this isn't a blob";
+                }
+                return node.hash;
+            }
+            // continue down
+            else{
+                file_it++;
+                if (node.type != "tree"){
+                    throw "this isn't a tree";
+                }
+                return find_FileFromTree_helper(node.hash,file_it,end_it,git_path);
+            }
+        }
+    }
+    throw "Couldn't find file in this tree";
+}
+GitBlob* findFileFromTree(std::string tree_hash, fs::path relative_path, const fs::path git_path){
+    auto path_it = relative_path.begin();
+    auto end_it = relative_path.end();
+    std::string file_hash = find_FileFromTree_helper(tree_hash, path_it,end_it,git_path);
+    GitObject* obj = readObject(git_path,file_hash);
+    return dynamic_cast<GitBlob*>(obj);
+}
+#endif
+

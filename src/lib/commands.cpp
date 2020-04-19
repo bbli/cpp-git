@@ -55,6 +55,9 @@ std::string git_add_file_helper(std::string old_tree_hash, typename fs::path::it
             // SubCase 2 : file_it still refers to a folder
             else {
                 file_it++;
+                if (node.type != "tree"){
+                    throw "this isn't a tree";
+                }
                 std::string tree_hash = git_add_file_helper(node.hash,file_it,end_it,git_path,file_path);
                 // Q: how do I know that this is guaranteed to be a tree?
                 tree_obj.add_entry("tree",node.name,tree_hash);

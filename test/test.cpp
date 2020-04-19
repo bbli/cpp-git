@@ -292,6 +292,12 @@ TEST(Staging, git_add_file_oneLevelNewFile){
     fs::remove_all(project_base_path);
 }
 
+TEST(Scratch, print_relative_path){
+    fs::path relative_path = "folder/a.txt";
+    std::cout <<  relative_path << std::endl;
+}
+
+#if 1
 TEST(Staging, git_add_file_twoLevelsNewFile){
     git_folder_setup("twoLevelsNewFile");
     fs::path project_base_path = repo_find(fs::current_path() / "twoLevelsNewFile");
@@ -305,19 +311,22 @@ TEST(Staging, git_add_file_twoLevelsNewFile){
     write_file(project_base_path / "folder" /"stage3.txt","stage3");
 
     std::string tree_hash = createIndexTreeFromFolder(project_base_path,true);
-    std::cout << "Index hash: " << tree_hash << std::endl;
-    std::cout << "Old Tree Listing" << std::endl;
-    printTree(git_path,tree_hash);
+    /* std::cout << "Index hash: " << tree_hash << std::endl; */
+    /* std::cout << "Old Tree Listing" << std::endl; */
+    /* printTree(git_path,tree_hash); */
     write_file(project_base_path / ".cpp-git" / "HEAD",tree_hash);
 
     // Add new file under folder
     write_file(project_base_path / "folder" / "stage4.txt", "stage4");
     std::string new_tree_hash = git_add_file(project_base_path / "folder" /"stage4.txt");
     // compare the two tree objects
-    std::cout << "New Tree Listing" << std::endl;
-    printTree(git_path,new_tree_hash);
+    /* std::cout << "New Tree Listing" << std::endl; */
+    /* printTree(git_path,new_tree_hash); */
+    GitBlob* stage4_blob = findFileFromTree(new_tree_hash,"folder/stage4.txt",git_path);
+    ASSERT_EQ(stage4_blob->data,"stage4");
 
     fs::remove_all(project_base_path);
 }
+#endif
 /* ********* Git Init	********* */
 // Test throw if not empty path
