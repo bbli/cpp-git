@@ -5,6 +5,7 @@
 #include <helper.hpp>
 #include <iostream>
 #include <range/v3/algorithm.hpp>
+#include <range/v3/view.hpp>
 #include <vector>
 
 using namespace ranges;
@@ -319,7 +320,7 @@ TEST(Staging, git_add_file_twoLevelsNewFile) {
     // compare the two tree objects
     /* std::cout << "New Tree Listing" << std::endl; */
     /* printTree(git_path,new_tree_hash); */
-    GitBlob* stage4_blob = findFileFromTree(new_tree_hash, "folder/stage4.txt", git_path);
+    GitBlob* stage4_blob = findProjectFileFromTree(new_tree_hash, "folder/stage4.txt", git_path);
     ASSERT_EQ(stage4_blob->data, "stage4");
 
     fs::remove_all(project_base_path);
@@ -346,9 +347,9 @@ TEST(Staging, git_add_folder_twoLevelsNewFile) {
     // Add new file under folder
     write_file(project_base_path / "folder" / "stage4.txt", "stage4");
     std::string new_tree_hash = git_add_folder(project_base_path / "folder");
-    GitBlob* stage4_blob = findFileFromTree(new_tree_hash, "folder/stage4.txt", git_path);
+    GitBlob* stage4_blob = findProjectFileFromTree(new_tree_hash, "folder/stage4.txt", git_path);
     ASSERT_EQ(stage4_blob->data, "stage4");
-    GitTree* folder = findFolderFromTree(new_tree_hash, "folder", git_path);
+    GitTree* folder = findProjectFolderFromTree(new_tree_hash, "folder", git_path);
     std::cout << "folder listing: " << std::endl;
     printer(folder->directory);
 
@@ -378,7 +379,7 @@ TEST(Staging, git_add_folder_twoLevelsNewFolder) {
     write_file(project_base_path / "folder" / "new_folder" / "new.txt", "new");
 
     std::string new_tree_hash = git_add_folder(project_base_path / "folder");
-    GitTree* folder = findFolderFromTree(new_tree_hash, "folder/new_folder", git_path);
+    GitTree* folder = findProjectFolderFromTree(new_tree_hash, "folder/new_folder", git_path);
     std::cout << "new_folder listing: " << std::endl;
     printer(folder->directory);
 

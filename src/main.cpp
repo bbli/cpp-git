@@ -1,7 +1,6 @@
 #include <iostream>
 #include <commands.hpp>
-
-#include <helper.hpp>
+#include <git_objects.hpp>
 
 
 int main(void) {
@@ -27,17 +26,7 @@ int main(void) {
 
     /* ********* Main	********* */
     try{
-        fs::path project_path = repo_find(fs::current_path());
-        fs::path git_path = project_path / ".cpp-git";
-        std::cout << "Project path " << project_path << std::endl;
-
-        GitBlob blob(git_path," version");
-        std::string return_hash = writeObject(&blob);
-
-
-        std::cout << "Return hash: " << return_hash << std::endl;
-        GitObject* gitobject = readObject(git_path,return_hash);
-        std::cout << "Data: " << gitobject->to_filesystem() << std::endl;
+        // where the interpreter code goes
     } catch (char const*e){
         std::cout << e << std::endl;
     }

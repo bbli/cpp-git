@@ -1,5 +1,6 @@
 build
 !CMakeLists.txt
 build_mac
+build2
 compile_commands.json
 

@@ -1,10 +1,11 @@
+#include "git_objects.hpp"
+#include "helper.hpp"
 #include "commands.hpp"
 
 #include <filesystem>
 #include <iostream>
 #include <vector>
 
-#include "helper.hpp"
 
 int test_function(void) {
     std::vector<int> test;
@@ -32,20 +33,6 @@ void git_init(fs::path project_base_path) {
     fs::create_directories(git_path / "refs" / "heads");
 }
 
-bool checkNodeName(GitTreeNode& node, std::string file_it_name){
-    return node.name == file_it_name;
-}
-
-bool endOfPath(typename fs::path::iterator file_it, typename fs::path::iterator end_it){
-    auto check_it = file_it;
-    return ++check_it == end_it;
-}
-
-void checkIfTree(GitTreeNode& node){
-    if (node.type != "tree") {
-        throw "this isn't a tree";
-    }
-}
 
 std::string getSubTreeHashForNewFile(std::string old_tree_hash, typename fs::path::iterator file_it,
                                 const typename fs::path::iterator end_it, const fs::path git_path,
@@ -56,7 +43,6 @@ std::string getSubTreeHashForNewFile(std::string old_tree_hash, typename fs::pat
     GitTree* old_tree_obj = dynamic_cast<GitTree*>(readObject(git_path, old_tree_hash));
     std::cout << "Currently at: " << *file_it << std::endl;
     bool found = false;
-    auto found_it = file_it;
     for (auto node : old_tree_obj->directory) {
         // Case 1: Same branch as file
         if (checkNodeName(node,*file_it)) {
@@ -129,7 +115,6 @@ std::string getSubTreeHashForNewFolder(std::string old_tree_hash, typename fs::p
     GitTree* old_tree_obj = dynamic_cast<GitTree*>(readObject(git_path, old_tree_hash));
     std::cout << "Currently at: " << *file_it << std::endl;
     bool found = false;
-    auto found_it = file_it;
     for (auto node : old_tree_obj->directory) {
         // Case 1: Same branch as file
         if (checkNodeName(node,*file_it)) {
