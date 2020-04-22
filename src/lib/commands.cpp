@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <iostream>
 #include <vector>
+#include <unordered_map>
 
 
 int test_function(void) {
@@ -205,4 +206,36 @@ std::string readProjectFolderAndWriteTree(const fs::path& adding_directory, bool
         write_file(git_path / "index", output);
     }
     return output;
+}
+
+std::string refResolve(fs::path path) {
+    std::string data = read_file(path);
+    if (data.rfind("ref: ", 0) == 0)
+        return refResolve(data.substr(5));
+    else
+        return data;
+}
+
+std::unordered_map<std::string, std::string> refList(fs::path project_base_path) {
+    fs::path ref_path = project_base_path / ".cpp-git" / "refs";
+    std::unordered_map<std::string, std::string> ret;
+
+    for (auto entry : fs::directory_iterator(ref_path)) {
+        fs::path cur_path = entry.path();
+        if (fs::is_directory(cur_path)) {
+            std::unordered_map<std::string, std::string> cur_ret = refList(cur_path);
+            ret.insert(cur_ret.begin(), cur_ret.end());
+        }
+        else
+            ret[cur_path.string()] = refResolve(cur_path);
+    }
+    return ret;
+}
+
+void git_show_ref() {
+    fs::path repo_base_path = repo_find(fs::current_path());
+    auto refs = refList(repo_base_path);
+    for ( auto it = refs.begin(); it != refs.end(); ++it )
+        std::cout << it->second << " refs/" << it->first << std::endl;
+    std::cout << std::endl;
 }
