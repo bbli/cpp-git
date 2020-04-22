@@ -9,7 +9,7 @@
 
 ## TODO
 ### Can be done in Isolation Right now
-* add interpreter
+* add interpreter [DONE]
 * define destructor/rest of the constructors for GitObjects
 * finish writing writeObject_and_readObject tests for the rest of the GitObjects
 * Add references/tags
