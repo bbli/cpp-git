@@ -12,7 +12,7 @@
 * add interpreter
 * define destructor/rest of the constructors for GitObjects
 * finish writing writeObject_and_readObject tests for the rest of the GitObjects
-* Add references/tags
+* Add references/tags [WIP]
 * add lazy write optimization to writeObject + write test for it
 * Define TearDown to delete created files from testing
 * conversion between relative to absolute path in interpreter code
