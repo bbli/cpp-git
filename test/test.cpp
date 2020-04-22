@@ -48,7 +48,7 @@ TEST(Scratch, directory_iterator_hidden_files) {
     fs::create_directory(folder_path / ".hidden");
 
     for (auto entry : fs::directory_iterator(folder_path)) {
-        std::cout << entry << std::endl;
+        std::cout << entry.path() << std::endl;
     }
 
     fs::remove_all(folder_path);
