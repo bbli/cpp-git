@@ -10,6 +10,7 @@
 ## TODO
 ### Can be done in Isolation Right now
 * add interpreter [DONE]
+* Have interpreter check validity of command line arguments + package into data structures before sending off
 * define destructor/rest of the constructors for GitObjects
 * finish writing writeObject_and_readObject tests for the rest of the GitObjects
 * Add references/tags
@@ -18,16 +19,23 @@
 * conversion between relative to absolute path in interpreter code
 * git_path speedup optimization
 
-* git reset --medium = just change index file to point to HEAD commit
+* git reset --medium(aka default) = just change index file to point to HEAD commit
 * git reset --hard = do above + walkTreeAndReplace on HEAD commit
+* git log: walk HEAD backwards , printing as you go along
+    * filter 
+    * --stat = call "git status" between each commit
 
-* implement git update-ref
+* git cat-file = take the hash and try to find the file. If found, read it in using read_file and print the contents
+
 
 ### Future Work
 * move all gitobject code to its own file
 * move scratch in main exec to test.cpp
 * change throws to classes
 * make strings into binary
+
+* no other VCS -> Subversion is snapshot + indexing
+* no diffing
 
 ## External Libraries
 * Testing from GoogleTest framework(https://github.com/google/googletest)

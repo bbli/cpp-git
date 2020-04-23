@@ -39,6 +39,16 @@ TEST(Helper, does_write_file_overwrite) {
     ASSERT_EQ(message2, read_result);
 }
 
+TEST(Scratch, system_unix_diff){
+    fs::path current_path = fs::current_path();
+    write_file(current_path / "diff1.txt", "abc");
+    write_file(current_path / "diff2.txt", "def");
+    system("diff --color diff1.txt diff2.txt");
+
+    fs::remove(current_path / "diff1.txt");
+    fs::remove(current_path / "diff2.txt");
+}
+
 // Answer: Does not skip hidden files
 TEST(Scratch, directory_iterator_hidden_files) {
     fs::path folder_path = fs::current_path() / "test_hiddenFiles";
