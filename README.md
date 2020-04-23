@@ -17,11 +17,20 @@
 * Define TearDown to delete created files from testing
 * conversion between relative to absolute path in interpreter code
 * git_path speedup optimization
-
-* git reset --medium = just change index file to point to HEAD commit
-* git reset --hard = do above + walkTreeAndReplace on HEAD commit
-
 * implement git update-ref
+
+* git reset --medium(aka default) = just change index file to point to HEAD commit
+* git reset --hard = do above + walkTreeAndReplace on HEAD commit
+* git log: walk HEAD backwards , printing as you go along
+    * filter 
+    * --stat = call "git status" between each commit
+* git branch
+    * -D branch_name: delete the branch
+    * -a: show all branches
+    * nothing: create a new branch and switch to it(Note this is different from default behavior)
+* git cat-file = take the hash and try to find the file. If found, read it in using read_file and print the contents. Otherwise throw not found error
+* git commit
+
 * command
     * cat-file [DONE]
     * init [DONE]
@@ -41,10 +50,16 @@
     * tag
    
 ### Future Work
-* move all gitobject code to its own file
-* move scratch in main exec to test.cpp
 * change throws to classes
 * make strings into binary
+
+### Presentation
+* explain GIT internals
+* explain design decision
+* explain differences with Git
+    * format
+    * HEAD
+
 
 ## External Libraries
 * Testing from GoogleTest framework(https://github.com/google/googletest)
