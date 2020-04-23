@@ -36,7 +36,8 @@ void write_file(fs::path file_path, std::string message);
 fs::path repo_find(fs::path file_path);
 GitObject* readObject(fs::path git_path, std::string hash);
 std::string writeObject(GitObject* obj, bool write = true);
-std::string getTreeHashOfIndex(fs::path git_path);
+GitTree* getIndexTree(fs::path git_path);
+std::string get_head_tree(fs::path git_path);
 void printTree(fs::path git_path, std::string tree_hash);
 
 bool isGitRepo(const fs::path& path);
@@ -45,10 +46,10 @@ bool endOfPath(typename fs::path::iterator file_it, typename fs::path::iterator 
 void checkIfTree(GitTreeNode& node);
 
 std::string readProjectFileAndWriteObject(const fs::path git_path, const fs::path& file_path);
-std::string getSubTreeHashForNewFile(std::string old_tree_hash, typename fs::path::iterator file_it,
+std::string getSubTreeHashForNewFile(GitTree* tree_obj, typename fs::path::iterator file_it,
                                 const typename fs::path::iterator end_it, const fs::path git_path,
                                 const fs::path& file_path);
-std::string getSubTreeHashForNewFolder(std::string old_tree_hash, typename fs::path::iterator file_it,
+std::string getSubTreeHashForNewFolder(GitTree* tree_obj, typename fs::path::iterator file_it,
                                   typename fs::path::iterator end_it, const fs::path git_path,
                                   const fs::path folder_path);
 std::string readProjectFolderAndWriteTree(const fs::path& adding_directory, bool index=false);

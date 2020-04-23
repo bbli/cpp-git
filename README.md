@@ -24,6 +24,10 @@
 * git log: walk HEAD backwards , printing as you go along
     * filter 
     * --stat = call "git status" between each commit
+* git branch
+    * -D branch_name: delete the branch
+    * -a: show all branches
+    * nothing: create a new branch and switch to it(Note this is different from default behavior)
 
 * git cat-file = take the hash and try to find the file. If found, read it in using read_file and print the contents
 
@@ -36,6 +40,14 @@
 
 * no other VCS -> Subversion is snapshot + indexing
 * no diffing
+
+### Presentation
+* explain GIT internals
+* explain design decision
+* explain differences with Git
+    * format
+    * HEAD
+
 
 ## External Libraries
 * Testing from GoogleTest framework(https://github.com/google/googletest)
