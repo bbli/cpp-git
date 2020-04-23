@@ -31,20 +31,26 @@ namespace fs = std::filesystem;
 /*     } */
 /* } */
 
+/* File Operation */
 std::string read_file(fs::path path);
 void write_file(fs::path file_path, std::string message);
+
 fs::path repo_find(fs::path file_path);
-GitObject* readObject(fs::path git_path, std::string hash);
-std::string writeObject(GitObject* obj, bool write = true);
-std::string getTreeHashOfIndex(fs::path git_path);
-void printTree(fs::path git_path, std::string tree_hash);
 
-bool isGitRepo(const fs::path& path);
-bool checkNodeName(GitTreeNode& node, std::string file_it_name);
-bool endOfPath(typename fs::path::iterator file_it, typename fs::path::iterator end_it);
-void checkIfTree(GitTreeNode& node);
+/* Object Operations */
+GitObject* read_object(fs::path git_path, std::string hash);
+std::string write_object(GitObject* obj, bool write = true);
+std::string object_find(fs::path repo, fs::path obj, const std::string& fmt);
 
-std::string readProjectFileAndWriteObject(const fs::path git_path, const fs::path& file_path);
+std::string get_tree_hash_of_index(fs::path git_path);
+void print_tree(fs::path git_path, std::string tree_hash);
 
-void object_find(void);
+bool is_git_repo(const fs::path& path);
+bool check_node_name(GitTreeNode& node, std::string file_it_name);
+bool end_of_path(typename fs::path::iterator file_it, typename fs::path::iterator end_it);
+void check_if_tree(GitTreeNode& node);
+
+std::string read_project_file_and_write_object(const fs::path git_path, const fs::path& file_path);
+
+
 #endif
