@@ -45,6 +45,13 @@ bool endOfPath(typename fs::path::iterator file_it, typename fs::path::iterator 
 void checkIfTree(GitTreeNode& node);
 
 std::string readProjectFileAndWriteObject(const fs::path git_path, const fs::path& file_path);
+std::string getSubTreeHashForNewFile(std::string old_tree_hash, typename fs::path::iterator file_it,
+                                const typename fs::path::iterator end_it, const fs::path git_path,
+                                const fs::path& file_path);
+std::string getSubTreeHashForNewFolder(std::string old_tree_hash, typename fs::path::iterator file_it,
+                                  typename fs::path::iterator end_it, const fs::path git_path,
+                                  const fs::path folder_path);
+std::string readProjectFolderAndWriteTree(const fs::path& adding_directory, bool index=false);
 
 void object_find(void);
 #endif
