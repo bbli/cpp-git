@@ -14,25 +14,33 @@ int test_function(void) {
 }
 
 
-void cmd_init(std::vector<std::string> args){
+void cmd_init(std::vector<std::string>& args){
     if ((args.size() >= 1 && args[0] == "--help") || args.size() > 1)
     {
         throw GIT_INIT_USAGE;
     }
-    git_init(args[0]);
+    git_init(fs::canonical(args[0]));
 }
 
 
-void cmd_cat_file(std::vector<std::string> args){
+void cmd_cat_file(std::vector<std::string>& args){
     if (args.size() <= 1 || CAT_FILE_SUBCMDS.find(args[0]) == CAT_FILE_SUBCMDS.end() || args[0] == "--help")
     {
         throw CAT_FILE_USAGE;
     }
-    fs::path repo = repo_find(".");
-    git_cat_file(repo, fs::canonical(args[1]), "commit");
+    git_cat_file(fs::canonical(args[1]), "commit");
 }
 
-void git_cat_file(fs::path repo, fs::path obj, const std::string& fmt){
+void cmd_checkout(std::vector<std::string>& args){
+    if (args.size() != 1)
+    {
+        throw CHECKOUT_USAGE;
+    }
+    git_checkout(args[0]);
+}
+
+void git_cat_file(fs::path obj, const std::string& fmt){
+    fs::path repo = repo_find(fs::current_path());
     GitObject* object = read_object(repo, object_find(repo, obj, fmt));
     std::cout << object->to_filesystem() << std::endl;
 }
@@ -56,6 +64,22 @@ void git_init(fs::path project_base_path) {
     // create refs dir with tags+heads subdirectory
     fs::create_directories(git_path / "refs" / "tags");
     fs::create_directories(git_path / "refs" / "heads");
+}
+
+
+void git_checkout(std::string hash){
+    auto repo_base_path = repo_find(fs::current_path());
+    GitObject* obj = read_object(repo_base_path / ".cpp-git", hash);
+    std::string fmt = obj->get_fmt();
+    if (fmt == "commit") {
+        GitCommit* commit_obj = dynamic_cast<GitCommit*>(obj);
+        git_checkout(commit_obj->tree_hash);
+    } else if (fmt == "tree") {
+        fs::path repo_base_path = repo_find(fs::current_path());
+        walk_tree_and_replace(repo_base_path, obj);
+    } else {
+        throw "Shouldn't reach here";
+    }
 }
 
 

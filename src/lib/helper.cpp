@@ -56,7 +56,9 @@ GitObject* create_object(std::string type, std::string& data, fs::path git_path)
     throw "Something is wrong with the type";
 }
 
+
 GitObject* read_object(fs::path git_path, std::string hash) {
+    /* git_path: worktree/.cpp-git; hash: hash of the object*/
     fs::path object_path = git_path / "objects" / hash.substr(0, 2) / hash.substr(2);
     /* std::cout << "object_path: " << object_path << std::endl; */
     std::string content = read_file(object_path);
@@ -107,7 +109,7 @@ std::string read_project_file_and_write_object(const fs::path git_path, const fs
     return write_object(&blob_obj);
 }
 
-void write_objectToProjectFile(fs::path project_blob_path, std::string blob_hash) {
+void write_object_to_project_file(fs::path project_blob_path, std::string blob_hash) {
     fs::path git_path = repo_find(project_blob_path) / ".cpp-git";
     GitObject* obj = read_object(git_path, blob_hash);
 
@@ -115,7 +117,7 @@ void write_objectToProjectFile(fs::path project_blob_path, std::string blob_hash
     write_file(project_blob_path, blob_obj->data);
 }
 
-void walkTreeAndReplace(fs::path tree_write_path, GitObject* obj) {
+void walk_tree_and_replace(fs::path tree_write_path, GitObject* obj) {
     fs::path git_path = repo_find(tree_write_path) / ".cpp-git";
 
     GitTree* tree_obj = dynamic_cast<GitTree*>(obj);
@@ -124,38 +126,17 @@ void walkTreeAndReplace(fs::path tree_write_path, GitObject* obj) {
     for (auto node : tree_obj->directory) {
         if (node.type == "blob") {
             /* std::cout << "Write Path: "<< (tree_write_path / node.name) << std::endl; */
-            write_objectToProjectFile(tree_write_path / node.name, node.hash);
+            write_object_to_project_file(tree_write_path / node.name, node.hash);
         } else if (node.type == "tree") {
             /* std::cout << "Got here" << std::endl; */
             GitObject* obj = read_object(git_path, node.hash);
-            walkTreeAndReplace(tree_write_path / node.name, obj);
+            walk_tree_and_replace(tree_write_path / node.name, obj);
         } else {
             std::cout << "Node should only be tree or blob" << std::endl;
             throw "Node type should only be tree or blob";
         }
     }
 }
-
-void howToGetAbsolutePath(fs::path git_path, GitObject* obj) {
-    // HMM???
-}
-
-void chkout_obj(fs::path git_path, std::string hash) {
-    GitObject* obj = read_object(git_path, hash);
-    std::string fmt = obj->get_fmt();
-    if (fmt == "commit") {
-        GitCommit* commit_obj = dynamic_cast<GitCommit*>(obj);
-        chkout_obj(git_path, commit_obj->tree_hash);
-    } else if (fmt == "tree") {
-        fs::path repo_base_path = repo_find(fs::current_path());
-        walkTreeAndReplace(repo_base_path, obj);
-    } else if (fmt == "blob") {
-        howToGetAbsolutePath(git_path, obj);
-    } else {
-        throw "Shouldn't reach here";
-    }
-}
-
 
 /* ********* Traversal Helpers	********* */
 void dereference_if_indirect(std::string& commit_string) {
@@ -221,7 +202,7 @@ std::string find_hash_in_tree(std::string tree_hash, typename fs::path::iterator
     throw "Couldn't find file in this tree";
 }
 
-GitBlob* findProjectFileFromTree(std::string tree_hash, fs::path relative_path, const fs::path git_path) {
+GitBlob* find_project_file_from_tree(std::string tree_hash, fs::path relative_path, const fs::path git_path) {
     auto path_it = relative_path.begin();
     auto end_it = relative_path.end();
     std::string file_hash = find_hash_in_tree(tree_hash, path_it, end_it, git_path);
@@ -229,7 +210,7 @@ GitBlob* findProjectFileFromTree(std::string tree_hash, fs::path relative_path, 
     return dynamic_cast<GitBlob*>(obj);
 }
 
-GitTree* findProjectFolderFromTree(std::string tree_hash, fs::path relative_path,
+GitTree* find_project_folder_from_tree(std::string tree_hash, fs::path relative_path,
                             const fs::path git_path) {
     auto path_it = relative_path.begin();
     auto end_it = relative_path.end();

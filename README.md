@@ -18,6 +18,7 @@
 * conversion between relative to absolute path in interpreter code
 * git_path speedup optimization
 * implement git update-ref
+* fix memory leaks -- no delete after newing git object
 
 * git reset --medium(aka default) = just change index file to point to HEAD commit
 * git reset --hard = do above + walkTreeAndReplace on HEAD commit

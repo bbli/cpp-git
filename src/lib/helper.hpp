@@ -51,6 +51,7 @@ bool end_of_path(typename fs::path::iterator file_it, typename fs::path::iterato
 void check_if_tree(GitTreeNode& node);
 
 std::string read_project_file_and_write_object(const fs::path git_path, const fs::path& file_path);
+void walk_tree_and_replace(fs::path tree_write_path, GitObject* obj);
 
 
 #endif
