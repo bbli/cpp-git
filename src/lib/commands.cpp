@@ -28,7 +28,7 @@ void cmd_cat_file(const std::vector<std::string> &args){
     {
         throw CAT_FILE_USAGE;
     }
-    git_cat_file(fs::canonical(args[1]), "commit");
+    git_cat_file(fs::canonical(args[1]), args[0]);
 }
 
 void cmd_checkout(const std::vector<std::string>& args){
