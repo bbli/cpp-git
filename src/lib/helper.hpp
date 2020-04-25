@@ -38,6 +38,7 @@ void write_file(fs::path file_path, std::string message);
 fs::path repo_find(fs::path file_path);
 
 /* Object Operations */
+GitObject* create_object(std::string type, std::string& data, fs::path git_path);
 GitObject* read_object(fs::path git_path, std::string hash);
 std::string write_object(GitObject* obj, bool write = true);
 std::string object_find(fs::path repo, fs::path obj, const std::string& fmt);
