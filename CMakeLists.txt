@@ -6,7 +6,7 @@ set(INSTALL_BIN_DIR ${PROJECT_SOURCE_DIR}/bin)
 add_compile_options(-W -Wall)
 set(CMAKE_CXX_STANDARD 20)
 if(APPLE)
-    include_directories(/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/usr/include)
+    #include_directories(/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/usr/include)
 endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS YES)
 
