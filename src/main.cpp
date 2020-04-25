@@ -47,7 +47,7 @@ private:
         {"rev-parse",   cmd_print},
         {"rm",          cmd_print},
         {"show-ref",    cmd_print},
-        {"tag",         cmd_print},
+        {"tag",         cmd_print}
     };
 };
 
