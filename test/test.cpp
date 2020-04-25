@@ -182,6 +182,43 @@ class TreeTraversal : public ::testing::Test {
     }
 };
 
+//TEST_F(TreeTraversal, one_level_tree) {
+//    /* // Now walk */
+//    fs::path git_path = repo_find(fs::current_path()) / ".cpp-git";
+//    chkout_obj(git_path, tree_hash);
+//
+//    // Check that we have written to project's path and that content is the same
+//    std::string final_message_1 = read_file(current_path / "file1.txt");
+//    /* final_message_1.pop_back(); */
+//    std::string final_message_2 = read_file(current_path / "file2.txt");
+//    /* final_message_2.pop_back(); */
+//    ASSERT_EQ(message_1, final_message_1);
+//    ASSERT_EQ(message_2, final_message_2);
+//}
+
+//TEST_F(TreeTraversal, two_level_tree) {
+//    // Create root tree
+//    fs::path git_path = repo_find(fs::current_path()) / ".cpp-git";
+//    std::string message_3 = "file3";
+//    GitBlob file_3(git_path, message_3);
+//    std::string hash_3 = write_object(&file_3);
+//    GitTree root_tree_obj(git_path);
+//    // Take tree from above and append to this tree
+//    root_tree_obj.add_entry("blob", "file3.txt", hash_3);
+//    root_tree_obj.add_entry("tree", "folder", tree_hash);
+//    std::string root_hash = write_object(&root_tree_obj);
+//
+//    // Now walk
+//    chkout_obj(git_path, root_hash);
+//
+//    // Check that everything is the same
+//    ASSERT_EQ(message_3, read_file(current_path / "file3.txt"));
+//    std::string final_message_1 = read_file(current_path / "folder" / "file1.txt");
+//    std::string final_message_2 = read_file(current_path / "folder" / "file2.txt");
+//    ASSERT_EQ(message_1, final_message_1);
+//    ASSERT_EQ(message_2, final_message_2);
+//}
+
 #if 1
 TEST(Staging, git_add_entireFolder) {
     git_folder_setup("entireFolder");

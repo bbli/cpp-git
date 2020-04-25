@@ -7,6 +7,7 @@
 #include <iostream>
 #include <sha1.hpp>
 #include <vector>
+#include <unordered_map>
 namespace fs = std::filesystem;
 
 template <typename T>
