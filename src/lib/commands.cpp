@@ -14,7 +14,7 @@ int test_function(void) {
 }
 
 
-void cmd_init(std::vector<std::string>& args){
+void cmd_init(const std::vector<std::string>& args){
     if ((args.size() >= 1 && args[0] == "--help") || args.size() > 1)
     {
         throw GIT_INIT_USAGE;
@@ -23,7 +23,7 @@ void cmd_init(std::vector<std::string>& args){
 }
 
 
-void cmd_cat_file(std::vector<std::string>& args){
+void cmd_cat_file(const std::vector<std::string>& args){
     if (args.size() <= 1 || CAT_FILE_SUBCMDS.find(args[0]) == CAT_FILE_SUBCMDS.end() || args[0] == "--help")
     {
         throw CAT_FILE_USAGE;
@@ -31,12 +31,20 @@ void cmd_cat_file(std::vector<std::string>& args){
     git_cat_file(fs::canonical(args[1]), "commit");
 }
 
-void cmd_checkout(std::vector<std::string>& args){
+void cmd_checkout(const std::vector<std::string>& args){
     if (args.size() != 1)
     {
         throw CHECKOUT_USAGE;
     }
     git_checkout(args[0]);
+}
+
+void cmd_commit(const std::vector<std::string>& args){
+    if (args.size() != 2)
+    {
+        throw "Currently only support `git commit -m 'your commit message'`";
+    }
+    git_commit(args[1]);
 }
 
 void git_cat_file(fs::path obj, const std::string& fmt){
@@ -74,12 +82,18 @@ void git_checkout(std::string hash){
     if (fmt == "commit") {
         GitCommit* commit_obj = dynamic_cast<GitCommit*>(obj);
         git_checkout(commit_obj->tree_hash);
-    } else if (fmt == "tree") {
-        fs::path repo_base_path = repo_find(fs::current_path());
-        walk_tree_and_replace(repo_base_path, obj);
     } else {
         throw "Shouldn't reach here";
     }
+}
+
+void git_commit(std::string commit_message){
+    fs::path project_base_path = repo_find(fs::current_path());
+    fs::path git_path = project_base_path / ".cpp-git";
+    std::string index_tree_hash = get_tree_hash_of_index(git_path);
+    auto parent_commit_hash = HOWTOGET();
+    GitCommit* obj = new GitCommit(git_path, index_tree_hash, parent_commit_hash, commit_message);
+    // TODO: write and update commit_obj to head
 }
 
 

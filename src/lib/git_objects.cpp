@@ -9,6 +9,7 @@ GitObject::GitObject(fs::path git_path) {
 GitCommit::GitCommit(fs::path git_path, const std::string& data) : GitObject(git_path) {
     to_internal(data);
 }
+
 GitTree::GitTree(fs::path git_path, const std::string& data) : GitObject(git_path) {
     to_internal(data);
 }

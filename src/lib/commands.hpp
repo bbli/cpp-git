@@ -17,13 +17,15 @@ namespace fs = std::filesystem;
 
 /* ********* Functions	********* */
 // Functions dealing with commands: validate, convert file path to absolute etc.
-void cmd_init(std::vector<std::string>& args);
-void cmd_cat_file(std::vector<std::string>& args);
-void cmd_checkout(std::vector<std::string>& args);
+void cmd_init(const std::vector<std::string>& args);
+void cmd_cat_file(const std::vector<std::string>& args);
+void cmd_checkout(const std::vector<std::string>& args);
+void cmd_commit(const std::vector<std::string>& args);
 // Actual functions executing commands
 void git_cat_file(fs::path obj, const std::string& fmt);
 void git_init(fs::path project_base_path);
 void git_checkout(std::string hash);
+void git_commit();
 
 int test_function(void);
 
