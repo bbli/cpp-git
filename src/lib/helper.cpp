@@ -7,6 +7,7 @@
 #include <iostream>
 #include <sha1.hpp>
 #include <vector>
+#include <unordered_map>
 namespace fs = std::filesystem;
 
 template <typename T>
@@ -178,6 +179,29 @@ void check_if_tree(GitTreeNode& node){
     if (node.type != "tree") {
         throw "this isn't a tree";
     }
+}
+
+std::string ref_resolve(fs::path path) {
+    std::string data = read_file(path);
+    if (data.rfind("ref: ", 0) == 0)
+        return ref_resolve(data.substr(5));
+    else
+        return data;
+}
+
+std::unordered_map<std::string, std::string> ref_list(fs::path base_path) {
+    std::unordered_map<std::string, std::string> ret;
+    for (auto entry : fs::directory_iterator(base_path)) {
+        fs::path cur_path = entry.path();
+//        std::cout << cur_path << std::endl;
+        if (fs::is_directory(cur_path)) {
+            std::unordered_map<std::string, std::string> cur_ret = ref_list(cur_path);
+            ret.insert(cur_ret.begin(), cur_ret.end());
+        }
+        else
+            ret[cur_path.string()] = ref_resolve(cur_path);
+    }
+    return ret;
 }
 
 #if 1

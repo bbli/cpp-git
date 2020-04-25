@@ -5,7 +5,7 @@
 #include <filesystem>
 #include <iostream>
 #include <vector>
-
+#include <unordered_map>
 
 int test_function(void) {
     std::vector<int> test;
@@ -14,7 +14,7 @@ int test_function(void) {
 }
 
 
-void cmd_init(std::vector<std::string>& args){
+void cmd_init(const std::vector<std::string>& args){
     if ((args.size() >= 1 && args[0] == "--help") || args.size() > 1)
     {
         throw GIT_INIT_USAGE;
@@ -23,7 +23,7 @@ void cmd_init(std::vector<std::string>& args){
 }
 
 
-void cmd_cat_file(std::vector<std::string>& args){
+void cmd_cat_file(const std::vector<std::string> &args){
     if (args.size() <= 1 || CAT_FILE_SUBCMDS.find(args[0]) == CAT_FILE_SUBCMDS.end() || args[0] == "--help")
     {
         throw CAT_FILE_USAGE;
@@ -31,7 +31,7 @@ void cmd_cat_file(std::vector<std::string>& args){
     git_cat_file(fs::canonical(args[1]), "commit");
 }
 
-void cmd_checkout(std::vector<std::string>& args){
+void cmd_checkout(const std::vector<std::string>& args){
     if (args.size() != 1)
     {
         throw CHECKOUT_USAGE;
@@ -254,4 +254,13 @@ std::string read_project_folder_and_write_tree(const fs::path& adding_directory,
         write_file(git_path / "index", output);
     }
     return output;
+}
+
+void cmd_show_ref(const std::vector<std::string> &args) {
+    fs::path repo_base_path = repo_find(fs::current_path());
+    fs::path ref_path = repo_base_path / ".cpp-git" / "refs";
+    auto refs = ref_list(ref_path);
+    for ( auto it = refs.begin(); it != refs.end(); ++it )
+        std::cout << it->second << " refs/" << it->first << std::endl;
+    std::cout << std::endl;
 }
