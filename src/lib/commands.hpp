@@ -28,6 +28,7 @@ void cmd_hash_object(const std::vector<std::string> &args);
 void git_cat_file(fs::path obj, const std::string& fmt);
 void git_init(fs::path project_base_path);
 void git_checkout(std::string hash);
+void git_hash_object(fs::path path, const std::string& fmt);
 
 int test_function(void);
 
