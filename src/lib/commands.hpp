@@ -11,6 +11,7 @@
 /* ********* Global Variables ********** */
 const std::set<std::string> CAT_FILE_SUBCMDS = {"blob", "commit", "tag", "tree"};
 #define CAT_FILE_USAGE "usage: git cat-file <type> <object>\n<type> can be one of: blob, tree, commit, tag"
+#define HASH_OBJECT_USAGE "usage: git hash-object <type> <path>\n<type> can be one of: blob, tree, commit, tag"
 #define GIT_INIT_USAGE "usage: git init <dir>\nCreate an empty Git repository as <dir>. <dir> defaults to be '.'"
 #define CHECKOUT_USAGE "usage: git checkout [<branch>/<commit>]"
 
@@ -22,6 +23,7 @@ void cmd_init(const std::vector<std::string>& args);
 void cmd_cat_file(const std::vector<std::string>& args);
 void cmd_checkout(const std::vector<std::string>& args);
 void cmd_show_ref(const std::vector<std::string> &args);
+void cmd_hash_object(const std::vector<std::string> &args);
 // Actual functions executing commands
 void git_cat_file(fs::path obj, const std::string& fmt);
 void git_init(fs::path project_base_path);

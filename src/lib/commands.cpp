@@ -264,3 +264,13 @@ void cmd_show_ref(const std::vector<std::string> &args) {
         std::cout << it->second << " refs/" << it->first << std::endl;
     std::cout << std::endl;
 }
+
+void cmd_hash_object(const std::vector<std::string> &args) {
+    if (args.size() <= 1 || CAT_FILE_SUBCMDS.find(args[0]) == CAT_FILE_SUBCMDS.end() || args[0] == "--help") {
+        throw HASH_OBJECT_USAGE;
+    }
+    fs::path repo = repo_find(fs::current_path());
+    std::string data = read_file(fs::canonical(args[1]));
+    GitObject* obj = create_object(args[0], data, repo);
+    write_object(obj, true);
+}
