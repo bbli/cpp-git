@@ -1,6 +1,7 @@
 #ifndef GIT_OBJECT_HPP
 #define GIT_OBJECT_HPP
 #include <filesystem>
+#include <iostream>
 #include <string>
 #include <vector>
 namespace fs = std::filesystem;
@@ -37,12 +38,10 @@ class GitCommit : public GitObject {
     std::string commit_message;
     virtual std::string get_fmt(void);
     GitCommit(fs::path git_path, const std::string& data);
-    GitCommit::GitCommit(fs::path git_path, const std::string& tree_hash,
-                    const std::string parent_hash, const std::string commit_message):
-                        GitObject(git_path),
-                        tree_hash(tree_hash),
-                        parent_hash(parent_hash),
-                        commit_message(commit_message){};
+    GitCommit(fs::path git_path, const std::string& tree_hash,
+                const std::string parent_hash, const std::string commit_message);
+    // create a root commit without parent and any file
+    GitCommit(fs::path git_path);
     void to_internal(const std::string& data);
     virtual std::string to_filesystem(void);
 };

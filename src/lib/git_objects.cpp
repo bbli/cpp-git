@@ -1,6 +1,7 @@
 #include "git_objects.hpp"
 #include <range/v3/view.hpp>
 #include <range/v3/range/conversion.hpp>
+#include <helper.hpp>
 
 GitObject::GitObject(fs::path git_path) {
     this->git_path = git_path;
@@ -10,10 +11,24 @@ GitCommit::GitCommit(fs::path git_path, const std::string& data) : GitObject(git
     to_internal(data);
 }
 
+GitCommit::GitCommit(fs::path git_path, const std::string& tree_hash,
+                const std::string parent_hash, const std::string commit_message):
+                    GitObject(git_path),
+                    tree_hash(tree_hash),
+                    parent_hash(parent_hash),
+                    commit_message(commit_message){};
+
+GitCommit::GitCommit(fs::path git_path) : GitObject(git_path), parent_hash(""), commit_message("") {
+    GitTree* tree_obj = new GitTree(git_path);
+    std::string tree_obj_hash = write_object(tree_obj, true);
+    this->tree_hash = tree_obj_hash;
+    delete tree_obj;
+}
+
 GitTree::GitTree(fs::path git_path, const std::string& data) : GitObject(git_path) {
     to_internal(data);
 }
-GitTree::GitTree(fs::path git_path) : GitObject(git_path){};
+GitTree::GitTree(fs::path git_path) : GitObject(git_path), directory(std::vector<GitTreeNode>{}){};
 GitTag::GitTag(fs::path git_path, const std::string& data) : GitObject(git_path) {
     to_internal(data);
 }

@@ -20,6 +20,7 @@ namespace fs = std::filesystem;
 /* ********* Functions	********* */
 // Functions dealing with commands: validate, convert file path to absolute etc.
 void cmd_init(const std::vector<std::string>& args);
+void cmd_add(const std::vector<std::string> &args);
 void cmd_cat_file(const std::vector<std::string>& args);
 void cmd_checkout(const std::vector<std::string>& args);
 void cmd_commit(const std::vector<std::string>& args);

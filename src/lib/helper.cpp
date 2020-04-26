@@ -68,9 +68,10 @@ GitObject* read_object(fs::path git_path, std::string hash) {
     /* std::cout << "Read(File After EOF Remove): " << content.length() << std::endl; */
     auto split_index = content.find('\0');
     /* std::cout << "Split index: " << split_index << std::endl; */
-    if (split_index == content.length() - 1) {
-        throw "not a valid file";
-    }
+    // if (split_index == content.length() - 1) {
+    //     std::cout<<"FFF"<<std::endl;
+    //     //throw "not a valid file";
+    // }
     // it's too bad string_view cannot be used in STL algorithms
     /* std::string_view type(content.begin(),split_point); */
     std::string type = content.substr(0, split_index);

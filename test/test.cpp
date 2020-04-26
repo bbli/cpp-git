@@ -388,3 +388,64 @@ TEST(Staging, git_add_folder_twoLevelsNewFolder) {
 #endif
 /* ********* Git Init	********* */
 // Test throw if not empty path
+
+
+TEST(GitCommand, git_init){
+    // make tmp folder
+    fs::path worktree = fs::current_path() / "init_tmp";
+    /* std::cout << "Folder path: " << folder_path << std::endl; */
+    if (fs::exists(worktree)) {
+        fs::remove_all(worktree);
+    }
+    cmd_init(std::vector<std::string>{worktree});
+    fs::path git_path = worktree / ".cpp-git";
+    ASSERT_TRUE(fs::exists(git_path / "HEAD"));
+    ASSERT_TRUE(fs::exists(git_path / "objects"));
+    ASSERT_TRUE(fs::exists(git_path / "branches"));
+    ASSERT_TRUE(fs::exists(git_path / "refs" / "tags"));
+    ASSERT_TRUE(fs::exists(git_path / "refs" / "heads"));
+    ASSERT_TRUE(fs::exists(git_path / "refs" / "heads" / "master"));
+    ASSERT_EQ(read_file(git_path / "HEAD"), "ref: refs/heads/master");
+}
+
+TEST(GitCommand, git_commit){
+    fs::path worktree = "test_git_commit";
+    git_folder_setup(worktree);
+    worktree = fs::canonical(worktree);
+    fs::path git_path = worktree / ".cpp-git";
+    fs::current_path(worktree);//change working directory
+
+    // git add a new file
+    std::string filename = "test.txt";
+    fs::path txtfile = worktree / filename;
+    std::string content = "Now test git_commit command";
+    write_file(txtfile, content);
+    cmd_add(std::vector<std::string>{txtfile});
+    ASSERT_TRUE(fs::exists(git_path / "index"));
+    std::cout<<"Finish adding a new file"<<std::endl;
+
+    // A new commit,
+    std::string message = "Initial commit";
+    try{
+        git_commit(message);
+    }
+    catch (char const *e)
+    {
+        std::cout << e << std::endl;
+        throw e;
+    }
+    std::cout<<"Finish invoking git commit"<<std::endl;
+    // Get commit from HEAD and check it's content
+    std::string hash = ref_resolve(git_path / "HEAD");
+    GitCommit* commit_obj = dynamic_cast<GitCommit*>(read_object(git_path, hash));
+    ASSERT_EQ(commit_obj->commit_message, message);
+    std::cout<<"Finish testing content"<<std::endl;
+
+    // Get tree node and check if there's a txt file with correct content
+    GitTree* tree_obj = dynamic_cast<GitTree*>(read_object(git_path, commit_obj->tree_hash));
+    ASSERT_EQ(tree_obj->directory.size(), 1);
+    ASSERT_EQ(tree_obj->directory[0].name, filename);
+    GitBlob* blob_obj = dynamic_cast<GitBlob*>(read_object(git_path, tree_obj->directory[0].hash));
+    ASSERT_EQ(blob_obj->data, content);
+}
+
