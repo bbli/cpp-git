@@ -639,6 +639,7 @@ TEST(GitCommand, git_commit){
     fs::current_path("..");
 }
 
+#if 0
 TEST(GitCommand, git_reset){
     fs::path worktree = "test_git_reset";
     git_folder_setup(worktree);
@@ -683,3 +684,4 @@ TEST(GitCommand, git_reset){
     }
     fs::current_path("..");
 }
+#endif

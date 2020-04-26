@@ -225,19 +225,19 @@ void git_checkout(std::string hash){
 void git_commit(std::string commit_message){
     fs::path project_base_path = repo_find(fs::current_path());
     fs::path git_path = project_base_path / ".cpp-git";
-    fs::path head_path = git_path / "HEAD";
     
     // Hash of the previous commit (aka HEAD), might be empty if it's the first commit
-    auto parent_commit_hash = ref_resolve(head_path);
+    std::string current_branch_name = get_current_branch(git_path);
+    std::string current_commit_hash = get_commit_hash_from_branch(current_branch_name,git_path);
 
     // Hash of the new tree in index
     std::string index_tree_hash = get_tree_hash_of_index(git_path);
 
-    // New commit, write to file and update HEAD
-    GitCommit* new_commit_obj = new GitCommit(git_path, index_tree_hash, parent_commit_hash, commit_message);
-    std::string new_commit_hash = write_object(new_commit_obj, true);
-    /* TODO Write to master instead of HEAD */
-    write_file(ref_resolve(head_path, true), new_commit_hash);
+    GitCommit new_commit_obj = GitCommit(git_path,index_tree_hash,current_commit_hash,commit_message);
+    std::string new_commit_hash = write_object(&new_commit_obj);
+    write_file(git_path / current_branch_name, new_commit_hash);
+    // clean index for the next round
+    write_file(git_path / "index", "");
 }
 
 void git_reset(bool hard){

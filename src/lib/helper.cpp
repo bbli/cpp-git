@@ -272,7 +272,6 @@ GitTree* get_index_tree(fs::path git_path) {
     }
 }
 
-// NOTE: until commit objects are implemented, will just write tree hashes to refs
 GitCommit* get_commit_from_hash(std::string commit_hash, fs::path git_path){
         GitObject* obj = read_object(git_path,commit_hash);
         return dynamic_cast<GitCommit*>(obj);
