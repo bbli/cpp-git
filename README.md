@@ -15,9 +15,9 @@
 * finish writing writeObject_and_readObject tests for the rest of the GitObjects
 * Add references/tags
 * add lazy write optimization to writeObject + write test for it
-* Define TearDown to delete created files from testing
-* conversion between relative to absolute path in interpreter code
 * git_path speedup optimization
+* make to_internal private function
+* seperate writing to index in read_project_folder_and_write_tree into separate function
 
 * git reset --medium(aka default) = just change index file to point to HEAD commit
 * git reset --hard = do above + walkTreeAndReplace on HEAD commit
@@ -27,7 +27,7 @@
 * git branch
     * -D branch_name: delete the branch
     * -a: show all branches
-    * nothing: create a new branch and switch to it(Note this is different from default behavior)
+    * git checkout -b branch_name: create a new branch and switch to it
 
 * git cat-file = take the hash and try to find the file. If found, read it in using read_file and print the contents
 
@@ -44,9 +44,22 @@
 ### Presentation
 * explain GIT internals
 * explain design decision
+    * get_fmt?
+    * tree refers to tree object, project refers to source files/working directory
 * explain differences with Git
     * format
     * HEAD
+    * commit: no committer, pgp signature, etc
+    * no commands involving diffing:
+        * rebase
+        * merge
+        * cherry-pick
+    * new/modified files
+    * algorithms may not be what git actually uses
+* algorithms:
+    * status:
+        - copy of dictionary for rare edge case that you have two copies of the same file
+    * add:
 
 
 ## External Libraries
