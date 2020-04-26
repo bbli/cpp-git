@@ -364,17 +364,39 @@ GitTree* findProjectFolderFromTree(std::string tree_hash, fs::path relative_path
 }
 
 /* ********* Commit Helpers	********* */
-GitTree* getIndexTree(fs::path git_path) {
-    std::string tree_hash = read_file(git_path / "index");
-    GitObject* obj = readObject(git_path, tree_hash);
-    return dynamic_cast<GitTree*>(obj);
+// will only be direct if chkout a commit without a ref
+// NOTE: instead of referencing a reference, 
+// just have HEAD point to a commit object instead
+std::string dereference_if_indirect(std::string commit_string,fs::path git_path) {
+    auto idx = commit_string.find(' ');
+    if (idx != std::string::npos) {
+        commit_string.erase(0, idx + 1);
+    }
+
+    return read_file(git_path / commit_string);
 }
 
-// NOTE: until commit objects are implemented, will just write tree hashes to HEAD
-std::string get_head_tree(fs::path git_path) {
-    std::string commit_hash = read_file(git_path / "HEAD");
-    /* dereference_if_indirect(content); */
-    /* GitObject* obj = readObject(project_base_path / ".cpp-git", content); */
-    /* return dynamic_cast<GitTree*>(obj); */
-    return commit_hash;
+GitTree* getIndexTree(fs::path git_path) {
+    std::string tree_hash = read_file(git_path / "index");
+    if (tree_hash==""){
+        return nullptr;
+    }
+    else{
+        GitObject* obj = readObject(git_path, tree_hash);
+        return dynamic_cast<GitTree*>(obj);
+    }
+}
+
+// NOTE: until commit objects are implemented, will just write tree hashes to refs
+GitTree* get_head_tree(fs::path git_path) {
+    if (!fs::exists(git_path / "refs" / "heads" /"master")){
+        return nullptr;
+    }
+    else{
+        std::string content = read_file(git_path / "HEAD");
+        std::string tree_hash = dereference_if_indirect(content,git_path);
+        /* std::cout << "Commit Hash: " << tree_hash << std::endl; */
+        GitObject* obj = readObject(git_path,tree_hash);
+        return dynamic_cast<GitTree*>(obj);
+    }
 }

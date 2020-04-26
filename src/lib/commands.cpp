@@ -2,10 +2,12 @@
 #include "helper.hpp"
 #include "commands.hpp"
 
+#include <string>
 #include <filesystem>
 #include <iostream>
 #include <vector>
-
+#include <unordered_map>
+#include <set>
 
 int test_function(void) {
     std::vector<int> test;
@@ -23,6 +25,7 @@ void git_init(fs::path project_base_path) {
     fs::create_directories(git_path / "objects");
     // create HEAD file with "ref: refs/heads/master"
     write_file(git_path / "HEAD", "ref: refs/heads/master");
+    write_file(git_path / "index", "");
     // create branches dir
     fs::create_directories(git_path / "branches");
     // create refs dir with tags+heads subdirectory
@@ -33,7 +36,7 @@ void git_init(fs::path project_base_path) {
 std::string git_add_file(const fs::path& file_path) {
     fs::path project_base_path = repo_find(file_path);
     fs::path git_path = project_base_path / ".cpp-git";
-    GitTree tree_obj(git_path);
+    std::string new_tree_hash;
 
     // Run file_it
     auto base_it = project_base_path.begin();
@@ -46,10 +49,30 @@ std::string git_add_file(const fs::path& file_path) {
     // Paths are unique, but individual names arn't
     // EC: if file is one_level
     // EC: if file is new file
-    GitTree* root_tree = getIndexTree(git_path);
-    /* std::cout << "HashOfHead:" << root_tree_hash << std::endl; */
-    std::string new_tree_hash =
-        getSubTreeHashForNewFile(root_tree, file_it, file_path.end(), git_path, file_path);
+    GitTree* index_tree = getIndexTree(git_path);
+    if (!index_tree){
+        // then base off head tree instead
+        // if even head is empty, just add from project folder instead of traversing git trees
+        /* std::cout << "got past index" << std::endl; */
+        GitTree* head_tree = get_head_tree(git_path);
+        /* std::cout << "got past head" << std::endl; */
+        if (!head_tree){
+            /* std::cout << "got here" << std::endl; */
+            // TODO: check that folder path and project base path are the same
+            std::string blob_hash = readProjectFileAndWriteObject(git_path,file_path);
+            GitTree tree_obj(git_path);
+            tree_obj.add_entry("blob",file_path.filename(),blob_hash);
+            new_tree_hash = writeObject(&tree_obj);
+            write_file(git_path / "index",new_tree_hash);
+        }
+        else{
+            new_tree_hash = getSubTreeHashForNewFile(head_tree,file_it,file_path.end(),git_path,file_path);
+        }
+    }
+    else{
+        new_tree_hash =
+            getSubTreeHashForNewFile(index_tree, file_it, file_path.end(), git_path, file_path);
+    }
 
     std::cout << "Should write to index now" << std::endl;
     write_file(git_path / "index", new_tree_hash);
@@ -59,7 +82,7 @@ std::string git_add_file(const fs::path& file_path) {
 std::string git_add_folder(const fs::path folder_path) {
     fs::path project_base_path = repo_find(folder_path);
     fs::path git_path = project_base_path / ".cpp-git";
-    GitTree tree_obj(git_path);
+    std::string new_tree_hash;
 
     // Run file_it
     auto base_it = project_base_path.begin();
@@ -69,10 +92,15 @@ std::string git_add_folder(const fs::path folder_path) {
         file_it++;
     }
 
-    GitTree* old_tree = getIndexTree(git_path);
-    /* std::cout << "HashOfHead:" << old_tree_hash << std::endl; */
-    std::string new_tree_hash =
-        getSubTreeHashForNewFolder(old_tree, file_it, folder_path.end(), git_path, folder_path);
+    GitTree* index_tree = getIndexTree(git_path);
+    if (!index_tree){
+        // TODO: check that folder path and project base path are the same
+        new_tree_hash = readProjectFolderAndWriteTree(project_base_path);
+    }
+    else{
+        new_tree_hash =
+            getSubTreeHashForNewFolder(index_tree, file_it, folder_path.end(), git_path, folder_path);
+    }
 
     std::cout << "Should write to index now" << std::endl;
     write_file(git_path / "index", new_tree_hash);
