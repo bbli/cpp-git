@@ -15,31 +15,47 @@
 * finish writing write_object_and_read_object tests for the rest of the GitObjects
 * Add references/tags
 * add lazy write optimization to write_object + write test for it
+* conversion between relative to absolute path in interpreter code [DONE]
 * git_path speedup optimization
 * make to_internal private function
 * seperate writing to index in read_project_folder_and_write_tree into separate function
 
-* git reset --medium(aka default) = just change index file to point to HEAD commit
-* git reset --hard = do above + walkTreeAndReplace on HEAD commit
+* implement git update-ref
+* fix memory leaks -- no delete after newing git object
+
+* git reset --medium(aka default) = just change index file to point to HEAD commit [DONE]
+* git reset --hard = do above + walkTreeAndReplace on HEAD commit [DONE]
 * git log: walk HEAD backwards , printing as you go along
     * filter 
     * --stat = call "git status" between each commit
 * git branch
     * -D branch_name: delete the branch
     * -a: show all branches
-    * git checkout -b branch_name: create a new branch and switch to it
+    * nothing: create a new branch and switch to it(Note this is different from default behavior)
+* git cat-file = take the hash and try to find the file. If found, read it in using read_file and print the contents. Otherwise throw not found error
+* git commit [DONE]
 
-* git cat-file = take the hash and try to find the file. If found, read it in using read_file and print the contents
-
-
+* command
+    * cat-file [DONE]
+    * init [DONE]
+    * add
+    * cat-file
+    * checkout 
+    * commit   
+    * hash-object
+    * init     
+    * log      
+    * ls-tree 
+    * merge    
+    * rebase   
+    * rev-parse
+    * rm  
+    * show-ref
+    * tag
+   
 ### Future Work
-* move all gitobject code to its own file
-* move scratch in main exec to test.cpp
 * change throws to classes
 * make strings into binary
-
-* no other VCS -> Subversion is snapshot + indexing
-* no diffing
 
 ### Presentation
 * explain GIT internals
@@ -60,7 +76,6 @@
     * status:
         - copy of dictionary for rare edge case that you have two copies of the same file
     * add:
-
 
 ## External Libraries
 * Testing from GoogleTest framework(https://github.com/google/googletest)

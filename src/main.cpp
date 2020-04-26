@@ -9,7 +9,7 @@
 #include <set>
 #include <vector>
 
-void display_help(const std::vector<std::string> &tokens)
+void cmd_print(const std::vector<std::string> &tokens)
 {
     for_each(tokens.begin(), tokens.end(), [](const std::string &s) { std::cout << s << std::endl; });
 }
@@ -22,8 +22,6 @@ public:
         this->cmd = argc <= 1 ? "" : argv[1];
         for (int i = 2; i < argc; ++i)
             this->args.push_back(std::string(argv[i]));
-        if (this->cmds_with_relative_paths.find(cmd) != this->cmds_with_relative_paths.end())
-            this->convert_relative_path_to_absolute();
     }
 
     void execute_cmd()
@@ -32,34 +30,24 @@ public:
     }
 
 private:
-    void convert_relative_path_to_absolute()
-    {
-        std::filesystem::path pwd = std::filesystem::canonical(".");
-        for (std::string &file : this->args)
-        {
-            if (file[0] != '/')
-                file = pwd / file;
-        }
-    }
     std::string cmd;
     std::vector<std::string> args = {};
-    std::set<std::string> cmds_with_relative_paths = {"add", "cat-file", "hash-object", "rm"};
     std::unordered_map<std::string, std::function<void(const std::vector<std::string> &args)>> menu = {
-        {"", display_help},
-        {"add", display_help},
-        {"cat-file", display_help},
-        {"checkout", display_help},
-        {"commit", display_help},
-        {"hash-object", display_help},
-        {"init", display_help},
-        {"log", display_help},
-        {"ls-tree", display_help},
-        {"merge", display_help},
-        {"rebase", display_help},
-        {"rev-parse", display_help},
-        {"rm", display_help},
-        {"show-ref", display_help},
-        {"tag", display_help},
+        {"",            cmd_print},
+        {"add",         cmd_print},
+        {"cat-file",    cmd_cat_file},
+        {"checkout",    cmd_print},
+        {"commit",      cmd_print},
+        {"hash-object", cmd_print},
+        {"init",        cmd_print},
+        {"log",         cmd_print},
+        {"ls-tree",     cmd_print},
+        {"merge",       cmd_print},
+        {"rebase",      cmd_print},
+        {"rev-parse",   cmd_print},
+        {"rm",          cmd_print},
+        {"show-ref",    cmd_print},
+        {"tag",         cmd_print}
     };
 };
 
