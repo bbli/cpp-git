@@ -317,6 +317,8 @@ std::string read_project_folder_and_write_tree(const fs::path& adding_directory,
 
 std::string ref_resolve(const fs::path& path, bool return_file_path) {
     std::string data = read_file(path);
+    //No content if it's an initial commit
+    if (data.size() == 0) return "";
     if (data.rfind("ref: ", 0) == 0)
         return ref_resolve(repo_find(path)/ ".cpp-git" / data.substr(5), return_file_path);
     else if (return_file_path)
