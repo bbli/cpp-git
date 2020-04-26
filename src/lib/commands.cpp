@@ -172,9 +172,20 @@ std::string git_add_file(const fs::path& file_path) {
             tree_obj.add_entry("blob",file_path.filename(),blob_hash);
             new_tree_hash = write_object(&tree_obj);
             write_file(git_path / "index",new_tree_hash);
-            // TODO: FIX THIS MESSED UP FROM MERGE
+        }
+        else{
+            new_tree_hash = get_subtree_hash_for_new_file(head_tree,file_it,file_path.end(),git_path,file_path);
+        }
+    }
+    else{
+        new_tree_hash =
+            get_subtree_hash_for_new_file(index_tree, file_it, file_path.end(), git_path, file_path);
+    }
+
+    std::cout << "Should write to index now" << std::endl;
+    write_file(git_path / "index", new_tree_hash);
+    return new_tree_hash;
 }
-#endif
 
 
 std::string git_add_folder(const fs::path folder_path) {
@@ -189,7 +200,6 @@ std::string git_add_folder(const fs::path folder_path) {
         base_it++;
         file_it++;
     }
-<<<<<<< HEAD
 
     GitTree* index_tree = get_index_tree(git_path);
     if (!index_tree){
@@ -200,18 +210,12 @@ std::string git_add_folder(const fs::path folder_path) {
         new_tree_hash =
             get_subtree_hash_for_new_folder(index_tree, file_it, folder_path.end(), git_path, folder_path);
     }
-    // TODO: FIX THIS MESSED UP FROM MERGE
 
     std::cout << "Should write to index now" << std::endl;
     write_file(git_path / "index", new_tree_hash);
     return new_tree_hash;
 }
 
-std::string read_project_folder_and_write_tree(const fs::path& adding_directory, bool index) {
-    fs::path project_base_path = repo_find(adding_directory);
-    fs::path git_path = project_base_path / ".cpp-git";
-
-<<<<<<< HEAD
 void get_project_file_hashes(fs::path directory,std::vector<std::string>& project_leaf_hashes,std::unordered_map<std::string,std::string>& path_to_hash_dict, const fs::path git_path){
     for (auto entry: fs::directory_iterator(directory)){
         fs::path entry_path = entry.path();
@@ -277,11 +281,48 @@ void get_leaf_hashes_of_tree(GitTree* tree_obj,std::set<std::string>& index_leaf
 }
 
 void print_unstaged_project_files(fs::path directory, const std::set<std::string>& index_leaf_hashes, const fs::path git_path, const fs::path project_base_path){
-    // TODO: FIX THIS MESSED UP FROM MERGE
+    for(auto project_file: fs::directory_iterator(directory)){
+        fs::path project_file_path = project_file.path();
+        /* std::cout << "file path: " << project_file_path << std::endl; */
+        if(is_git_repo(project_file_path)){
+            continue;
+        }
+
+        if (fs::is_regular_file(project_file_path)){
+            std::string file_hash = read_project_file_and_write_object(git_path,project_file_path);
+            if (!is_in_set(index_leaf_hashes,file_hash)){
+                std::cout << "new/modified: " <<  path_relative_to_project(project_base_path,project_file_path) << std::endl;
+            }
+        }
+        else if (fs::is_directory(project_file_path)){
+            print_unstaged_project_files(project_file_path,index_leaf_hashes,git_path,project_base_path);
+        }
+        else{
+            throw "cpp-git cannot handle this file";
+        }
+    }
 }
 
 void print_new_index_nodes_and_calc_delete(GitTree* index_tree,std::set<std::string>& delete_hashes, const std::set<std::string>& head_leaf_hashes,const fs::path git_path){
-    // TODO: FIX THIS MESSED UP FROM MERGE
+    /* std::cout << "Listing:" << std::endl; */
+    /* printer(index_tree->directory); */
+    for (auto index_node: index_tree->directory){
+        if (index_node.type == "blob"){
+            bool found = is_in_set(head_leaf_hashes,index_node.hash);
+            // This is not in commit set, so print
+            if (!found){
+                std::cout << "new/modified file: " << index_node.name << std::endl;
+            }
+            // This node is in the commit set, so should not exist in delete_hashes
+            else{
+                delete_hashes.erase(index_node.hash);
+            }
+        }
+        else if (index_node.type == "tree"){
+            GitTree* subtree = get_tree_from_hash(index_node.hash,git_path);
+            print_new_index_nodes_and_calc_delete(subtree,delete_hashes,head_leaf_hashes,git_path);
+        }
+    }
 }
 
 void print_deleted_head_nodes(GitTree* head_tree, const std::set<std::string>& delete_hashes, fs::path rel_path, const fs::path git_path){
