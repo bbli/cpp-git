@@ -246,13 +246,19 @@ GitTree* find_project_folder_from_tree(std::string tree_hash, fs::path relative_
 // will only be direct if chkout a commit without a ref
 // NOTE: instead of referencing a reference, 
 // just have HEAD point to a commit object instead
-std::string dereference_if_indirect(std::string commit_string,fs::path git_path) {
-    auto idx = commit_string.find(' ');
-    if (idx != std::string::npos) {
-        commit_string.erase(0, idx + 1);
-    }
+std::string get_commit_hash_from_branch(std::string full_branch_name, fs::path git_path){
+    return read_file(git_path / full_branch_name);
+}
 
-    return read_file(git_path / commit_string);
+// will return refs/heads/branch_name
+// or commit hash
+std::string get_current_branch(fs::path git_path){
+    std::string content = read_file(git_path / "HEAD");
+    auto idx = content.find(' ');
+    if (idx != std::string::npos) {
+        content.erase(0, idx + 1);
+    }
+    return content;
 }
 
 GitTree* get_index_tree(fs::path git_path) {
@@ -267,16 +273,22 @@ GitTree* get_index_tree(fs::path git_path) {
 }
 
 // NOTE: until commit objects are implemented, will just write tree hashes to refs
+GitCommit* get_commit_from_hash(std::string commit_hash, fs::path git_path){
+        GitObject* obj = read_object(git_path,commit_hash);
+        return dynamic_cast<GitCommit*>(obj);
+}
+
 GitTree* get_head_tree(fs::path git_path) {
-    if (!fs::exists(git_path / "refs" / "heads" /"master")){
+    std::string full_branch_name = get_current_branch(git_path);
+    std::string commit_hash = get_commit_hash_from_branch(full_branch_name,git_path);
+    if (commit_hash==""){
         return nullptr;
     }
     else{
-        std::string content = read_file(git_path / "HEAD");
-        std::string tree_hash = dereference_if_indirect(content,git_path);
         /* std::cout << "Commit Hash: " << tree_hash << std::endl; */
-        GitObject* obj = read_object(git_path,tree_hash);
-        return dynamic_cast<GitTree*>(obj);
+        GitCommit* commit_obj = get_commit_from_hash(commit_hash,git_path);
+        std::cout << "Commit tree: " << (commit_obj->tree_hash) << std::endl;
+        return get_tree_from_hash(commit_obj->tree_hash,git_path);
     }
 }
 std::string get_tree_hash_of_index(fs::path git_path) {

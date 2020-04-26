@@ -202,13 +202,12 @@ void git_init(fs::path project_base_path) {
     // create HEAD file with "ref: refs/heads/master"
     write_file(git_path / "HEAD", "ref: refs/heads/master");
     write_file(git_path / "index", "");
+    write_file(git_path / "refs" / "heads" / "master","");
+
     // create branches dir
     fs::create_directories(git_path / "branches");
     // create refs dir with tags+heads subdirectory
     fs::create_directories(git_path / "refs" / "tags");
-    GitCommit root_commit = GitCommit(git_path);
-    write_file(git_path / "refs" / "heads" / "master", write_object(&root_commit));
-    write_file(git_path / "index", root_commit.tree_hash);
 }
 
 void git_checkout(std::string hash){
@@ -277,7 +276,7 @@ std::string git_add_file(const fs::path& file_path) {
     if (!index_tree){
         // then base off head tree instead
         // if even head is empty, just add from project folder instead of traversing git trees
-        /* std::cout << "got past index" << std::endl; */
+        std::cout << "got past index" << std::endl;
         GitTree* head_tree = get_head_tree(git_path);
         /* std::cout << "got past head" << std::endl; */
         if (!head_tree){

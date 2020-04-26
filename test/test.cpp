@@ -244,21 +244,6 @@ TEST(Staging, git_add_entireFolder) {
 }
 #endif
 
-TEST(Staging, dereference_if_indirect) {
-    std::string folder_name = "dereference_if_indirect";
-    git_folder_setup(folder_name);
-    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
-    std::cout << "Project base path: " << project_base_path << std::endl;
-    fs::path git_path = project_base_path / ".cpp-git";
-    
-    write_file(git_path / "refs/heads/master","abc");
-
-    std::string test_string = "ref: refs/heads/master";
-    std::string commit_hash = dereference_if_indirect(test_string,git_path);
-    std::cout << "Test string: " << commit_hash << std::endl;
-    ASSERT_EQ(commit_hash,"abc");
-}
-
 TEST(Staging, git_add_file_oneLevelOneModifiedFile) {
     git_folder_setup("oneLevelOneModifiedFile");
     fs::path project_base_path = repo_find(fs::current_path() / "oneLevelOneModifiedFile");
@@ -466,10 +451,13 @@ TEST(Staging, git_add_file_blankIndexCompareWithHEAD){
     fs::create_directory(project_base_path / "folder");
     write_file(project_base_path /"folder" /"stage3.txt", "stage3");
 
-    //write tree and write to master
+    //write tree , write commit, and write to master
     std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
-    write_file(git_path / "refs" / "heads" / "master", tree_hash);
+    GitCommit commit_obj(git_path,tree_hash,"","first commit");
+    std::string commit_hash = write_object(&commit_obj);
+    write_file(git_path / get_current_branch(git_path), commit_hash);
 
+    std::cout << "DEBUG: " << 1 << std::endl;
     // create new file in subfolder, and add to index
     write_file(project_base_path /"folder" /"stage4.txt", "stage4");
     std::string new_tree_hash = git_add_file(project_base_path/ "folder" /"stage4.txt");
@@ -516,12 +504,15 @@ TEST(Status, commit_vs_index_oneLevelNewFile){
     std::cout << "Project base path: " << project_base_path << std::endl;
     fs::path git_path = project_base_path / ".cpp-git";
 
-    // Create new files and create tree object
+    // Create new files
     write_file(project_base_path / "stage1.txt", "stage1");
     write_file(project_base_path / "stage2.txt", "stage2");
+    
+    //write tree , write commit, and write to master
     std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
-    // write to HEAD
-    write_file(project_base_path / ".cpp-git" / "refs" / "heads" / "master", tree_hash);
+    GitCommit commit_obj(git_path,tree_hash,"","first commit");
+    std::string commit_hash = write_object(&commit_obj);
+    write_file(git_path / get_current_branch(git_path), commit_hash);
 
     // Add New File -> add to index
     write_file(project_base_path / "stage3.txt", "stage3");
@@ -544,9 +535,11 @@ TEST(Status, commit_vs_index_multipleLevelNewFile){
     fs::create_directory(project_base_path / "folder");
     write_file(project_base_path /"folder" /"stage3.txt", "stage3");
 
-    //write tree and write to head
+    //write tree , write commit, and write to master
     std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
-    write_file(project_base_path / ".cpp-git" / "refs" / "heads" / "master", tree_hash);
+    GitCommit commit_obj(git_path,tree_hash,"","first commit");
+    std::string commit_hash = write_object(&commit_obj);
+    write_file(git_path / get_current_branch(git_path), commit_hash);
     
     // create new file in subfolder, and add to index
     write_file(project_base_path /"folder" /"stage4.txt", "stage4");
