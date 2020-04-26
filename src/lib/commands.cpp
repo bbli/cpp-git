@@ -329,6 +329,9 @@ std::string ref_resolve(const fs::path& path, bool return_file_path) {
 
 std::unordered_map<std::string, std::string> ref_list(const fs::path& base_path) {
     std::unordered_map<std::string, std::string> ret;
+    fs::path repo_base_path = repo_find(fs::current_path());
+    fs::path ref_path = repo_base_path / ".cpp-git" / "refs";
+
     for (auto entry : fs::directory_iterator(base_path)) {
         fs::path cur_path = entry.path();
 //        std::cout << cur_path << std::endl;
@@ -337,18 +340,22 @@ std::unordered_map<std::string, std::string> ref_list(const fs::path& base_path)
             ret.insert(cur_ret.begin(), cur_ret.end());
         }
         else
-            ret[cur_path.string()] = ref_resolve(cur_path);
+            ret[cur_path.string().substr(ref_path.string().size() + 1)] = ref_resolve(cur_path);
     }
     return ret;
 }
 
-void cmd_show_ref(const std::vector<std::string> &args) {
+void git_show_ref(const std::string& prefix) {
     fs::path repo_base_path = repo_find(fs::current_path());
     fs::path ref_path = repo_base_path / ".cpp-git" / "refs";
     auto refs = ref_list(ref_path);
     for ( auto it = refs.begin(); it != refs.end(); ++it )
-        std::cout << it->second << " refs/" << it->first << std::endl;
+        std::cout << it->second << " " + prefix + "/" << it->first << std::endl;
     std::cout << std::endl;
+}
+
+void cmd_show_ref(const std::vector<std::string> &args) {
+    git_show_ref("refs");
 }
 
 void cmd_hash_object(const std::vector<std::string> &args) {
