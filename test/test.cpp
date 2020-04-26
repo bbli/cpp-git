@@ -402,10 +402,17 @@ TEST(GitCommand, git_init){
     ASSERT_TRUE(fs::exists(git_path / "HEAD"));
     ASSERT_TRUE(fs::exists(git_path / "objects"));
     ASSERT_TRUE(fs::exists(git_path / "branches"));
+    ASSERT_TRUE(fs::exists(git_path / "index"));
     ASSERT_TRUE(fs::exists(git_path / "refs" / "tags"));
     ASSERT_TRUE(fs::exists(git_path / "refs" / "heads"));
     ASSERT_TRUE(fs::exists(git_path / "refs" / "heads" / "master"));
     ASSERT_EQ(read_file(git_path / "HEAD"), "ref: refs/heads/master");
+}
+
+void add_testing_file(fs::path file_path, std::string content){
+    write_file(file_path, content);
+    cmd_add(std::vector<std::string>{file_path});
+    std::cout<<"Finish adding a new file: "<< file_path <<std::endl;
 }
 
 TEST(GitCommand, git_commit){
@@ -413,39 +420,82 @@ TEST(GitCommand, git_commit){
     git_folder_setup(worktree);
     worktree = fs::canonical(worktree);
     fs::path git_path = worktree / ".cpp-git";
-    fs::current_path(worktree);//change working directory
+    //change working directory since git commit should be executed under a git repo
+    fs::current_path(worktree);
 
-    // git add a new file
-    std::string filename = "test.txt";
-    fs::path txtfile = worktree / filename;
-    std::string content = "Now test git_commit command";
-    write_file(txtfile, content);
-    cmd_add(std::vector<std::string>{txtfile});
-    ASSERT_TRUE(fs::exists(git_path / "index"));
-    std::cout<<"Finish adding a new file"<<std::endl;
-
-    // A new commit,
-    std::string message = "Initial commit";
     try{
+        // git add a new file
+        std::string filename = "test.txt", content = "Now test git_commit command";
+        add_testing_file(worktree / filename, content);
+
+        // A new commit,
+        std::string message = "Initial commit";
         git_commit(message);
+        
+        std::cout<<"Finish invoking git commit"<<std::endl;
+        // Get commit from HEAD and check it's content
+        ASSERT_EQ(read_file(git_path / "HEAD"), "ref: refs/heads/master");
+        std::string hash = ref_resolve(git_path / "HEAD");
+        GitCommit* commit_obj = dynamic_cast<GitCommit*>(read_object(git_path, hash));
+        ASSERT_EQ(commit_obj->commit_message, message);
+        std::cout<<"Finish testing content"<<std::endl;
+
+        // Get tree node and check if there's a txt file with correct content
+        GitTree* tree_obj = dynamic_cast<GitTree*>(read_object(git_path, commit_obj->tree_hash));
+        ASSERT_EQ(tree_obj->directory.size(), 1);
+        ASSERT_EQ(tree_obj->directory[0].name, filename);
+        GitBlob* blob_obj = dynamic_cast<GitBlob*>(read_object(git_path, tree_obj->directory[0].hash));
+        ASSERT_EQ(blob_obj->data, content);
     }
     catch (char const *e)
     {
         std::cout << e << std::endl;
         throw e;
     }
-    std::cout<<"Finish invoking git commit"<<std::endl;
-    // Get commit from HEAD and check it's content
-    std::string hash = ref_resolve(git_path / "HEAD");
-    GitCommit* commit_obj = dynamic_cast<GitCommit*>(read_object(git_path, hash));
-    ASSERT_EQ(commit_obj->commit_message, message);
-    std::cout<<"Finish testing content"<<std::endl;
-
-    // Get tree node and check if there's a txt file with correct content
-    GitTree* tree_obj = dynamic_cast<GitTree*>(read_object(git_path, commit_obj->tree_hash));
-    ASSERT_EQ(tree_obj->directory.size(), 1);
-    ASSERT_EQ(tree_obj->directory[0].name, filename);
-    GitBlob* blob_obj = dynamic_cast<GitBlob*>(read_object(git_path, tree_obj->directory[0].hash));
-    ASSERT_EQ(blob_obj->data, content);
+    fs::current_path("..");
 }
 
+TEST(GitCommand, git_reset){
+    fs::path worktree = "test_git_reset";
+    git_folder_setup(worktree);
+    worktree = fs::canonical(worktree);
+    fs::path git_path = worktree / ".cpp-git";
+    fs::current_path(worktree);//change working directory
+    auto get_HEAD_tree_hash = [&](){
+        std::string head_commit_hash = ref_resolve(git_path / "HEAD");
+        return dynamic_cast<GitCommit*>(read_object(git_path, head_commit_hash))->tree_hash;
+    };
+    try{
+        // git add a new file
+        std::string filename = "test.txt", content = "Now test git_rest command";
+        add_testing_file(worktree / filename, content);
+
+        // get the initial tree hash
+        std::string HEAD_tree_hash = get_HEAD_tree_hash();
+        // test git reset --mixed as default;
+        ASSERT_NE(read_file(git_path / "index"), HEAD_tree_hash);
+        cmd_reset(std::vector<std::string>{});
+        ASSERT_EQ(read_file(git_path / "index"), HEAD_tree_hash);
+        ASSERT_EQ(read_file(worktree / filename), content);
+
+        // test git reset --hard
+        //   commit to change HEAD
+        add_testing_file(worktree / filename, content);
+        cmd_commit(std::vector<std::string>{"-m", "Init commit"});
+        HEAD_tree_hash = get_HEAD_tree_hash();
+        //   Add modified file
+        std::string new_content = "Now test git_rest command with '--hard' option";
+        add_testing_file(worktree / filename, new_content);
+        ASSERT_NE(read_file(git_path / "index"), HEAD_tree_hash);
+        cmd_reset(std::vector<std::string>{"--hard"});
+        //   test if index is reset to head and files are replaced
+        ASSERT_EQ(read_file(git_path / "index"), HEAD_tree_hash);
+        ASSERT_EQ(read_file(worktree / filename), content);
+    }
+    catch (char const *e)
+    {
+        std::cout << e << std::endl;
+        throw e;
+    }
+    fs::current_path("..");
+}

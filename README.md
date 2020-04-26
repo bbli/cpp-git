@@ -15,13 +15,13 @@
 * Add references/tags
 * add lazy write optimization to write_object + write test for it
 * Define TearDown to delete created files from testing
-* conversion between relative to absolute path in interpreter code
+* conversion between relative to absolute path in interpreter code [DONE]
 * git_path speedup optimization
 * implement git update-ref
 * fix memory leaks -- no delete after newing git object
 
-* git reset --medium(aka default) = just change index file to point to HEAD commit
-* git reset --hard = do above + walkTreeAndReplace on HEAD commit
+* git reset --medium(aka default) = just change index file to point to HEAD commit [DONE]
+* git reset --hard = do above + walkTreeAndReplace on HEAD commit [DONE]
 * git log: walk HEAD backwards , printing as you go along
     * filter 
     * --stat = call "git status" between each commit
@@ -30,7 +30,7 @@
     * -a: show all branches
     * nothing: create a new branch and switch to it(Note this is different from default behavior)
 * git cat-file = take the hash and try to find the file. If found, read it in using read_file and print the contents. Otherwise throw not found error
-* git commit
+* git commit [DONE]
 
 * command
     * cat-file [DONE]
