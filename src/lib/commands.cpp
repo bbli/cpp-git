@@ -59,6 +59,13 @@ void cmd_commit(const std::vector<std::string>& args){
     git_commit(args[1]);
 }
 
+void cmd_reset(const std::vector<std::string>& args){
+    if (args.size() == 0 || args[0] == "--mixed")
+        git_reset(false);
+    else
+        git_reset(true);
+}
+
 void git_cat_file(fs::path obj, const std::string& fmt){
     fs::path repo = repo_find(fs::current_path());
     GitObject* object = read_object(repo, object_find(repo, obj, fmt));
@@ -115,7 +122,23 @@ void git_commit(std::string commit_message){
     // New commit, write to file and update HEAD
     GitCommit* new_commit_obj = new GitCommit(git_path, index_tree_hash, parent_commit_hash, commit_message);
     std::string new_commit_hash = write_object(new_commit_obj, true);
-    write_file(head_path, new_commit_hash);
+    /* TODO Write to master instead of HEAD */
+    write_file(ref_resolve(head_path, true), new_commit_hash);
+}
+
+void git_reset(bool hard){
+    fs::path worktree = repo_find(fs::current_path());
+    fs::path git_path = worktree / ".cpp-git";
+    // Get tree_hash from HEAD
+    std::string head_commit_hash = ref_resolve(git_path / "HEAD");
+    GitCommit* head_commit = dynamic_cast<GitCommit*>(read_object(git_path, head_commit_hash));
+    std::string head_commit_tree_hash = head_commit->tree_hash;
+    write_file(git_path / "index", head_commit_tree_hash);
+
+    if (hard){
+        GitTree* tree = dynamic_cast<GitTree*>(read_object(git_path, head_commit_tree_hash));
+        walk_tree_and_replace(worktree, tree);
+    }
 }
 
 
@@ -292,12 +315,12 @@ std::string read_project_folder_and_write_tree(const fs::path& adding_directory,
     return output;
 }
 
-std::string ref_resolve(const fs::path& path) {
+std::string ref_resolve(const fs::path& path, bool return_file_path) {
     std::string data = read_file(path);
-    //No content if it's an initial commit
-    if (data.size() == 0) return "";
     if (data.rfind("ref: ", 0) == 0)
-        return ref_resolve(repo_find(path)/ ".cpp-git" / data.substr(5));
+        return ref_resolve(repo_find(path)/ ".cpp-git" / data.substr(5), return_file_path);
+    else if (return_file_path)
+        return path;
     else
         return data;
 }
