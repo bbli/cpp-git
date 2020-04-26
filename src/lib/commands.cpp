@@ -19,9 +19,21 @@ void cmd_init(const std::vector<std::string>& args){
     {
         throw GIT_INIT_USAGE;
     }
-    git_init(fs::canonical(args[0]));
+    git_init(args[0]);
 }
 
+
+void cmd_add(const std::vector<std::string> &args){
+    for(auto path: args){
+        if (path != "/") path = fs::canonical(path);
+        if (fs::is_directory(path)){
+            std::string ERROR = "TODO: add git add folder";
+        }
+        else{
+            git_add_file(path);
+        }
+    }
+}
 
 void cmd_cat_file(const std::vector<std::string> &args){
     if (args.size() <= 1 || CAT_FILE_SUBCMDS.find(args[0]) == CAT_FILE_SUBCMDS.end() || args[0] == "--help")
@@ -37,6 +49,14 @@ void cmd_checkout(const std::vector<std::string>& args){
         throw CHECKOUT_USAGE;
     }
     git_checkout(args[0]);
+}
+
+void cmd_commit(const std::vector<std::string>& args){
+    if (args.size() != 2)
+    {
+        throw "Currently only support `git commit -m 'your commit message'`";
+    }
+    git_commit(args[1]);
 }
 
 void git_cat_file(fs::path obj, const std::string& fmt){
@@ -63,7 +83,9 @@ void git_init(fs::path project_base_path) {
     fs::create_directories(git_path / "branches");
     // create refs dir with tags+heads subdirectory
     fs::create_directories(git_path / "refs" / "tags");
-    fs::create_directories(git_path / "refs" / "heads");
+    GitCommit root_commit = GitCommit(git_path);
+    write_file(git_path / "refs" / "heads" / "master", write_object(&root_commit));
+    write_file(git_path / "index", root_commit.tree_hash);
 }
 
 
@@ -74,12 +96,26 @@ void git_checkout(std::string hash){
     if (fmt == "commit") {
         GitCommit* commit_obj = dynamic_cast<GitCommit*>(obj);
         git_checkout(commit_obj->tree_hash);
-    } else if (fmt == "tree") {
-        fs::path repo_base_path = repo_find(fs::current_path());
-        walk_tree_and_replace(repo_base_path, obj);
     } else {
         throw "Shouldn't reach here";
     }
+}
+
+void git_commit(std::string commit_message){
+    fs::path project_base_path = repo_find(fs::current_path());
+    fs::path git_path = project_base_path / ".cpp-git";
+    fs::path head_path = git_path / "HEAD";
+    
+    // Hash of the previous commit (aka HEAD), might be empty if it's the first commit
+    auto parent_commit_hash = ref_resolve(head_path);
+
+    // Hash of the new tree in index
+    std::string index_tree_hash = get_tree_hash_of_index(git_path);
+
+    // New commit, write to file and update HEAD
+    GitCommit* new_commit_obj = new GitCommit(git_path, index_tree_hash, parent_commit_hash, commit_message);
+    std::string new_commit_hash = write_object(new_commit_obj, true);
+    write_file(head_path, new_commit_hash);
 }
 
 
@@ -256,15 +292,17 @@ std::string read_project_folder_and_write_tree(const fs::path& adding_directory,
     return output;
 }
 
-std::string ref_resolve(fs::path path) {
+std::string ref_resolve(const fs::path& path) {
     std::string data = read_file(path);
+    //No content if it's an initial commit
+    if (data.size() == 0) return "";
     if (data.rfind("ref: ", 0) == 0)
-        return ref_resolve(data.substr(5));
+        return ref_resolve(repo_find(path)/ ".cpp-git" / data.substr(5));
     else
         return data;
 }
 
-std::unordered_map<std::string, std::string> ref_list(fs::path base_path) {
+std::unordered_map<std::string, std::string> ref_list(const fs::path& base_path) {
     std::unordered_map<std::string, std::string> ret;
     for (auto entry : fs::directory_iterator(base_path)) {
         fs::path cur_path = entry.path();
