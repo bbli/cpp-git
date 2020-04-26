@@ -9,13 +9,6 @@
 #include <vector>
 namespace fs = std::filesystem;
 
-template <typename T>
-void printer(T container) {
-    for (auto x : container) {
-        std::cout << x << " ";
-    }
-    std::cout << std::endl;
-}
 
 void printTree(fs::path git_path, std::string tree_hash) {
     GitTree* tree_obj = dynamic_cast<GitTree*>(readObject(git_path, tree_hash));
@@ -33,6 +26,7 @@ void write_file(fs::path file_path, std::string message) {
 }
 
 std::string read_file(fs::path path) {
+    /* std::cout << "Reading: " << path << std::endl; */
     std::ifstream object_file;
     // Weakly typed, so should convert to string
     object_file.open(path);
@@ -46,7 +40,6 @@ std::string read_file(fs::path path) {
         throw "Couldn't open the file";
     }
 }
-
 
 GitObject* create_object(std::string type, std::string& data, fs::path git_path) {
     if (type == std::string("commit")) return new GitCommit(git_path, data);
@@ -154,15 +147,6 @@ void chkout_obj(fs::path git_path, std::string hash) {
 
 
 /* ********* Traversal Helpers	********* */
-// will only be direct if chkout a commit without a ref
-// NOTE: instead of referencing a reference, 
-// just have HEAD point to a commit object instead
-void dereference_if_indirect(std::string& commit_string) {
-    auto idx = commit_string.find(' ');
-    if (idx != std::string::npos) {
-        commit_string.erase(0, idx + 1);
-    }
-}
 
 // get back to project root
 fs::path repo_find(fs::path file_path) {
@@ -214,10 +198,9 @@ std::string readProjectFolderAndWriteTree(const fs::path& adding_directory, bool
         if (isGitRepo(path)) {
             continue;
         }
-        std::cout << "Entry path: " << path << std::endl;
+        /* std::cout << "Entry path: " << path << std::endl; */
         if (fs::is_regular_file(entry)) {
             std::string blob_hash = readProjectFileAndWriteObject(git_path, path);
-            // append to tree object
             tree_obj.add_entry("blob", path.filename(), blob_hash);
         } else if (fs::is_directory(path)) {
             std::string tree_hash = readProjectFolderAndWriteTree(path);
@@ -316,11 +299,14 @@ std::string getSubTreeHashForNewFolder(GitTree* tree_obj, typename fs::path::ite
     }
     // EC: if at end and we haven't found the file in the old tree directory
     if (endOfPath(file_it,end_it) && !found) {
-        std::string subtree_hash = readProjectFolderAndWriteTree(folder_path, false);
+        /* std::cout << "Name of mistaken write: " << folder_path.filename() << std::endl; */
+        std::string subtree_hash = readProjectFolderAndWriteTree(folder_path);
         // add to new_tree
         new_tree_obj.add_entry("blob", folder_path.filename(), subtree_hash);
     }
     // Write Tree and return hash
+    /* std::cout << "Post: currently at: " << *file_it << std::endl; */
+    /* printer(new_tree_obj.directory); */
     return writeObject(&new_tree_obj);
 }
 
@@ -363,6 +349,26 @@ GitTree* findProjectFolderFromTree(std::string tree_hash, fs::path relative_path
     return dynamic_cast<GitTree*>(obj);
 }
 
+
+std::string path_relative_to_project(const fs::path project_base_path,fs::path entry_path){
+    std::string base = project_base_path.string();
+    std::string entry = entry_path.string();
+
+    auto [rel,_] = std::mismatch(entry.begin(),entry.end(),base.begin());
+    auto idx = rel-entry.begin();
+
+    return entry.substr(idx+1);
+}
+
+bool is_in_set(const std::set<std::string>& set,std::string val){
+    auto it = set.find(val);
+    if (it != set.end()){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
 /* ********* Commit Helpers	********* */
 // will only be direct if chkout a commit without a ref
 // NOTE: instead of referencing a reference, 
