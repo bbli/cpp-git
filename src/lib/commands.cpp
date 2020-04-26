@@ -49,7 +49,7 @@ std::string git_add_file(const fs::path& file_path) {
     // Paths are unique, but individual names arn't
     // EC: if file is one_level
     // EC: if file is new file
-    GitTree* index_tree = getIndexTree(git_path);
+    GitTree* index_tree = get_index_tree(git_path);
     if (!index_tree){
         // then base off head tree instead
         // if even head is empty, just add from project folder instead of traversing git trees
@@ -59,19 +59,19 @@ std::string git_add_file(const fs::path& file_path) {
         if (!head_tree){
             /* std::cout << "got here" << std::endl; */
             // TODO: check that folder path and project base path are the same
-            std::string blob_hash = readProjectFileAndWriteObject(git_path,file_path);
+            std::string blob_hash = read_project_file_and_write_object(git_path,file_path);
             GitTree tree_obj(git_path);
             tree_obj.add_entry("blob",file_path.filename(),blob_hash);
-            new_tree_hash = writeObject(&tree_obj);
+            new_tree_hash = write_object(&tree_obj);
             write_file(git_path / "index",new_tree_hash);
         }
         else{
-            new_tree_hash = getSubTreeHashForNewFile(head_tree,file_it,file_path.end(),git_path,file_path);
+            new_tree_hash = get_subtree_hash_for_new_file(head_tree,file_it,file_path.end(),git_path,file_path);
         }
     }
     else{
         new_tree_hash =
-            getSubTreeHashForNewFile(index_tree, file_it, file_path.end(), git_path, file_path);
+            get_subtree_hash_for_new_file(index_tree, file_it, file_path.end(), git_path, file_path);
     }
 
     std::cout << "Should write to index now" << std::endl;
@@ -92,14 +92,14 @@ std::string git_add_folder(const fs::path folder_path) {
         file_it++;
     }
 
-    GitTree* index_tree = getIndexTree(git_path);
+    GitTree* index_tree = get_index_tree(git_path);
     if (!index_tree){
         // TODO: check that folder path and project base path are the same
-        new_tree_hash = readProjectFolderAndWriteTree(project_base_path);
+        new_tree_hash = read_project_folder_and_write_tree(project_base_path);
     }
     else{
         new_tree_hash =
-            getSubTreeHashForNewFolder(index_tree, file_it, folder_path.end(), git_path, folder_path);
+            get_subtree_hash_for_new_folder(index_tree, file_it, folder_path.end(), git_path, folder_path);
     }
 
     std::cout << "Should write to index now" << std::endl;
@@ -114,7 +114,7 @@ void get_project_file_hashes(fs::path directory,std::vector<std::string>& projec
     for (auto entry: fs::directory_iterator(directory)){
         fs::path entry_path = entry.path();
         if (fs::is_regular_file(entry_path)){
-            std::string file_hash = readProjectFileAndWriteObject(git_path,entry_path);
+            std::string file_hash = read_project_file_and_write_object(git_path,entry_path);
             project_leaf_hashes.push_back(file_hash);
             path_to_hash_dict.insert({entry_path.string(),file_hash});
         }
@@ -165,7 +165,7 @@ void get_leaf_hashes_of_tree(GitTree* tree_obj,std::set<std::string>& index_leaf
             index_leaf_hashes.insert(node.hash);
         }
         else if (node.type == "tree"){
-            GitTree* subtree = get_tree(node.hash,git_path);
+            GitTree* subtree = get_tree_from_hash(node.hash,git_path);
             get_leaf_hashes_of_tree(subtree,index_leaf_hashes,git_path);
         }
         else{
@@ -178,12 +178,12 @@ void print_unstaged_project_files(fs::path directory, const std::set<std::string
     for(auto project_file: fs::directory_iterator(directory)){
         fs::path project_file_path = project_file.path();
         /* std::cout << "file path: " << project_file_path << std::endl; */
-        if(isGitRepo(project_file_path)){
+        if(is_git_repo(project_file_path)){
             continue;
         }
 
         if (fs::is_regular_file(project_file_path)){
-            std::string file_hash = readProjectFileAndWriteObject(git_path,project_file_path);
+            std::string file_hash = read_project_file_and_write_object(git_path,project_file_path);
             if (!is_in_set(index_leaf_hashes,file_hash)){
                 std::cout << "new/modified: " <<  path_relative_to_project(project_base_path,project_file_path) << std::endl;
             }
@@ -213,7 +213,7 @@ void print_new_index_nodes_and_calc_delete(GitTree* index_tree,std::set<std::str
             }
         }
         else if (index_node.type == "tree"){
-            GitTree* subtree = get_tree(index_node.hash,git_path);
+            GitTree* subtree = get_tree_from_hash(index_node.hash,git_path);
             print_new_index_nodes_and_calc_delete(subtree,delete_hashes,head_leaf_hashes,git_path);
         }
     }
@@ -228,7 +228,7 @@ void print_deleted_head_nodes(GitTree* head_tree, const std::set<std::string>& d
             }
         }
         else if (head_node.type == "tree"){
-            GitTree* subtree = get_tree(head_node.hash, git_path);
+            GitTree* subtree = get_tree_from_hash(head_node.hash, git_path);
             print_deleted_head_nodes(subtree,delete_hashes,rel_path / head_node.name, git_path);
         }
         else{
@@ -240,7 +240,7 @@ void print_deleted_head_nodes(GitTree* head_tree, const std::set<std::string>& d
 void git_status_index_vs_project(const fs::path git_path){
     fs::path project_base_path = repo_find(git_path);
 
-    GitTree* index_tree = getIndexTree(git_path);
+    GitTree* index_tree = get_index_tree(git_path);
     std::set<std::string> index_leaf_hashes;
     get_leaf_hashes_of_tree(index_tree,index_leaf_hashes,git_path);
 
@@ -249,7 +249,7 @@ void git_status_index_vs_project(const fs::path git_path){
 }
 
 void git_status_commit_index(const fs::path git_path){
-    GitTree* index_tree = getIndexTree(git_path);
+    GitTree* index_tree = get_index_tree(git_path);
     GitTree* head_tree = get_head_tree(git_path);
     if (!index_tree || !head_tree){
         std::cout << "Something went wrong" << std::endl;

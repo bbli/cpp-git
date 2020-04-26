@@ -12,9 +12,9 @@
 * add interpreter [DONE]
 * Have interpreter check validity of command line arguments + package into data structures before sending off
 * define destructor/rest of the constructors for GitObjects
-* finish writing writeObject_and_readObject tests for the rest of the GitObjects
+* finish writing write_object_and_read_object tests for the rest of the GitObjects
 * Add references/tags
-* add lazy write optimization to writeObject + write test for it
+* add lazy write optimization to write_object + write test for it
 * git_path speedup optimization
 * make to_internal private function
 * seperate writing to index in read_project_folder_and_write_tree into separate function
