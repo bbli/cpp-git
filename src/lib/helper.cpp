@@ -111,25 +111,33 @@ void write_object_to_project_file(fs::path project_blob_path, std::string blob_h
     write_file(project_blob_path, blob_obj->data);
 }
 
-void walk_tree_and_replace(fs::path tree_write_path, GitObject* obj) {
-    fs::path git_path = repo_find(tree_write_path) / ".cpp-git";
+std::string read_project_folder_and_write_tree(const fs::path& adding_directory, bool index) {
+    fs::path project_base_path = repo_find(adding_directory);
+    fs::path git_path = project_base_path / ".cpp-git";
 
-    GitTree* tree_obj = dynamic_cast<GitTree*>(obj);
-    std::cout << "Tree listing: " << std::endl;
-    printer(tree_obj->directory);
-    for (auto node : tree_obj->directory) {
-        if (node.type == "blob") {
-            /* std::cout << "Write Path: "<< (tree_write_path / node.name) << std::endl; */
-            write_object_to_project_file(tree_write_path / node.name, node.hash);
-        } else if (node.type == "tree") {
-            /* std::cout << "Got here" << std::endl; */
-            GitObject* obj = read_object(git_path, node.hash);
-            walk_tree_and_replace(tree_write_path / node.name, obj);
+    GitTree tree_obj(git_path);
+    for (auto entry : fs::directory_iterator(adding_directory)) {
+        fs::path path = entry.path();
+        if (is_git_repo(path)) {
+            continue;
+        }
+        /* std::cout << "Entry path: " << path << std::endl; */
+        if (fs::is_regular_file(entry)) {
+            std::string blob_hash = read_project_file_and_write_object(git_path, path);
+            tree_obj.add_entry("blob", path.filename(), blob_hash);
+        } else if (fs::is_directory(path)) {
+            std::string tree_hash = read_project_folder_and_write_tree(path);
+            tree_obj.add_entry("tree", path.filename(), tree_hash);
         } else {
-            std::cout << "Node should only be tree or blob" << std::endl;
-            throw "Node type should only be tree or blob";
+            throw "cpp-git cannot handle this file";
         }
     }
+    std::string output = write_object(&tree_obj);
+    if (index) {
+        std::cout << "Should write to index now" << std::endl;
+        write_file(git_path / "index", output);
+    }
+    return output;
 }
 
 /* ********* Traversal Helpers	********* */
@@ -173,130 +181,27 @@ GitTree* get_tree_from_hash(std::string hash, fs::path git_path){
     return dynamic_cast<GitTree*>(obj);
 }
 
-/* ********* Traversal Algorithms	********* */
-std::string read_project_folder_and_write_tree(const fs::path& adding_directory, bool index) {
-    fs::path project_base_path = repo_find(adding_directory);
-    fs::path git_path = project_base_path / ".cpp-git";
+std::string path_relative_to_project(const fs::path project_base_path,fs::path entry_path){
+    std::string base = project_base_path.string();
+    std::string entry = entry_path.string();
 
-    GitTree tree_obj(git_path);
-    for (auto entry : fs::directory_iterator(adding_directory)) {
-        fs::path path = entry.path();
-        if (is_git_repo(path)) {
-            continue;
-        }
-        /* std::cout << "Entry path: " << path << std::endl; */
-        if (fs::is_regular_file(entry)) {
-            std::string blob_hash = read_project_file_and_write_object(git_path, path);
-            tree_obj.add_entry("blob", path.filename(), blob_hash);
-        } else if (fs::is_directory(path)) {
-            std::string tree_hash = read_project_folder_and_write_tree(path);
-            tree_obj.add_entry("tree", path.filename(), tree_hash);
-        } else {
-            throw "cpp-git cannot handle this file";
-        }
-    }
-    std::string output = write_object(&tree_obj);
-    if (index) {
-        std::cout << "Should write to index now" << std::endl;
-        write_file(git_path / "index", output);
-    }
-    return output;
+    auto [rel,_] = std::mismatch(entry.begin(),entry.end(),base.begin());
+    auto idx = rel-entry.begin();
+
+    return entry.substr(idx+1);
 }
 
-std::string get_subtree_hash_for_new_file(GitTree* tree_obj, typename fs::path::iterator file_it,
-                                const typename fs::path::iterator end_it, const fs::path git_path,
-                                const fs::path& file_path) {
-    // New Tree Object we are creating
-    GitTree new_tree_obj(git_path);
-
-    /* std::cout << "Currently at: " << *file_it << std::endl; */
-    bool found = false;
-    for (auto node : tree_obj->directory) {
-        // Case 1: Same branch as file
-        if (check_node_name(node,*file_it)) {
-            // SubCase 1: file_it is at last element
-            bool end = end_of_path(file_it,end_it);
-            if (end) {
-                // create GitBlob object, write to .git, then add to tree obj
-                std::string blob_hash = read_project_file_and_write_object(git_path, file_path);
-                new_tree_obj.add_entry(node.type, node.name, blob_hash);
-                found = true;
-            }
-            // SubCase 2 : still haven't reached file
-            else {
-                check_if_tree(node);
-                GitTree* subtree = get_tree_from_hash(node.hash,git_path);
-                auto new_it = file_it;
-                std::string subtree_hash =
-                    get_subtree_hash_for_new_file(subtree, ++new_it, end_it, git_path, file_path);
-                new_tree_obj.add_entry("tree", node.name, subtree_hash);
-            }
-        }
-        // Case 2: Not what we want to add to index
-        else {
-            new_tree_obj.add_entry(node.type, node.name, node.hash);
-        }
+bool is_in_set(const std::set<std::string>& set,std::string val){
+    auto it = set.find(val);
+    if (it != set.end()){
+        return true;
     }
-    // EC: if at end and we haven't found the file in the old tree directory
-    std::cout << "Currently at: " << *file_it << std::endl;
-    if (end_of_path(file_it,end_it) && !found) {
-        std::string blob_hash = read_project_file_and_write_object(git_path, file_path);
-        new_tree_obj.add_entry("blob", file_path.filename(), blob_hash);
+    else{
+        return false;
     }
-    // Write Tree and return hash
-    std::cout << "Post Listing: " << std::endl;
-    printer(new_tree_obj.directory);
-    return write_object(&new_tree_obj);
-}
-std::string get_subtree_hash_for_new_folder(GitTree* tree_obj, typename fs::path::iterator file_it,
-                                  typename fs::path::iterator end_it, const fs::path git_path,
-                                  const fs::path folder_path) {
-    // New Tree Object we are creating
-    GitTree new_tree_obj(git_path);
-
-    std::cout << "Pre: currently at " << *file_it << std::endl;
-    bool found = false;
-    for (auto node : tree_obj->directory) {
-        // Case 1: Same branch as file
-        if (check_node_name(node,*file_it)) {
-            // SubCase 1: node points to adding folder
-            bool end = end_of_path(file_it,end_it);
-            if (end) {
-                check_if_tree(node);
-                std::string subtree_hash = read_project_folder_and_write_tree(folder_path);
-                // add to new_tree
-                new_tree_obj.add_entry(node.type, node.name, subtree_hash);
-                found = true;
-            }
-            // SubCase 2 : still haven't reached folder
-            else {
-                check_if_tree(node);
-                GitTree* subtree = get_tree_from_hash(node.hash,git_path);
-                auto new_it = file_it;
-                std::string subtree_hash =
-                    get_subtree_hash_for_new_folder(subtree, ++new_it, end_it, git_path, folder_path);
-                new_tree_obj.add_entry("tree", node.name, subtree_hash);
-            }
-        }
-        // Case 2: Not what we want to add to index
-        else {
-            new_tree_obj.add_entry(node.type, node.name, node.hash);
-        }
-    }
-    // EC: if at end and we haven't found the file in the old tree directory
-    if (end_of_path(file_it,end_it) && !found) {
-        /* std::cout << "Name of mistaken write: " << folder_path.filename() << std::endl; */
-        std::string subtree_hash = read_project_folder_and_write_tree(folder_path);
-        // add to new_tree
-        new_tree_obj.add_entry("blob", folder_path.filename(), subtree_hash);
-    }
-    // Write Tree and return hash
-    /* std::cout << "Post: currently at: " << *file_it << std::endl; */
-    /* printer(new_tree_obj.directory); */
-    return write_object(&new_tree_obj);
 }
 
-#if 1
+
 /* ********* Finding Project File in GitTree	********* */
 std::string find_hash_in_tree(std::string tree_hash, typename fs::path::iterator file_it,
                              const typename fs::path::iterator end_it, const fs::path git_path) {
@@ -337,25 +242,6 @@ GitTree* find_project_folder_from_tree(std::string tree_hash, fs::path relative_
 }
 
 
-std::string path_relative_to_project(const fs::path project_base_path,fs::path entry_path){
-    std::string base = project_base_path.string();
-    std::string entry = entry_path.string();
-
-    auto [rel,_] = std::mismatch(entry.begin(),entry.end(),base.begin());
-    auto idx = rel-entry.begin();
-
-    return entry.substr(idx+1);
-}
-
-bool is_in_set(const std::set<std::string>& set,std::string val){
-    auto it = set.find(val);
-    if (it != set.end()){
-        return true;
-    }
-    else{
-        return false;
-    }
-}
 /* ********* Commit Helpers	********* */
 // will only be direct if chkout a commit without a ref
 // NOTE: instead of referencing a reference, 

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <commands.hpp>
+#include <commands.cpp>
 #include <helper.cpp>
 #include <helper.hpp>
 #include <iostream>

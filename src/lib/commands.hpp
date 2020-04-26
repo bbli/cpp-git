@@ -38,7 +38,6 @@ void git_reset(bool hard);
 int test_function(void);
 
 std::string git_add_file(const fs::path& file_path);
-std::string read_project_folder_and_write_tree(const fs::path& adding_directory, bool root = false);
 std::string git_add_folder(const fs::path folder_path);
 void git_status(const fs::path git_path);
 void git_status_commit_index(const fs::path git_path);
