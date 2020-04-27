@@ -27,6 +27,8 @@ void cmd_commit(const std::vector<std::string>& args);
 void cmd_show_ref(const std::vector<std::string> &args);
 void cmd_hash_object(const std::vector<std::string> &args);
 void cmd_reset(const std::vector<std::string>& args);
+void cmd_tag(const std::vector<std::string>& args);
+void cmd_log();
 // Actual functions executing commands
 void git_cat_file(fs::path obj, const std::string& fmt);
 void git_init(fs::path project_base_path);

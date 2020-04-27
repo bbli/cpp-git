@@ -576,6 +576,7 @@ void git_show_tag() {
         cout << it->second << " " << it->first << endl;
     cout << endl;
 }
+
 void git_create_tag(string name, string object, bool if_create_object, string tag_message) {
     fs::path repo_base_path = repo_find(fs::current_path());
     fs::path tag_path = repo_base_path / ".cpp-git" / "refs" / "tags";
@@ -585,7 +586,7 @@ void git_create_tag(string name, string object, bool if_create_object, string ta
     if (!if_create_object)
         write_file(tag_path / name, sha);
     else {
-        GitTag new_tag_obj = GitTag(repo_base_path, object, tag_message);
+        GitTag new_tag_obj = GitTag(repo_base_path / ".cpp-git", object, tag_message);
         string new_tag_hash = write_object(&new_tag_obj);
         write_file(tag_path / name, new_tag_hash);
     }
@@ -619,4 +620,26 @@ void cmd_tag(const vector<string> &args) {
     else {
         throw "WRONG GIT TAG USAGE";
     }
+}
+
+void cmd_log() {
+    fs::path project_base_path = repo_find(fs::current_path());
+    fs::path git_path = project_base_path / ".cpp-git";
+
+    string current_branch_name = get_current_branch(git_path);
+    string current_commit_hash = get_commit_hash_from_branch(current_branch_name,git_path);
+
+    if (current_commit_hash.empty())
+        return;
+
+    do {
+        GitObject *obj = read_object(git_path, current_commit_hash);
+        string fmt = obj->get_fmt();
+        if (fmt != "commit")
+            throw "Shouldn't reach here";
+        GitCommit *commit_obj = dynamic_cast<GitCommit *>(obj);
+        cout << "commit " + commit_obj->tree_hash << endl << commit_obj->commit_message << endl << endl;
+        current_commit_hash = commit_obj->parent_hash;
+    }
+    while( !current_commit_hash.empty() );
 }
