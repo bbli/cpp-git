@@ -638,3 +638,8 @@ void git_hash_object(fs::path file_path, const string& fmt) {
     GitObject* obj = create_object(fmt, data, repo);
     write_object(obj, true);
 }
+
+void cmd_status(const fs::path git_path){
+    git_status_commit_index(git_path);
+    git_status_index_vs_project(git_path);
+}
