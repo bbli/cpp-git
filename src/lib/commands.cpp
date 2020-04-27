@@ -313,25 +313,27 @@ std::string git_add_folder(const fs::path folder_path) {
         file_it++;
     }
 
-    GitTree* index_tree = get_index_tree(git_path);
-    if (!index_tree){
-        GitTree* head_tree = get_head_tree(git_path);
-        if (!head_tree){
-            if (folder_path == project_base_path){
-                new_tree_hash = read_project_folder_and_write_tree(folder_path);
+    // Common Case of just adding from project root
+    // in which case, we want index = working
+    if (folder_path == project_base_path){
+        new_tree_hash = read_project_folder_and_write_tree(folder_path);
+    }
+    else{
+        GitTree* index_tree = get_index_tree(git_path);
+        if (!index_tree){
+            GitTree* head_tree = get_head_tree(git_path);
+            if (!head_tree){
+                    throw "git add error";
             }
             else{
-                throw "git add error. Add the parent directory first";
+                // SubCase 2: then base off head tree instead
+                new_tree_hash = get_subtree_hash_for_new_folder(head_tree,file_it,folder_path.end(),git_path,folder_path);
             }
         }
         else{
-        // SubCase 2: then base off head tree instead
-            new_tree_hash = get_subtree_hash_for_new_folder(head_tree,file_it,folder_path.end(),git_path,folder_path);
+            new_tree_hash =
+                get_subtree_hash_for_new_folder(index_tree, file_it, folder_path.end(), git_path, folder_path);
         }
-    }
-    else{
-        new_tree_hash =
-            get_subtree_hash_for_new_folder(index_tree, file_it, folder_path.end(), git_path, folder_path);
     }
 
     std::cout << "Should write to index now" << std::endl;
