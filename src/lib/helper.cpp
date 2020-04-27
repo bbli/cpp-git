@@ -7,6 +7,7 @@
 #include <iostream>
 #include <sha1.hpp>
 #include <vector>
+#include <map>
 #include <unordered_map>
 namespace fs = std::filesystem;
 using namespace std;
@@ -206,6 +207,15 @@ bool is_in_set(const set<string>& set,string val){
         return false;
     }
 }
+bool is_in_set(const map<string,string>& map,string val){
+    auto it = map.find(val);
+    if (it != map.end()){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
 
 
 /* ********* Finding Project File in GitTree	********* */
@@ -292,7 +302,7 @@ GitTree* get_head_tree(fs::path git_path) {
     else{
         /* cout << "Commit Hash: " << tree_hash << endl; */
         GitCommit* commit_obj = get_commit_from_hash(commit_hash,git_path);
-        cout << "Commit tree: " << (commit_obj->tree_hash) << endl;
+        /* cout << "Commit tree: " << (commit_obj->tree_hash) << endl; */
         return get_tree_from_hash(commit_obj->tree_hash,git_path);
     }
 }

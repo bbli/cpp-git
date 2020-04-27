@@ -5,6 +5,7 @@
 #include <git_objects.hpp>
 #include <string>
 #include <set>
+#include <map>
 namespace fs = std::filesystem;
 #include <iostream>
 
@@ -44,6 +45,7 @@ std::string read_project_folder_and_write_tree(const fs::path& adding_directory,
 void write_object_to_project_file(fs::path project_blob_path, std::string blob_hash);
 std::string path_relative_to_project(const fs::path project_base_path,fs::path entry_path);
 bool is_in_set(const std::set<std::string>& set,std::string val);
+bool is_in_set(const std::map<std::string,std::string>& map,std::string val);
 
 /* Commit Operations */
 std::string get_current_branch(fs::path git_path);

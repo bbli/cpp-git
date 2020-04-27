@@ -585,6 +585,33 @@ TEST(Status, commit_vs_index_multipleLevelNewFile){
     git_status_commit_index(git_path);
 }
 
+TEST(Status, commit_vs_index_oneLevelDeletedFile){
+    std::string folder_name = "oneLevelDeletedFile";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+
+    // Create new files and create tree object
+    write_file(project_base_path / "stage1.txt", "stage1");
+    write_file(project_base_path / "stage2.txt", "stage2");
+    fs::create_directory(project_base_path / "folder");
+    write_file(project_base_path /"folder" /"stage3.txt", "stage3");
+
+    //write tree , write commit, and write to master
+    std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
+    GitCommit commit_obj(git_path,tree_hash,"","first commit");
+    std::string commit_hash = write_object(&commit_obj);
+    write_file(git_path / get_current_branch(git_path), commit_hash);
+
+    // Delete a file and add to index. 
+    fs::remove(project_base_path / "stage2.txt");
+    git_add_folder(project_base_path );
+
+    std::cout << "Should say stage 2 is deleted" << std::endl;
+    git_status_commit_index(git_path);
+}
+
 TEST(Status, commit_vs_index_multipleLevelDeletedFile){
     std::string folder_name = "commit_vs_index_multipleLevelDeletedFile";
     git_folder_setup(folder_name);
@@ -610,6 +637,35 @@ TEST(Status, commit_vs_index_multipleLevelDeletedFile){
     git_add_folder(project_base_path / "folder");
 
     std::cout << "Should say stage 3 is deleted" << std::endl;
+    git_status_commit_index(git_path);
+
+}
+
+TEST(Status, commit_vs_index_multipleLevelModifiedFile){
+    std::string folder_name = "commit_vs_index_multipleLevelModifiedFile";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+
+    // Create new files and create tree object
+    write_file(project_base_path / "stage1.txt", "stage1");
+    write_file(project_base_path / "stage2.txt", "stage2");
+    fs::create_directory(project_base_path / "folder");
+    write_file(project_base_path /"folder" /"stage3.txt", "stage3");
+
+    //write tree , write commit, and write to master
+    std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
+    GitCommit commit_obj(git_path,tree_hash,"","first commit");
+    std::string commit_hash = write_object(&commit_obj);
+    write_file(git_path / get_current_branch(git_path), commit_hash);
+
+    // Modify a file and add to index. 
+    // NOTE this means folder is now empty
+    write_file(project_base_path / "folder" / "stage3.txt", "changed");
+    git_add_folder(project_base_path / "folder");
+
+    std::cout << "Should say stage 3 is modified" << std::endl;
     git_status_commit_index(git_path);
 
 }
