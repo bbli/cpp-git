@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <commands.hpp>
+#include <commands.cpp>
 #include <helper.cpp>
 #include <helper.hpp>
 #include <iostream>
@@ -37,6 +38,16 @@ TEST(Helper, does_write_file_overwrite) {
     /* read_result.pop_back(); */
     /* std::cout << "After overwrite: " << read_result << std::endl; */
     ASSERT_EQ(message2, read_result);
+}
+
+TEST(Scratch, system_unix_diff){
+    fs::path current_path = fs::current_path();
+    write_file(current_path / "diff1.txt", "abc");
+    write_file(current_path / "diff2.txt", "def");
+    system("diff --color diff1.txt diff2.txt");
+
+    fs::remove(current_path / "diff1.txt");
+    fs::remove(current_path / "diff2.txt");
 }
 
 // Answer: Does not skip hidden files
@@ -155,15 +166,15 @@ class TreeTraversal : public ::testing::Test {
     std::string message_1;
     std::string message_2;
     std::string tree_hash;
-    fs::path current_path;
+    fs::path project_base_path;
+    fs::path git_path;
     GitTree tree_obj;
     void SetUp() override {
         // Set up the repo
-        current_path = fs::current_path();
-        if (!fs::exists(current_path)) {
-            git_init(current_path);
-        }
-        fs::path git_path = current_path / ".cpp-git";
+        git_folder_setup("TreeTraversal");
+        project_base_path = repo_find(fs::current_path() / "TreeTraversal");
+        std::cout << "Project base path: " << project_base_path << std::endl;
+        git_path = project_base_path / ".cpp-git";
 
         // Create a tree
         message_1 = "file1";
@@ -182,42 +193,40 @@ class TreeTraversal : public ::testing::Test {
     }
 };
 
-//TEST_F(TreeTraversal, one_level_tree) {
-//    /* // Now walk */
-//    fs::path git_path = repo_find(fs::current_path()) / ".cpp-git";
-//    chkout_obj(git_path, tree_hash);
-//
-//    // Check that we have written to project's path and that content is the same
-//    std::string final_message_1 = read_file(current_path / "file1.txt");
-//    /* final_message_1.pop_back(); */
-//    std::string final_message_2 = read_file(current_path / "file2.txt");
-//    /* final_message_2.pop_back(); */
-//    ASSERT_EQ(message_1, final_message_1);
-//    ASSERT_EQ(message_2, final_message_2);
-//}
+TEST_F(TreeTraversal, one_level_tree) {
+    /* // Now walk */
+    walk_tree_and_replace(project_base_path,&tree_obj);
 
-//TEST_F(TreeTraversal, two_level_tree) {
-//    // Create root tree
-//    fs::path git_path = repo_find(fs::current_path()) / ".cpp-git";
-//    std::string message_3 = "file3";
-//    GitBlob file_3(git_path, message_3);
-//    std::string hash_3 = write_object(&file_3);
-//    GitTree root_tree_obj(git_path);
-//    // Take tree from above and append to this tree
-//    root_tree_obj.add_entry("blob", "file3.txt", hash_3);
-//    root_tree_obj.add_entry("tree", "folder", tree_hash);
-//    std::string root_hash = write_object(&root_tree_obj);
-//
-//    // Now walk
-//    chkout_obj(git_path, root_hash);
-//
-//    // Check that everything is the same
-//    ASSERT_EQ(message_3, read_file(current_path / "file3.txt"));
-//    std::string final_message_1 = read_file(current_path / "folder" / "file1.txt");
-//    std::string final_message_2 = read_file(current_path / "folder" / "file2.txt");
-//    ASSERT_EQ(message_1, final_message_1);
-//    ASSERT_EQ(message_2, final_message_2);
-//}
+    // Check that we have written to project's path and that content is the same
+    std::string final_message_1 = read_file(project_base_path / "file1.txt");
+    /* final_message_1.pop_back(); */
+    std::string final_message_2 = read_file(project_base_path / "file2.txt");
+    /* final_message_2.pop_back(); */
+    ASSERT_EQ(message_1, final_message_1);
+    ASSERT_EQ(message_2, final_message_2);
+}
+
+TEST_F(TreeTraversal, two_level_tree) {
+    // Create root tree
+    std::string message_3 = "file3";
+    GitBlob file_3(git_path, message_3);
+    std::string hash_3 = write_object(&file_3);
+    GitTree root_tree_obj(git_path);
+    // Take tree from above and append to this tree
+    root_tree_obj.add_entry("blob", "file3.txt", hash_3);
+    root_tree_obj.add_entry("tree", "folder", tree_hash);
+    std::string root_hash = write_object(&root_tree_obj);
+
+    // Now walk from root
+    walk_tree_and_replace(project_base_path,&root_tree_obj);
+
+    // Check that everything is the same
+    ASSERT_EQ(message_3, read_file(project_base_path / "file3.txt"));
+    std::string final_message_1 = read_file(project_base_path / "folder" / "file1.txt");
+    std::string final_message_2 = read_file(project_base_path / "folder" / "file2.txt");
+    ASSERT_EQ(message_1, final_message_1);
+    ASSERT_EQ(message_2, final_message_2);
+}
 
 #if 1
 TEST(Staging, git_add_entireFolder) {
@@ -234,13 +243,6 @@ TEST(Staging, git_add_entireFolder) {
     ASSERT_EQ(index_hash, stage_tree_hash);
 }
 #endif
-
-TEST(Staging, dereference_if_indirect) {
-    std::string test_string = "ref: refs/heads/master";
-    dereference_if_indirect(test_string);
-    std::cout << "Test string: " << test_string << std::endl;
-    ASSERT_EQ(test_string, std::string("refs/heads/master"));
-}
 
 TEST(Staging, git_add_file_oneLevelOneModifiedFile) {
     git_folder_setup("oneLevelOneModifiedFile");
@@ -386,6 +388,232 @@ TEST(Staging, git_add_folder_twoLevelsNewFolder) {
     fs::remove_all(project_base_path);
 }
 #endif
+
+TEST(Staging, blank_index_read){
+    std::string folder_name = "blank_index_read";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+
+    // See if return ptr is nullptr
+    GitTree* tree_obj = get_index_tree(git_path);
+    if (!tree_obj){
+        std::cout << "YUP, tree_obj is null" << std::endl;
+    }
+    else{
+        std::cout << "NOPE, tree_obj should have been null" << std::endl;
+    }
+    ASSERT_EQ(tree_obj,nullptr);
+}
+
+TEST(Staging, git_add_folder_blank_index){
+    fs::path folder_name = "add_folder_blank_index";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+
+    // Create new files
+    write_file(project_base_path / "stage1.txt", "stage1");
+    write_file(project_base_path / "stage2.txt", "stage2");
+    // Maually add the folder ourselves to check with git add
+    std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
+
+    git_add_folder(project_base_path);
+    std::string index_hash = read_file(project_base_path / ".cpp-git" / "index");
+    ASSERT_EQ(tree_hash,index_hash);
+}
+
+TEST(Staging, git_add_file_blank_index){
+    fs::path folder_name = "add_file_blank_index";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+
+    // Create new file
+    write_file(project_base_path / "stage1.txt", "stage1");
+    // Maually add the folder ourselves to check with git add
+    std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
+
+    git_add_file(project_base_path / "stage1.txt");
+    std::string index_hash = read_file(project_base_path / ".cpp-git" / "index");
+    ASSERT_EQ(tree_hash,index_hash);
+}
+
+TEST(Staging, git_add_file_blankIndexCompareWithHEAD){
+    fs::path folder_name = "add_file_blank_index";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+
+    // Create new files
+    write_file(project_base_path / "stage1.txt", "stage1");
+    write_file(project_base_path / "stage2.txt", "stage2");
+    fs::create_directory(project_base_path / "folder");
+    write_file(project_base_path /"folder" /"stage3.txt", "stage3");
+
+    //write tree , write commit, and write to master
+    std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
+    GitCommit commit_obj(git_path,tree_hash,"","first commit");
+    std::string commit_hash = write_object(&commit_obj);
+    write_file(git_path / get_current_branch(git_path), commit_hash);
+
+    // create new file in subfolder, and add to index
+    write_file(project_base_path /"folder" /"stage4.txt", "stage4");
+    std::string new_tree_hash = git_add_file(project_base_path/ "folder" /"stage4.txt");
+    std::string index_hash = read_file(project_base_path / ".cpp-git" / "index");
+
+    // check that git add file was based off HEAD
+    GitBlob* stage1_blob = find_project_file_from_tree(new_tree_hash,"stage1.txt",git_path);
+    ASSERT_EQ(stage1_blob->data,"stage1");
+}
+
+TEST(Staging, git_add_folder_blankIndexCompareWithHEAD){
+    fs::path folder_name = "add_file_blank_index";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+
+    // Create new files
+    write_file(project_base_path / "stage1.txt", "stage1");
+    write_file(project_base_path / "stage2.txt", "stage2");
+    fs::create_directory(project_base_path / "folder");
+    write_file(project_base_path /"folder" /"stage3.txt", "stage3");
+
+    //write tree , write commit, and write to master
+    std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
+    GitCommit commit_obj(git_path,tree_hash,"","first commit");
+    std::string commit_hash = write_object(&commit_obj);
+    write_file(git_path / get_current_branch(git_path), commit_hash);
+
+    // create new file in subfolder, and add to index
+    write_file(project_base_path /"folder" /"stage4.txt", "stage4");
+    std::string new_tree_hash = git_add_folder(project_base_path/ "folder");
+    std::string index_hash = read_file(project_base_path / ".cpp-git" / "index");
+
+    // check that git add file was based off HEAD
+    GitBlob* stage4_blob = find_project_file_from_tree(new_tree_hash,"folder/stage4.txt",git_path);
+    ASSERT_EQ(stage4_blob->data,"stage4");
+}
+
+
+TEST(Status, path_relative_to_project){
+    auto base_path = fs::current_path();
+    auto project_file_path = fs::current_path() / "a" / "b";
+
+    auto rel_path = path_relative_to_project(base_path,project_file_path);
+    std::cout << "Relative Path: " << rel_path << std::endl;
+    ASSERT_EQ(rel_path, "a/b");
+}
+
+TEST(Status, working_vs_index_multipleLevelNewFile){
+    std::string folder_name = "working_vs_index_vs_working";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+
+
+    // Create new files and create tree object
+    write_file(project_base_path / "stage1.txt", "stage1");
+    write_file(project_base_path / "stage2.txt", "stage2");
+    fs::create_directory(project_base_path / "folder");
+    write_file(project_base_path /"folder" /"stage3.txt", "stage3");
+    //write tree and write to index
+    std::string tree_hash = read_project_folder_and_write_tree(project_base_path,true);
+    
+    // create new file in subfolder and see untracked/modified file
+    write_file(project_base_path /"folder" /"stage4.txt", "stage4");
+    std::cout << "should say folder/stage4.txt is unstaged" << std::endl;
+    git_status_index_vs_project(git_path);
+}
+
+TEST(Status, commit_vs_index_oneLevelNewFile){
+    std::string folder_name = "commit_vs_index_oneLevelNewFile";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+
+    // Create new files
+    write_file(project_base_path / "stage1.txt", "stage1");
+    write_file(project_base_path / "stage2.txt", "stage2");
+    
+    //write tree , write commit, and write to master
+    std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
+    GitCommit commit_obj(git_path,tree_hash,"","first commit");
+    std::string commit_hash = write_object(&commit_obj);
+    write_file(git_path / get_current_branch(git_path), commit_hash);
+
+    // Add New File -> add to index
+    write_file(project_base_path / "stage3.txt", "stage3");
+    std::string index_hash = read_project_folder_and_write_tree(project_base_path,true);
+
+    std::cout << "Should say stage 3 is staged" << std::endl;
+    git_status_commit_index(git_path);
+}
+
+TEST(Status, commit_vs_index_multipleLevelNewFile){
+    std::string folder_name = "commit_vs_index_multipleLevelNewFile";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+
+    // Create new files and create tree object
+    write_file(project_base_path / "stage1.txt", "stage1");
+    write_file(project_base_path / "stage2.txt", "stage2");
+    fs::create_directory(project_base_path / "folder");
+    write_file(project_base_path /"folder" /"stage3.txt", "stage3");
+
+    //write tree , write commit, and write to master
+    std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
+    GitCommit commit_obj(git_path,tree_hash,"","first commit");
+    std::string commit_hash = write_object(&commit_obj);
+    write_file(git_path / get_current_branch(git_path), commit_hash);
+    
+    // create new file in subfolder, and add to index
+    write_file(project_base_path /"folder" /"stage4.txt", "stage4");
+    git_add_file(project_base_path/"folder" /"stage4.txt");
+
+    std::cout << "Should say stage 4 is staged" << std::endl;
+    // See new/modified file
+    git_status_commit_index(git_path);
+}
+
+TEST(Status, commit_vs_index_multipleLevelDeletedFile){
+    std::string folder_name = "commit_vs_index_multipleLevelDeletedFile";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+
+    // Create new files and create tree object
+    write_file(project_base_path / "stage1.txt", "stage1");
+    write_file(project_base_path / "stage2.txt", "stage2");
+    fs::create_directory(project_base_path / "folder");
+    write_file(project_base_path /"folder" /"stage3.txt", "stage3");
+
+    //write tree , write commit, and write to master
+    std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
+    GitCommit commit_obj(git_path,tree_hash,"","first commit");
+    std::string commit_hash = write_object(&commit_obj);
+    write_file(git_path / get_current_branch(git_path), commit_hash);
+
+    // Delete a file and add to index. 
+    // NOTE this means folder is now empty
+    fs::remove(project_base_path / "folder" / "stage3.txt");
+    git_add_folder(project_base_path / "folder");
+
+    std::cout << "Should say stage 3 is deleted" << std::endl;
+    git_status_commit_index(git_path);
+
+}
+
 /* ********* Git Init	********* */
 // Test throw if not empty path
 
@@ -455,6 +683,7 @@ TEST(GitCommand, git_commit){
     fs::current_path("..");
 }
 
+#if 0
 TEST(GitCommand, git_reset){
     fs::path worktree = "test_git_reset";
     git_folder_setup(worktree);
@@ -499,3 +728,4 @@ TEST(GitCommand, git_reset){
     }
     fs::current_path("..");
 }
+#endif

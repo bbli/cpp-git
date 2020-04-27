@@ -5,7 +5,7 @@
 #include <set>
 #include <unordered_map>
 // To get the data structures
-#include <git_objects.hpp>
+#include "git_objects.hpp"
 /* #include <helper.hpp> */
 
 /* ********* Global Variables ********** */
@@ -39,8 +39,10 @@ void git_reset(bool hard);
 int test_function(void);
 
 std::string git_add_file(const fs::path& file_path);
-std::string read_project_folder_and_write_tree(const fs::path& adding_directory, bool root = false);
 std::string git_add_folder(const fs::path folder_path);
+void git_status(const fs::path git_path);
+void git_status_commit_index(const fs::path git_path);
+void git_status_index_vs_project(const fs::path git_path);
 
 std::string ref_resolve(const fs::path& path, bool return_file_path = false);
 std::unordered_map<std::string, std::string> ref_list(const fs::path& base_path);
