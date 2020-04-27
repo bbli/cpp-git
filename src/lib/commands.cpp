@@ -603,11 +603,15 @@ void cmd_tag(const vector<string> &args) {
         git_create_tag(args[0], commit_hash, false);
     }
     else if (args[0] == "-a" && (args.size() >= 2)) {
-        // git tag -a NAME [OBJECT] [-m MESSAGE]: create a new Annotated tags NAME (stored as full objects), pointing at HEAD (default) or OBJECT
-        string commit_hash = "HEAD";
+        string commit_hash;
         string message = "";
         if (args.size() >= 3 && args[2] != "-m")
-            string commit_hash = args[2];
+            commit_hash = args[2]; // NAME
+        else {
+            fs::path git_path = repo_find(fs::current_path()) / ".cpp-git";
+            string current_branch_name = get_current_branch(git_path);
+            commit_hash = get_commit_hash_from_branch(current_branch_name,git_path); // Default Value (HEAD)
+        }
         if (args[args.size() -2] == "-m")
             message = args.back();
         git_create_tag(args[1], commit_hash, true, message);
