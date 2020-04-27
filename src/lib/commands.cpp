@@ -523,40 +523,47 @@ string ref_resolve(const fs::path& path, bool return_file_path) {
         return data;
 }
 
-unordered_map<string, string> ref_list(const fs::path& base_path) {
-    unordered_map<string, string> ret;
+std::unordered_map<std::string, std::string> ref_list(const fs::path& base_path) {
+    std::unordered_map<std::string, std::string> ret;
+    fs::path repo_base_path = repo_find(fs::current_path());
+    fs::path ref_path = repo_base_path / ".cpp-git" / "refs";
+
     for (auto entry : fs::directory_iterator(base_path)) {
         fs::path cur_path = entry.path();
-//        cout << cur_path << endl;
+//        std::cout << cur_path << std::endl;
         if (fs::is_directory(cur_path)) {
-            unordered_map<string, string> cur_ret = ref_list(cur_path);
+            std::unordered_map<std::string, std::string> cur_ret = ref_list(cur_path);
             ret.insert(cur_ret.begin(), cur_ret.end());
         }
         else
-            ret[cur_path.string()] = ref_resolve(cur_path);
+            ret[cur_path.string().substr(ref_path.string().size() + 1)] = ref_resolve(cur_path);
     }
     return ret;
 }
 
-void cmd_show_ref(const vector<string> &args) {
+void git_show_ref(const std::string& prefix) {
     fs::path repo_base_path = repo_find(fs::current_path());
     fs::path ref_path = repo_base_path / ".cpp-git" / "refs";
     auto refs = ref_list(ref_path);
     for ( auto it = refs.begin(); it != refs.end(); ++it )
-        cout << it->second << " refs/" << it->first << endl;
-    cout << endl;
+        std::cout << it->second << " " + prefix + "/" << it->first << std::endl;
+    std::cout << std::endl;
 }
 
-void cmd_hash_object(const vector<string> &args) {
+void cmd_show_ref(const std::vector<std::string> &args) {
+    git_show_ref("refs");
+}
+
+void cmd_hash_object(const std::vector<std::string> &args) {
     if (args.size() <= 1 || CAT_FILE_SUBCMDS.find(args[0]) == CAT_FILE_SUBCMDS.end() || args[0] == "--help") {
         throw HASH_OBJECT_USAGE;
     }
     git_hash_object(fs::canonical(args[1]), args[0]);
 }
 
-void git_hash_object(fs::path file_path, const string& fmt) {
+void git_hash_object(fs::path file_path, const std::string& fmt) {
     fs::path repo = repo_find(fs::current_path());
-    string data = read_file(file_path);
+    std::string data = read_file(file_path);
     GitObject* obj = create_object(fmt, data, repo);
     write_object(obj, true);
 }
