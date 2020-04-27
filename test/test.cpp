@@ -692,7 +692,7 @@ TEST(GitCommand, cmd_log){
     fs::current_path(worktree);
 
     try{
-        cmd_log();
+        cmd_log({});
 
         std::string filename = "test.txt", content = "Now test git_commit command";
         add_testing_file(worktree / filename, content);
@@ -706,7 +706,11 @@ TEST(GitCommand, cmd_log){
         message = "Second commit";
         git_commit(message);
 
-        cmd_log();
+        std::cout << "Should Output all commit:" << std::endl;
+        cmd_log({});
+
+        std::cout << "Should Output the second commit only:" << std::endl;
+        cmd_log({"-n", "1"});
 //
 //        std::cout<<"Finish invoking git commit"<<std::endl;
 //        // Get commit from HEAD and check it's content

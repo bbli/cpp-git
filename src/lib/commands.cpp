@@ -622,7 +622,18 @@ void cmd_tag(const vector<string> &args) {
     }
 }
 
-void cmd_log() {
+void cmd_log(const vector<string> &args) {
+    if (args.size() == 0 || (args.size() == 2 && args[0] == "-n")){
+        int num = INT_MAX;
+        if (args.size() > 0)
+            num = std::stoi(args[1]);
+        git_log(num);
+    }
+    else
+        throw LOG_USAGE;
+}
+
+void git_log(int num) {
     fs::path project_base_path = repo_find(fs::current_path());
     fs::path git_path = project_base_path / ".cpp-git";
 
@@ -640,6 +651,7 @@ void cmd_log() {
         GitCommit *commit_obj = dynamic_cast<GitCommit *>(obj);
         cout << "commit " + commit_obj->tree_hash << endl << commit_obj->commit_message << endl << endl;
         current_commit_hash = commit_obj->parent_hash;
+        num -= 1;
     }
-    while( !current_commit_hash.empty() );
+    while( !current_commit_hash.empty() and num > 0);
 }
