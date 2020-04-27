@@ -459,7 +459,7 @@ TEST(Staging, git_add_file_blankIndexCompareWithHEAD){
     std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
     GitCommit commit_obj(git_path,tree_hash,"","first commit");
     std::string commit_hash = write_object(&commit_obj);
-    write_file(git_path / get_current_branch(git_path), commit_hash);
+    write_file(git_path / get_current_branch_full(git_path), commit_hash);
 
     // create new file in subfolder, and add to index
     write_file(project_base_path /"folder" /"stage4.txt", "stage4");
@@ -488,7 +488,7 @@ TEST(Staging, git_add_folder_blankIndexCompareWithHEAD){
     std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
     GitCommit commit_obj(git_path,tree_hash,"","first commit");
     std::string commit_hash = write_object(&commit_obj);
-    write_file(git_path / get_current_branch(git_path), commit_hash);
+    write_file(git_path / get_current_branch_full(git_path), commit_hash);
 
     // create new file in subfolder, and add to index
     write_file(project_base_path /"folder" /"stage4.txt", "stage4");
@@ -547,7 +547,7 @@ TEST(Status, commit_vs_index_oneLevelNewFile){
     std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
     GitCommit commit_obj(git_path,tree_hash,"","first commit");
     std::string commit_hash = write_object(&commit_obj);
-    write_file(git_path / get_current_branch(git_path), commit_hash);
+    write_file(git_path / get_current_branch_full(git_path), commit_hash);
 
     // Add New File -> add to index
     write_file(project_base_path / "stage3.txt", "stage3");
@@ -574,7 +574,7 @@ TEST(Status, commit_vs_index_multipleLevelNewFile){
     std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
     GitCommit commit_obj(git_path,tree_hash,"","first commit");
     std::string commit_hash = write_object(&commit_obj);
-    write_file(git_path / get_current_branch(git_path), commit_hash);
+    write_file(git_path / get_current_branch_full(git_path), commit_hash);
     
     // create new file in subfolder, and add to index
     write_file(project_base_path /"folder" /"stage4.txt", "stage4");
@@ -602,7 +602,7 @@ TEST(Status, commit_vs_index_oneLevelDeletedFile){
     std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
     GitCommit commit_obj(git_path,tree_hash,"","first commit");
     std::string commit_hash = write_object(&commit_obj);
-    write_file(git_path / get_current_branch(git_path), commit_hash);
+    write_file(git_path / get_current_branch_full(git_path), commit_hash);
 
     // Delete a file and add to index. 
     fs::remove(project_base_path / "stage2.txt");
@@ -629,7 +629,7 @@ TEST(Status, commit_vs_index_multipleLevelDeletedFile){
     std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
     GitCommit commit_obj(git_path,tree_hash,"","first commit");
     std::string commit_hash = write_object(&commit_obj);
-    write_file(git_path / get_current_branch(git_path), commit_hash);
+    write_file(git_path / get_current_branch_full(git_path), commit_hash);
 
     // Delete a file and add to index. 
     // NOTE this means folder is now empty
@@ -658,7 +658,7 @@ TEST(Status, commit_vs_index_multipleLevelModifiedFile){
     std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
     GitCommit commit_obj(git_path,tree_hash,"","first commit");
     std::string commit_hash = write_object(&commit_obj);
-    write_file(git_path / get_current_branch(git_path), commit_hash);
+    write_file(git_path / get_current_branch_full(git_path), commit_hash);
 
     // Modify a file and add to index. 
     // NOTE this means folder is now empty
@@ -687,7 +687,7 @@ TEST(Status, everything){
     std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
     GitCommit commit_obj(git_path,tree_hash,"","first commit");
     std::string commit_hash = write_object(&commit_obj);
-    write_file(git_path / get_current_branch(git_path), commit_hash);
+    write_file(git_path / get_current_branch_full(git_path), commit_hash);
 
     // Modify, delete, and create -> then add to index. 
     write_file(project_base_path / "folder" / "stage3.txt", "changed");
@@ -722,6 +722,30 @@ TEST(Checkout, file){
     ASSERT_EQ(read_file(project_base_path/"folder" / "stage3.txt"),"stage3");
 }
 
+TEST(Checkout, branch){
+    std::string folder_name = "checkout_file";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+
+    // Create new files and create tree object
+    write_file(project_base_path / "stage1.txt", "stage1");
+    write_file(project_base_path / "stage2.txt", "stage2");
+    fs::create_directory(project_base_path / "folder");
+    write_file(project_base_path /"folder" /"stage3.txt", "stage3");
+    // git add and git commit
+    git_add_folder(project_base_path);
+    git_commit("first commit",git_path);
+
+    // change some files
+    write_file(project_base_path / "stage2.txt", "changed");
+    write_file(project_base_path / "folder" / "stage3.txt", "changed");
+    // checkout previous version
+    git_checkout_branch("master",git_path);
+    ASSERT_EQ(read_file(project_base_path/"folder" / "stage3.txt"),"stage3");
+    ASSERT_EQ(read_file(project_base_path/ "stage2.txt"),"stage2");
+}
 
 /* ********* Git Init	********* */
 // Test throw if not empty path
@@ -841,3 +865,63 @@ TEST(GitCommand, git_reset){
     fs::current_path("..");
 }
 #endif
+TEST(Branching, new_branch){
+    std::string folder_name = "checkout_file";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+
+    // Create new files
+    write_file(project_base_path / "stage1.txt", "stage1");
+    write_file(project_base_path / "stage2.txt", "stage2");
+    fs::create_directory(project_base_path / "folder");
+    write_file(project_base_path /"folder" /"stage3.txt", "stage3");
+    // git add and git commit
+    git_add_folder(project_base_path);
+    git_commit("first commit",git_path);
+
+    git_branch_new("new_branch",git_path);
+    git_checkout_branch("new_branch",git_path);
+    ASSERT_EQ(read_file(git_path/ "HEAD"),"ref: refs/heads/new_branch");
+
+}
+
+TEST(Branching, branch_delete){
+    std::string folder_name = "checkout_file";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+
+    // Create new files
+    write_file(project_base_path / "stage1.txt", "stage1");
+    write_file(project_base_path / "stage2.txt", "stage2");
+    fs::create_directory(project_base_path / "folder");
+    write_file(project_base_path /"folder" /"stage3.txt", "stage3");
+    // git add and git commit
+    git_add_folder(project_base_path);
+    git_commit("first commit",git_path);
+
+    git_branch_new("new_branch",git_path);
+    git_branch_delete("new_branch",git_path);
+    try{
+        git_checkout_branch("new_branch",git_path);
+    }
+    catch (char const* e){
+        std::cout << e << std::endl;
+    }
+}
+
+TEST(Branching, branch_list){
+    std::string folder_name = "checkout_file";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+
+    git_branch_new("new_branch",git_path);
+    git_branch_new("new_branch2",git_path);
+    std::cout << "Should list master, new_branch, new_branch2" << std::endl;
+    git_branch_list(git_path);
+}

@@ -129,7 +129,7 @@ string get_subtree_hash_for_new_folder(GitTree* tree_obj, typename fs::path::ite
 
 void git_checkout_file(fs::path file_path,fs::path git_path){
     fs::path project_base_path = repo_find(file_path);
-    string full_branch_name = get_current_branch(git_path);
+    string full_branch_name = get_current_branch_full(git_path);
     string commit_hash = get_commit_hash_from_branch(full_branch_name,git_path);
     GitTree* head_tree = get_head_tree(git_path);
     // Run file_it
@@ -142,7 +142,8 @@ void git_checkout_file(fs::path file_path,fs::path git_path){
 
     string file_hash = find_hash_in_tree(head_tree,file_it,file_path.end(),git_path);
     if (file_hash==""){
-        cout << "File has not previously been checked in";
+        /* cout << "File has not previously been checked in"; */
+        throw "error. File has not previously been checked in";
     }
     else{
         write_object_to_project_file(file_path,file_hash);
@@ -162,6 +163,7 @@ bool is_actually_a_hash(string branch_name, fs::path git_path){
 void git_checkout_branch(string branch_name, fs::path git_path){
     fs::path project_base_path = repo_find(git_path);
     string commit_hash;
+    string full_branch_name = "refs/heads/" + branch_name;
     GitTree* index_tree = get_index_tree(git_path);
     if(index_tree){
         throw "error. Please commit changes before changing branches";
@@ -171,11 +173,45 @@ void git_checkout_branch(string branch_name, fs::path git_path){
         commit_hash = branch_name;
     }
     else{
-        commit_hash= get_commit_hash_from_branch("refs/heads/"+branch_name,git_path);
+        // will throw if not a valid branch
+        commit_hash= get_commit_hash_from_branch(full_branch_name,git_path);
     }
     GitCommit* commit = get_commit_from_hash(commit_hash,git_path);
     GitTree* commit_tree = get_tree_from_hash(commit->tree_hash,git_path);
     walk_tree_and_replace(project_base_path,commit_tree);
+    // now update HEAD as we have switched over
+    write_file(git_path / "HEAD", "ref: "+ full_branch_name);
+}
+
+void git_branch_new(std::string branch_name,fs::path git_path){
+    fs::path full_branch_name = fs::path("refs/heads") / branch_name;
+    fs::path full_branch_path = git_path / full_branch_name;
+    if (fs::exists(full_branch_path)){
+        throw "error. branch already exists";
+    }
+
+    // make new branch point to current branch's commit
+    string current_full_branch_name = get_current_branch_full(git_path);
+    string current_commit_hash = get_commit_hash_from_branch(current_full_branch_name,git_path);
+    write_file(full_branch_path, current_commit_hash);
+}
+
+void git_branch_delete(std::string branch_name, fs::path git_path){
+    fs::path full_branch_name = fs::path("refs/heads") / branch_name;
+    fs::path full_branch_path = git_path / full_branch_name;
+
+    if (!fs::exists(full_branch_path)){
+        throw "error. branch does not exist";
+    }
+
+    fs::remove(full_branch_path);
+}
+
+void git_branch_list(fs::path git_path){
+    std::cout << "Branches:" << std::endl;
+    for (auto entry: fs::directory_iterator(git_path / "refs/heads")){
+        std::cout << entry.path().filename() << std::endl;
+    }
 }
 /* ********* 	********* */
 int test_function(void) {
@@ -280,9 +316,9 @@ void git_checkout(string hash){
 void git_commit(string commit_message,fs::path git_path){
     fs::path project_base_path = repo_find(git_path);
     
-    string current_branch_name = get_current_branch(git_path);
+    string current_full_branch_name = get_current_branch_full(git_path);
     // Hash of the previous commit (aka HEAD), might be empty if it's the first commit
-    string current_commit_hash = get_commit_hash_from_branch(current_branch_name,git_path);
+    string current_commit_hash = get_commit_hash_from_branch(current_full_branch_name,git_path);
 
     // Hash of the new tree in index
     string index_tree_hash = get_tree_hash_of_index(git_path);
@@ -293,7 +329,7 @@ void git_commit(string commit_message,fs::path git_path){
         GitCommit new_commit_obj = GitCommit(git_path,index_tree_hash,current_commit_hash,commit_message);
         string new_commit_hash = write_object(&new_commit_obj);
         // move ref to new commit
-        write_file(git_path / current_branch_name, new_commit_hash);
+        write_file(git_path / current_full_branch_name, new_commit_hash);
         // clean index for the next round
         write_file(git_path / "index", "");
     }

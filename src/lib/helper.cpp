@@ -275,7 +275,7 @@ string get_commit_hash_from_branch(string full_branch_name, fs::path git_path){
 
 // will return refs/heads/branch_name
 // or commit hash
-string get_current_branch(fs::path git_path){
+string get_current_branch_full(fs::path git_path){
     string content = read_file(git_path / "HEAD");
     auto idx = content.find(' ');
     if (idx != string::npos) {
@@ -301,7 +301,7 @@ GitCommit* get_commit_from_hash(string commit_hash, fs::path git_path){
 }
 
 GitTree* get_head_tree(fs::path git_path) {
-    string full_branch_name = get_current_branch(git_path);
+    string full_branch_name = get_current_branch_full(git_path);
     string commit_hash = get_commit_hash_from_branch(full_branch_name,git_path);
     if (commit_hash==""){
         return nullptr;
