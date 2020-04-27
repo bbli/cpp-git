@@ -234,7 +234,7 @@ void git_commit(string commit_message){
     // Hash of the new tree in index
     string index_tree_hash = get_tree_hash_of_index(git_path);
 
-    GitCommit new_commit_obj = GitCommit(git_path,index_tree_hash,current_commit_hash,commit_message);
+    GitCommit new_commit_obj = GitCommit(git_path, index_tree_hash, current_commit_hash, commit_message);
     string new_commit_hash = write_object(&new_commit_obj);
     write_file(git_path / current_branch_name, new_commit_hash);
     // clean index for the next round
@@ -523,16 +523,16 @@ string ref_resolve(const fs::path& path, bool return_file_path) {
         return data;
 }
 
-std::unordered_map<std::string, std::string> ref_list(const fs::path& base_path) {
-    std::unordered_map<std::string, std::string> ret;
+unordered_map<string, string> ref_list(const fs::path& base_path) {
+    unordered_map<string, string> ret;
     fs::path repo_base_path = repo_find(fs::current_path());
     fs::path ref_path = repo_base_path / ".cpp-git" / "refs";
 
     for (auto entry : fs::directory_iterator(base_path)) {
         fs::path cur_path = entry.path();
-//        std::cout << cur_path << std::endl;
+//        cout << cur_path << endl;
         if (fs::is_directory(cur_path)) {
-            std::unordered_map<std::string, std::string> cur_ret = ref_list(cur_path);
+            unordered_map<string, string> cur_ret = ref_list(cur_path);
             ret.insert(cur_ret.begin(), cur_ret.end());
         }
         else
@@ -541,29 +541,78 @@ std::unordered_map<std::string, std::string> ref_list(const fs::path& base_path)
     return ret;
 }
 
-void git_show_ref(const std::string& prefix) {
+void git_show_ref(const string& prefix) {
     fs::path repo_base_path = repo_find(fs::current_path());
     fs::path ref_path = repo_base_path / ".cpp-git" / "refs";
     auto refs = ref_list(ref_path);
     for ( auto it = refs.begin(); it != refs.end(); ++it )
-        std::cout << it->second << " " + prefix + "/" << it->first << std::endl;
-    std::cout << std::endl;
+        cout << it->second << " " + prefix + "/" << it->first << endl;
+    cout << endl;
 }
 
-void cmd_show_ref(const std::vector<std::string> &args) {
+void cmd_show_ref(const vector<string> &args) {
     git_show_ref("refs");
 }
 
-void cmd_hash_object(const std::vector<std::string> &args) {
+void cmd_hash_object(const vector<string> &args) {
     if (args.size() <= 1 || CAT_FILE_SUBCMDS.find(args[0]) == CAT_FILE_SUBCMDS.end() || args[0] == "--help") {
         throw HASH_OBJECT_USAGE;
     }
     git_hash_object(fs::canonical(args[1]), args[0]);
 }
 
-void git_hash_object(fs::path file_path, const std::string& fmt) {
+void git_hash_object(fs::path file_path, const string& fmt) {
     fs::path repo = repo_find(fs::current_path());
-    std::string data = read_file(file_path);
+    string data = read_file(file_path);
     GitObject* obj = create_object(fmt, data, repo);
     write_object(obj, true);
+}
+
+void git_show_tag() {
+    fs::path repo_base_path = repo_find(fs::current_path());
+    fs::path tag_path = repo_base_path / ".cpp-git" / "refs" / "tags";
+    auto refs = ref_list(tag_path);
+    for ( auto it = refs.begin(); it != refs.end(); ++it )
+        cout << it->second << " " << it->first << endl;
+    cout << endl;
+}
+void git_create_tag(string name, string object, bool if_create_object, string tag_message) {
+    fs::path repo_base_path = repo_find(fs::current_path());
+    fs::path tag_path = repo_base_path / ".cpp-git" / "refs" / "tags";
+
+    string sha = object_find(repo_base_path, object, "commit");
+
+    if (!if_create_object)
+        write_file(tag_path / name, sha);
+    else {
+        GitTag new_tag_obj = GitTag(repo_base_path, object, tag_message);
+        string new_tag_hash = write_object(&new_tag_obj);
+        write_file(tag_path / name, new_tag_hash);
+    }
+}
+
+void cmd_tag(const vector<string> &args) {
+    if (args.size() == 0) {
+        // git tag: List all tags
+        git_show_tag();
+    } else if (args.size() == 1 || (args.size() == 2 && args[0] != "-a")) {
+        // git tag NAME [OBJECT]: create a new lightweight tag NAME, pointing at HEAD (default) or OBJECT
+        string commit_hash = "HEAD";
+        if (args.size() == 2)
+            string commit_hash = args[1];
+        git_create_tag(args[0], commit_hash, false);
+    }
+    else if (args[0] == "-a" && (args.size() >= 2)) {
+        // git tag -a NAME [OBJECT] [-m MESSAGE]: create a new Annotated tags NAME (stored as full objects), pointing at HEAD (default) or OBJECT
+        string commit_hash = "HEAD";
+        string message = "";
+        if (args.size() >= 3 && args[2] != "-m")
+            string commit_hash = args[2];
+        if (args[args.size() -2] == "-m")
+            message = args.back();
+        git_create_tag(args[1], commit_hash, true, message);
+    }
+    else {
+        throw "WRONG GIT TAG USAGE";
+    }
 }

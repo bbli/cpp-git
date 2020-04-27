@@ -35,6 +35,7 @@ void git_commit(std::string commit_message);
 void git_show_ref(const std::string& prefix = "");
 void git_hash_object(fs::path path, const std::string& fmt);
 void git_reset(bool hard);
+void git_create_tag(std::string name, std::string object, bool if_create_object, std::string tag_message = "");
 
 int test_function(void);
 
