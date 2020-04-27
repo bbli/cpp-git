@@ -116,11 +116,16 @@ std::string GitCommit::to_filesystem(void) {
 }
 std::string GitTree::to_filesystem(void) {
     std::string data;
-    for (auto node : directory) {
-        data += node.type + ' ' + node.name + ' ' + node.hash + '\n';
+    if (directory.size()>0){
+        for (auto node : directory) {
+            data += node.type + ' ' + node.name + ' ' + node.hash + '\n';
+        }
+        // to account for extra '\n'
+        data.pop_back();
     }
-    // to account for extra '\n'
-    data.pop_back();
+    else{
+        data = "";
+    }
     return data;
 }
 std::string GitTag::to_filesystem(void) { return "TODO"; }

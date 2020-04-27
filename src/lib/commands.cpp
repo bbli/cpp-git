@@ -83,7 +83,7 @@ std::string get_subtree_hash_for_new_folder(GitTree* tree_obj, typename fs::path
     // New Tree Object we are creating
     GitTree new_tree_obj(git_path);
 
-    std::cout << "Pre: currently at " << *file_it << std::endl;
+    /* std::cout << "Pre: currently at " << *file_it << std::endl; */
     bool found = false;
     for (auto node : tree_obj->directory) {
         // Case 1: Same branch as file
@@ -92,6 +92,7 @@ std::string get_subtree_hash_for_new_folder(GitTree* tree_obj, typename fs::path
             bool end = end_of_path(file_it,end_it);
             if (end) {
                 check_if_tree(node);
+                /* std::cout << "Node name: "  << node.name << std::endl; */
                 std::string subtree_hash = read_project_folder_and_write_tree(folder_path);
                 // add to new_tree
                 new_tree_obj.add_entry(node.type, node.name, subtree_hash);
@@ -327,6 +328,7 @@ std::string git_add_folder(const fs::path folder_path) {
             }
             else{
                 // SubCase 2: then base off head tree instead
+                /* std::cout << "DEBUG: " << "no index but yes head" << std::endl; */
                 new_tree_hash = get_subtree_hash_for_new_folder(head_tree,file_it,folder_path.end(),git_path,folder_path);
             }
         }
@@ -416,7 +418,7 @@ void print_unstaged_project_files(fs::path directory, const std::set<std::string
         if (fs::is_regular_file(project_file_path)){
             std::string file_hash = read_project_file_and_write_object(git_path,project_file_path);
             if (!is_in_set(index_leaf_hashes,file_hash)){
-                std::cout << "new/modified: " <<  path_relative_to_project(project_base_path,project_file_path) << std::endl;
+                std::cout <<  path_relative_to_project(project_base_path,project_file_path) << std::endl;
             }
         }
         else if (fs::is_directory(project_file_path)){
@@ -470,28 +472,43 @@ void print_deleted_head_nodes(GitTree* head_tree, const std::set<std::string>& d
 
 void git_status_index_vs_project(const fs::path git_path){
     fs::path project_base_path = repo_find(git_path);
-
     GitTree* index_tree = get_index_tree(git_path);
     std::set<std::string> index_leaf_hashes;
-    get_leaf_hashes_of_tree(index_tree,index_leaf_hashes,git_path);
 
     std::cout << "---------------Files not yet staged------------" << std::endl;
-    print_unstaged_project_files(project_base_path,index_leaf_hashes,git_path,project_base_path);
+    if (!index_tree){
+        // pass in empty index leaf hash
+        print_unstaged_project_files(project_base_path,index_leaf_hashes,git_path,project_base_path);
+    }
+    else{
+        get_leaf_hashes_of_tree(index_tree,index_leaf_hashes,git_path);
+        print_unstaged_project_files(project_base_path,index_leaf_hashes,git_path,project_base_path);
+    }
 }
 
 void git_status_commit_index(const fs::path git_path){
+    std::cout << "---------------Files staged for commit:------------" << std::endl;
+    std::set<std::string> head_leaf_hashes;
+    std::set<std::string> delete_hashes;
+    // EC: no index
+    // EC : no head
     GitTree* index_tree = get_index_tree(git_path);
     GitTree* head_tree = get_head_tree(git_path);
-    if (!index_tree || !head_tree){
-        std::cout << "Something went wrong" << std::endl;
-    }
-    std::set<std::string> head_leaf_hashes;
-    get_leaf_hashes_of_tree(head_tree,head_leaf_hashes,git_path);
 
-    std::set<std::string> delete_hashes = head_leaf_hashes;
-    std::cout << "---------------Files staged for commit:------------" << std::endl;
-    print_new_index_nodes_and_calc_delete(index_tree,delete_hashes,head_leaf_hashes,git_path);
-    print_deleted_head_nodes(head_tree,delete_hashes,"",git_path);
+    if (index_tree){
+        if (!head_tree){
+            // Pass empty head_leaf_hashes so everything is new
+            print_new_index_nodes_and_calc_delete(index_tree,delete_hashes,head_leaf_hashes,git_path);
+        }
+        else{
+            // COMMON CASE, both index and head trees exist
+            get_leaf_hashes_of_tree(head_tree,head_leaf_hashes,git_path);
+            delete_hashes = head_leaf_hashes;
+            print_new_index_nodes_and_calc_delete(index_tree,delete_hashes,head_leaf_hashes,git_path);
+            print_deleted_head_nodes(head_tree,delete_hashes,"",git_path);
+        }
+    }
+    // Otherwise there is nothing staged
 }
 
 std::string ref_resolve(const fs::path& path, bool return_file_path) {

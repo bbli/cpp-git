@@ -116,6 +116,12 @@ std::string read_project_folder_and_write_tree(const fs::path& adding_directory,
     fs::path git_path = project_base_path / ".cpp-git";
 
     GitTree tree_obj(git_path);
+#if 0
+    /* std::cout << "DEBUG: " << "reading " << adding_directory << std::endl; */
+    for (auto entry: fs::directory_iterator(adding_directory)){
+        std::cout << entry.path() << std::endl;
+    }
+#endif
     for (auto entry : fs::directory_iterator(adding_directory)) {
         fs::path path = entry.path();
         if (is_git_repo(path)) {
