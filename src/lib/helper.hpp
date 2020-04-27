@@ -7,31 +7,7 @@
 #include <set>
 namespace fs = std::filesystem;
 #include <iostream>
-/* ********* Data Structures	********* */
-// if force=true -> empty git directory
-/* class Repo{ */
-/*     private: */
 
-/*     public: */
-/*         fs::path worktree; */
-/*         fs::path gitdir; */
-/*         Repo(fs::path path, bool force); */
-/* }; */
-
-/* ********* Helper Functions	********* */
-/* // T should be a range */
-/* template<typename T> */
-/* GitTreeNode createNode(T entry_parts){ */
-/*     using namespace ranges; */
-/*     for (auto [idx,part]: views::enumerate(entry_parts)){ */
-/*         break; */
-/*         std::cout << "Idx: " << idx << "Part: " << part << std::endl; */
-/*         /1* if (idx==2){ *1/ */
-/*         /1*     std::cout << "Should break" << std::endl; *1/ */
-/*         /1*     break; *1/ */
-/*         /1* } *1/ */
-/*     } */
-/* } */
 template <typename T>
 void printer(T container) {
     for (auto x : container) {

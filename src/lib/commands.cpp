@@ -274,13 +274,9 @@ std::string git_add_file(const fs::path& file_path) {
     // EC: if file is new file
     GitTree* index_tree = get_index_tree(git_path);
     if (!index_tree){
-        // then base off head tree instead
-        // if even head is empty, just add from project folder instead of traversing git trees
-        std::cout << "got past index" << std::endl;
+        // SubCase 1: if even head is empty, just add from project folder instead of traversing git trees
         GitTree* head_tree = get_head_tree(git_path);
-        /* std::cout << "got past head" << std::endl; */
         if (!head_tree){
-            /* std::cout << "got here" << std::endl; */
             // TODO: check that folder path and project base path are the same
             std::string blob_hash = read_project_file_and_write_object(git_path,file_path);
             GitTree tree_obj(git_path);
@@ -289,6 +285,7 @@ std::string git_add_file(const fs::path& file_path) {
             write_file(git_path / "index",new_tree_hash);
         }
         else{
+        // SubCase 2: then base off head tree instead
             new_tree_hash = get_subtree_hash_for_new_file(head_tree,file_it,file_path.end(),git_path,file_path);
         }
     }
@@ -318,8 +315,19 @@ std::string git_add_folder(const fs::path folder_path) {
 
     GitTree* index_tree = get_index_tree(git_path);
     if (!index_tree){
-        // TODO: check that folder path and project base path are the same
-        new_tree_hash = read_project_folder_and_write_tree(project_base_path);
+        GitTree* head_tree = get_head_tree(git_path);
+        if (!head_tree){
+            if (folder_path == project_base_path){
+                new_tree_hash = read_project_folder_and_write_tree(folder_path);
+            }
+            else{
+                throw "git add error. Add the parent directory first";
+            }
+        }
+        else{
+        // SubCase 2: then base off head tree instead
+            new_tree_hash = get_subtree_hash_for_new_folder(head_tree,file_it,folder_path.end(),git_path,folder_path);
+        }
     }
     else{
         new_tree_hash =

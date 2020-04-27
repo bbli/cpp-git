@@ -417,8 +417,10 @@ TEST(Staging, git_add_folder_blank_index){
     // Create new files
     write_file(project_base_path / "stage1.txt", "stage1");
     write_file(project_base_path / "stage2.txt", "stage2");
+    // Maually add the folder ourselves to check with git add
+    std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
 
-    std::string tree_hash = git_add_folder(project_base_path);
+    git_add_folder(project_base_path);
     std::string index_hash = read_file(project_base_path / ".cpp-git" / "index");
     ASSERT_EQ(tree_hash,index_hash);
 }
@@ -432,8 +434,10 @@ TEST(Staging, git_add_file_blank_index){
 
     // Create new file
     write_file(project_base_path / "stage1.txt", "stage1");
+    // Maually add the folder ourselves to check with git add
+    std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
 
-    std::string tree_hash = git_add_file(project_base_path / "stage1.txt");
+    git_add_file(project_base_path / "stage1.txt");
     std::string index_hash = read_file(project_base_path / ".cpp-git" / "index");
     ASSERT_EQ(tree_hash,index_hash);
 }
@@ -457,12 +461,43 @@ TEST(Staging, git_add_file_blankIndexCompareWithHEAD){
     std::string commit_hash = write_object(&commit_obj);
     write_file(git_path / get_current_branch(git_path), commit_hash);
 
-    std::cout << "DEBUG: " << 1 << std::endl;
     // create new file in subfolder, and add to index
     write_file(project_base_path /"folder" /"stage4.txt", "stage4");
     std::string new_tree_hash = git_add_file(project_base_path/ "folder" /"stage4.txt");
     std::string index_hash = read_file(project_base_path / ".cpp-git" / "index");
-    ASSERT_EQ(new_tree_hash,index_hash);
+
+    // check that git add file was based off HEAD
+    GitBlob* stage1_blob = find_project_file_from_tree(new_tree_hash,"stage1.txt",git_path);
+    ASSERT_EQ(stage1_blob->data,"stage1");
+}
+
+TEST(Staging, git_add_folder_blankIndexCompareWithHEAD){
+    fs::path folder_name = "add_file_blank_index";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+
+    // Create new files
+    write_file(project_base_path / "stage1.txt", "stage1");
+    write_file(project_base_path / "stage2.txt", "stage2");
+    fs::create_directory(project_base_path / "folder");
+    write_file(project_base_path /"folder" /"stage3.txt", "stage3");
+
+    //write tree , write commit, and write to master
+    std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
+    GitCommit commit_obj(git_path,tree_hash,"","first commit");
+    std::string commit_hash = write_object(&commit_obj);
+    write_file(git_path / get_current_branch(git_path), commit_hash);
+
+    // create new file in subfolder, and add to index
+    write_file(project_base_path /"folder" /"stage4.txt", "stage4");
+    std::string new_tree_hash = git_add_folder(project_base_path/ "folder");
+    std::string index_hash = read_file(project_base_path / ".cpp-git" / "index");
+
+    // check that git add file was based off HEAD
+    GitBlob* stage4_blob = find_project_file_from_tree(new_tree_hash,"folder/stage4.txt",git_path);
+    ASSERT_EQ(stage4_blob->data,"stage4");
 }
 
 
