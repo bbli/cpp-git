@@ -228,18 +228,23 @@ void git_commit(string commit_message){
     fs::path project_base_path = repo_find(fs::current_path());
     fs::path git_path = project_base_path / ".cpp-git";
     
-    // Hash of the previous commit (aka HEAD), might be empty if it's the first commit
     string current_branch_name = get_current_branch(git_path);
+    // Hash of the previous commit (aka HEAD), might be empty if it's the first commit
     string current_commit_hash = get_commit_hash_from_branch(current_branch_name,git_path);
 
     // Hash of the new tree in index
     string index_tree_hash = get_tree_hash_of_index(git_path);
-
-    GitCommit new_commit_obj = GitCommit(git_path,index_tree_hash,current_commit_hash,commit_message);
-    string new_commit_hash = write_object(&new_commit_obj);
-    write_file(git_path / current_branch_name, new_commit_hash);
-    // clean index for the next round
-    write_file(git_path / "index", "");
+    if (index_tree_hash.length() == 0){
+        std::cout << "Error. Nothing to commit" << std::endl;
+    }
+    else{
+        GitCommit new_commit_obj = GitCommit(git_path,index_tree_hash,current_commit_hash,commit_message);
+        string new_commit_hash = write_object(&new_commit_obj);
+        // move ref to new commit
+        write_file(git_path / current_branch_name, new_commit_hash);
+        // clean index for the next round
+        write_file(git_path / "index", "");
+    }
 }
 
 void git_reset(bool hard){
