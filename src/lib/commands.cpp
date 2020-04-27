@@ -126,6 +126,57 @@ string get_subtree_hash_for_new_folder(GitTree* tree_obj, typename fs::path::ite
     /* printer(new_tree_obj.directory); */
     return write_object(&new_tree_obj);
 }
+
+void git_checkout_file(fs::path file_path,fs::path git_path){
+    fs::path project_base_path = repo_find(file_path);
+    string full_branch_name = get_current_branch(git_path);
+    string commit_hash = get_commit_hash_from_branch(full_branch_name,git_path);
+    GitTree* head_tree = get_head_tree(git_path);
+    // Run file_it
+    auto base_it = project_base_path.begin();
+    auto file_it = file_path.begin();
+    while (base_it != project_base_path.end()) {
+        base_it++;
+        file_it++;
+    }
+
+    string file_hash = find_hash_in_tree(head_tree,file_it,file_path.end(),git_path);
+    if (file_hash==""){
+        cout << "File has not previously been checked in";
+    }
+    else{
+        write_object_to_project_file(file_path,file_hash);
+    }
+}
+bool is_actually_a_hash(string branch_name, fs::path git_path){
+    if (branch_name.length() < 4){
+        return false;
+    }
+    if (fs::exists(git_path / "objects" / branch_name.substr(0,2) / branch_name.substr(2))){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+void git_checkout_branch(string branch_name, fs::path git_path){
+    fs::path project_base_path = repo_find(git_path);
+    string commit_hash;
+    GitTree* index_tree = get_index_tree(git_path);
+    if(index_tree){
+        throw "error. Please commit changes before changing branches";
+    }
+
+    if (is_actually_a_hash(branch_name,git_path)){
+        commit_hash = branch_name;
+    }
+    else{
+        commit_hash= get_commit_hash_from_branch("refs/heads/"+branch_name,git_path);
+    }
+    GitCommit* commit = get_commit_from_hash(commit_hash,git_path);
+    GitTree* commit_tree = get_tree_from_hash(commit->tree_hash,git_path);
+    walk_tree_and_replace(project_base_path,commit_tree);
+}
 /* ********* 	********* */
 int test_function(void) {
     vector<int> test;
@@ -176,7 +227,9 @@ void cmd_commit(const vector<string>& args){
     {
         throw "Currently only support `git commit -m 'your commit message'`";
     }
-    git_commit(args[1]);
+    fs::path project_base_path = repo_find(fs::current_path());
+    fs::path git_path = project_base_path / ".cpp-git";
+    git_commit(args[1],git_path);
 }
 
 void cmd_reset(const vector<string>& args){
@@ -224,9 +277,8 @@ void git_checkout(string hash){
     }
 }
 
-void git_commit(string commit_message){
-    fs::path project_base_path = repo_find(fs::current_path());
-    fs::path git_path = project_base_path / ".cpp-git";
+void git_commit(string commit_message,fs::path git_path){
+    fs::path project_base_path = repo_find(git_path);
     
     string current_branch_name = get_current_branch(git_path);
     // Hash of the previous commit (aka HEAD), might be empty if it's the first commit

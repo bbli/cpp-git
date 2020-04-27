@@ -31,7 +31,7 @@ void cmd_reset(const std::vector<std::string>& args);
 void git_cat_file(fs::path obj, const std::string& fmt);
 void git_init(fs::path project_base_path);
 void git_checkout(std::string hash);
-void git_commit(std::string commit_message);
+void git_commit(std::string commit_message,fs::path git_path);
 void git_hash_object(fs::path path, const std::string& fmt);
 void git_reset(bool hard);
 

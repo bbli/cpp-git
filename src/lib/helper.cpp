@@ -219,9 +219,8 @@ bool is_in_set(const map<string,string>& map,string val){
 
 
 /* ********* Finding Project File in GitTree	********* */
-string find_hash_in_tree(string tree_hash, typename fs::path::iterator file_it,
+string find_hash_in_tree(GitTree* tree_obj, typename fs::path::iterator file_it,
                              const typename fs::path::iterator end_it, const fs::path git_path) {
-    GitTree* tree_obj = dynamic_cast<GitTree*>(read_object(git_path, tree_hash));
     for (auto node : tree_obj->directory) {
         if (check_node_name(node,*file_it)) {
             bool end = end_of_path(file_it,end_it);
@@ -232,17 +231,19 @@ string find_hash_in_tree(string tree_hash, typename fs::path::iterator file_it,
             else {
                 file_it++;
                 check_if_tree(node);
-                return find_hash_in_tree(node.hash, file_it, end_it, git_path);
+                GitTree* subtree = get_tree_from_hash(node.hash,git_path);
+                return find_hash_in_tree(subtree, file_it, end_it, git_path);
             }
         }
     }
-    throw "Couldn't find file in this tree";
+    return "";
 }
 
-GitBlob* find_project_file_from_tree(string tree_hash, fs::path relative_path, const fs::path git_path) {
+GitBlob* find_project_file_from_tree_hash(string tree_hash, fs::path relative_path, const fs::path git_path) {
     auto path_it = relative_path.begin();
     auto end_it = relative_path.end();
-    string file_hash = find_hash_in_tree(tree_hash, path_it, end_it, git_path);
+    GitTree* root_tree = get_tree_from_hash(tree_hash,git_path);
+    string file_hash = find_hash_in_tree(root_tree, path_it, end_it, git_path);
     GitObject* obj = read_object(git_path, file_hash);
     return dynamic_cast<GitBlob*>(obj);
 }
@@ -251,8 +252,9 @@ GitTree* find_project_folder_from_tree(string tree_hash, fs::path relative_path,
                             const fs::path git_path) {
     auto path_it = relative_path.begin();
     auto end_it = relative_path.end();
-    cout << "Starting Folder Find" << endl;
-    string file_hash = find_hash_in_tree(tree_hash, path_it, end_it, git_path);
+    /* cout << "Starting Folder Find" << endl; */
+    GitTree* root_tree = get_tree_from_hash(tree_hash,git_path);
+    string file_hash = find_hash_in_tree(root_tree, path_it, end_it, git_path);
     GitObject* obj = read_object(git_path, file_hash);
     return dynamic_cast<GitTree*>(obj);
 }
@@ -263,7 +265,12 @@ GitTree* find_project_folder_from_tree(string tree_hash, fs::path relative_path,
 // NOTE: instead of referencing a reference, 
 // just have HEAD point to a commit object instead
 string get_commit_hash_from_branch(string full_branch_name, fs::path git_path){
-    return read_file(git_path / full_branch_name);
+    if (fs::exists(git_path / full_branch_name)){
+        return read_file(git_path / full_branch_name);
+    }
+    else{
+        throw "Error. Not a valid branch";
+    }
 }
 
 // will return refs/heads/branch_name

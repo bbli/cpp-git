@@ -33,6 +33,8 @@ std::string get_tree_hash_of_index(fs::path git_path);
 GitTree* get_index_tree(fs::path git_path);
 GitTree* get_head_tree(fs::path git_path);
 GitTree* get_tree_from_hash(std::string hash, fs::path git_path);
+std::string find_hash_in_tree(GitTree* tree_obj, typename fs::path::iterator file_it,
+                             const typename fs::path::iterator end_it, const fs::path git_path);
 void print_tree(fs::path git_path, std::string tree_hash);
 
 bool is_git_repo(const fs::path& path);
