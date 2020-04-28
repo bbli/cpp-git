@@ -696,6 +696,9 @@ string ref_resolve(const fs::path& path, bool return_file_path) {
 
 unordered_map<string, string> ref_list(const fs::path& base_path) {
     unordered_map<string, string> ret;
+    fs::path repo_base_path = repo_find(fs::current_path());
+    fs::path ref_path = repo_base_path / ".cpp-git" / "refs";
+
     for (auto entry : fs::directory_iterator(base_path)) {
         fs::path cur_path = entry.path();
 //        cout << cur_path << endl;
@@ -704,18 +707,22 @@ unordered_map<string, string> ref_list(const fs::path& base_path) {
             ret.insert(cur_ret.begin(), cur_ret.end());
         }
         else
-            ret[cur_path.string()] = ref_resolve(cur_path);
+            ret[cur_path.string().substr(ref_path.string().size() + 1)] = ref_resolve(cur_path);
     }
     return ret;
 }
 
-void cmd_show_ref(const vector<string> &args) {
+void git_show_ref(const string& prefix) {
     fs::path repo_base_path = repo_find(fs::current_path());
     fs::path ref_path = repo_base_path / ".cpp-git" / "refs";
     auto refs = ref_list(ref_path);
     for ( auto it = refs.begin(); it != refs.end(); ++it )
-        cout << it->second << " refs/" << it->first << endl;
+        cout << it->second << " " + prefix + "/" << it->first << endl;
     cout << endl;
+}
+
+void cmd_show_ref(const vector<string> &args) {
+    git_show_ref("refs");
 }
 
 void cmd_hash_object(const vector<string> &args) {
@@ -732,7 +739,96 @@ void git_hash_object(fs::path file_path, const string& fmt) {
     write_object(obj, true);
 }
 
+void git_show_tag() {
+    fs::path repo_base_path = repo_find(fs::current_path());
+    fs::path tag_path = repo_base_path / ".cpp-git" / "refs" / "tags";
+    auto refs = ref_list(tag_path);
+    for ( auto it = refs.begin(); it != refs.end(); ++it )
+        cout << it->second << " " << it->first << endl;
+    cout << endl;
+}
+
+void git_create_tag(string name, string object, bool if_create_object, string tag_message) {
+    fs::path repo_base_path = repo_find(fs::current_path());
+    fs::path tag_path = repo_base_path / ".cpp-git" / "refs" / "tags";
+
+    string sha = object_find(repo_base_path, object, "commit");
+
+    if (!if_create_object)
+        write_file(tag_path / name, sha);
+    else {
+        GitTag new_tag_obj = GitTag(repo_base_path / ".cpp-git", object, tag_message);
+        string new_tag_hash = write_object(&new_tag_obj);
+        write_file(tag_path / name, new_tag_hash);
+    }
+}
+
+void cmd_tag(const vector<string> &args) {
+    if (args.size() == 0) {
+        // git tag: List all tags
+        git_show_tag();
+    } else if (args.size() == 1 || (args.size() == 2 && args[0] != "-a")) {
+        // git tag NAME [OBJECT]: create a new lightweight tag NAME, pointing at HEAD (default) or OBJECT
+        string commit_hash = "HEAD";
+        if (args.size() == 2)
+            string commit_hash = args[1];
+        git_create_tag(args[0], commit_hash, false);
+    }
+    else if (args[0] == "-a" && (args.size() >= 2)) {
+        string commit_hash;
+        string message = "";
+        if (args.size() >= 3 && args[2] != "-m")
+            commit_hash = args[2]; // NAME
+        else {
+            fs::path git_path = repo_find(fs::current_path()) / ".cpp-git";
+            string current_branch_name = get_current_branch(git_path);
+            commit_hash = get_commit_hash_from_branch(current_branch_name,git_path); // Default Value (HEAD)
+        }
+        if (args[args.size() -2] == "-m")
+            message = args.back();
+        git_create_tag(args[1], commit_hash, true, message);
+    }
+    else {
+        throw "WRONG GIT TAG USAGE";
+    }
+}
+
+void cmd_log(const vector<string> &args) {
+    if (args.size() == 0 || (args.size() == 2 && args[0] == "-n")){
+        int num = INT_MAX;
+        if (args.size() > 0)
+            num = std::stoi(args[1]);
+        git_log(num);
+    }
+    else
+        throw LOG_USAGE;
+}
+
+void git_log(int num) {
+    fs::path project_base_path = repo_find(fs::current_path());
+    fs::path git_path = project_base_path / ".cpp-git";
+
+    string current_branch_name = get_current_branch(git_path);
+    string current_commit_hash = get_commit_hash_from_branch(current_branch_name,git_path);
+
+    if (current_commit_hash.empty())
+        return;
+
+    do {
+        GitObject *obj = read_object(git_path, current_commit_hash);
+        string fmt = obj->get_fmt();
+        if (fmt != "commit")
+            throw "Shouldn't reach here";
+        GitCommit *commit_obj = dynamic_cast<GitCommit *>(obj);
+        cout << "commit " + commit_obj->tree_hash << endl << commit_obj->commit_message << endl << endl;
+        current_commit_hash = commit_obj->parent_hash;
+        num -= 1;
+    }
+    while( !current_commit_hash.empty() and num > 0);
+}
+
 void cmd_status(const fs::path git_path){
     git_status_commit_index(git_path);
     git_status_index_vs_project(git_path);
 }
+

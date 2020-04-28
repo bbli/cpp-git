@@ -8,6 +8,7 @@ GitObject::GitObject(fs::path git_path) {
     this->git_path = git_path;
     // implicity change to string
 }
+
 GitCommit::GitCommit(fs::path git_path, const string& data) : GitObject(git_path) {
     to_internal(data);
 }
@@ -29,10 +30,18 @@ GitCommit::GitCommit(fs::path git_path) : GitObject(git_path), parent_hash(""), 
 GitTree::GitTree(fs::path git_path, const string& data) : GitObject(git_path) {
     to_internal(data);
 }
+
 GitTree::GitTree(fs::path git_path) : GitObject(git_path), directory(vector<GitTreeNode>{}){};
+
 GitTag::GitTag(fs::path git_path, const string& data) : GitObject(git_path) {
     to_internal(data);
 }
+
+GitTag::GitTag(fs::path git_path, const string& commit_hash, const string& tag_message):
+    GitObject(git_path),
+    commit_hash(commit_hash),
+    tag_message(tag_message) {}
+
 GitBlob::GitBlob(fs::path git_path, const string& data) : GitObject(git_path) {
     to_internal(data);
 }
@@ -107,9 +116,16 @@ void GitTree::to_internal(const string& data) {
     }
     /* printer(directory); */
 }
+
 void GitTag::to_internal(const string& data) {
-    // TODO
+    auto commit_hash_point = find_if(data.begin(), data.end(), [](auto x) { return x == '\n'; });
+    if (commit_hash_point == data.end()) {
+        throw "sommething wrong with tag file";
+    }
+    std::copy(data.begin(), commit_hash_point, back_inserter(commit_hash));
+    std::copy(commit_hash_point, data.end(), back_inserter(tag_message));
 }
+
 void GitBlob::to_internal(const string& data) { this->data = data; }
 
 string GitCommit::to_filesystem(void) {
@@ -129,7 +145,8 @@ string GitTree::to_filesystem(void) {
     }
     return data;
 }
-string GitTag::to_filesystem(void) { return "TODO"; }
+string GitTag::to_filesystem(void) { return commit_hash + '\n' + tag_message; }
+
 string GitBlob::to_filesystem(void) { return data; }
 
 string GitCommit::get_fmt(void) { return "commit"; }

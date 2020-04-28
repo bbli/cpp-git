@@ -818,6 +818,57 @@ TEST(GitCommand, git_commit){
     fs::current_path("..");
 }
 
+TEST(GitCommand, cmd_log){
+    fs::path worktree = "test_git_commit";
+    git_folder_setup(worktree);
+    worktree = fs::canonical(worktree);
+    fs::path git_path = worktree / ".cpp-git";
+    //change working directory since git commit should be executed under a git repo
+    fs::current_path(worktree);
+
+    try{
+        cmd_log({});
+
+        std::string filename = "test.txt", content = "Now test git_commit command";
+        add_testing_file(worktree / filename, content);
+        std::string message = "Initial commit";
+        git_commit(message);
+
+//        cmd_log();
+
+        filename = "test2.txt";
+        add_testing_file(worktree / filename, content);
+        message = "Second commit";
+        git_commit(message);
+
+        std::cout << "Should Output all commit:" << std::endl;
+        cmd_log({});
+
+        std::cout << "Should Output the second commit only:" << std::endl;
+        cmd_log({"-n", "1"});
+//
+//        std::cout<<"Finish invoking git commit"<<std::endl;
+//        // Get commit from HEAD and check it's content
+//        ASSERT_EQ(read_file(git_path / "HEAD"), "ref: refs/heads/master");
+//        std::string hash = ref_resolve(git_path / "HEAD");
+//        GitCommit* commit_obj = dynamic_cast<GitCommit*>(read_object(git_path, hash));
+//        ASSERT_EQ(commit_obj->commit_message, message);
+//        std::cout<<"Finish testing content"<<std::endl;
+//
+//        // Get tree node and check if there's a txt file with correct content
+//        GitTree* tree_obj = dynamic_cast<GitTree*>(read_object(git_path, commit_obj->tree_hash));
+//        ASSERT_EQ(tree_obj->directory.size(), 1);
+//        ASSERT_EQ(tree_obj->directory[0].name, filename);
+//        GitBlob* blob_obj = dynamic_cast<GitBlob*>(read_object(git_path, tree_obj->directory[0].hash));
+//        ASSERT_EQ(blob_obj->data, content);
+    }
+    catch (char const *e)
+    {
+        std::cout << e << std::endl;
+        throw e;
+    }
+    fs::current_path("..");
+}
 
 #if 0
 TEST(GitCommand, git_reset){
