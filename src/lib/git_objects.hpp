@@ -75,7 +75,6 @@ class GitTag : public GitObject {
     virtual std::string get_fmt(void);
     GitTag(fs::path git_path, const std::string& data);
     GitTag(fs::path git_path, const std::string& commit_hash, const std::string& tag_message);
-    void to_internal(const std::string& data);
     virtual std::string to_filesystem(void);
 };
 

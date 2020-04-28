@@ -832,14 +832,14 @@ TEST(GitCommand, cmd_log){
         std::string filename = "test.txt", content = "Now test git_commit command";
         add_testing_file(worktree / filename, content);
         std::string message = "Initial commit";
-        git_commit(message);
+        git_commit(message, git_path);
 
 //        cmd_log();
 
         filename = "test2.txt";
         add_testing_file(worktree / filename, content);
         message = "Second commit";
-        git_commit(message);
+        git_commit(message, git_path);
 
         std::cout << "Should Output all commit:" << std::endl;
         cmd_log({});

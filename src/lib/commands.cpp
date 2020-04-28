@@ -781,8 +781,8 @@ void cmd_tag(const vector<string> &args) {
             commit_hash = args[2]; // NAME
         else {
             fs::path git_path = repo_find(fs::current_path()) / ".cpp-git";
-            string current_branch_name = get_current_branch(git_path);
-            commit_hash = get_commit_hash_from_branch(current_branch_name,git_path); // Default Value (HEAD)
+            string current_full_branch_name = get_current_branch_full(git_path);
+            commit_hash = get_commit_hash_from_branch(current_full_branch_name,git_path); // Default Value (HEAD)
         }
         if (args[args.size() -2] == "-m")
             message = args.back();
@@ -808,7 +808,7 @@ void git_log(int num) {
     fs::path project_base_path = repo_find(fs::current_path());
     fs::path git_path = project_base_path / ".cpp-git";
 
-    string current_branch_name = get_current_branch(git_path);
+    string current_branch_name = get_current_branch_full(git_path);
     string current_commit_hash = get_commit_hash_from_branch(current_branch_name,git_path);
 
     if (current_commit_hash.empty())
