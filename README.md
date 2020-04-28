@@ -14,10 +14,10 @@
 * define destructor/rest of the constructors for GitObjects
 * finish writing write_object_and_read_object tests for the rest of the GitObjects
 * Add references/tags
-* add lazy write optimization to write_object + write test for it
+* add lazy write optimization to write_object + write test for it [DONE]
 * conversion between relative to absolute path in interpreter code [DONE]
 * git_path speedup optimization
-* make to_internal private function
+* make to_internal private function [DONE]
 * seperate writing to index in read_project_folder_and_write_tree into separate function
 
 * implement git update-ref
