@@ -36,20 +36,23 @@ private:
     vector<string> args = {};
     unordered_map<string, function<void(const vector<string> &args)>> menu = {
         {"",            cmd_print},
-        {"add",         cmd_print},
+        {"add",         cmd_add},
         {"cat-file",    cmd_cat_file},
         {"checkout",    cmd_checkout},
         {"commit",      cmd_commit},
+        {"branch", cmd_branch},
+        {"reset", cmd_reset},
         {"hash-object", cmd_hash_object},
         {"init",        cmd_init},
         {"log",         cmd_log},
+        {"status",         cmd_status},
         /* {"ls-tree",     cmd_print}, */
         /* {"merge",       cmd_print}, */
         /* {"rebase",      cmd_print}, */
         /* {"rev-parse",   cmd_print}, */
         /* {"rm",          cmd_print}, */
-        {"show-ref",    cmd_print},
-        {"tag",         cmd_print}
+        {"show-ref",    cmd_show_ref},
+        {"tag",         cmd_tag}
     };
 };
 
