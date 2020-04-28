@@ -296,8 +296,39 @@ void cmd_commit(const vector<string>& args){
 void cmd_reset(const vector<string>& args){
     if (args.size() == 0 || args[0] == "--mixed")
         git_reset(false);
-    else
+    else if (args[0] == "--hard")
         git_reset(true);
+    else
+        throw "git reset error.";
+}
+
+void cmd_branch(const vector<string>& args){
+    fs::path project_base_path = repo_find(fs::current_path());
+    fs::path git_path = project_base_path / ".cpp-git";
+    if (args.size()== 0 || args[0] == "--list"){
+        git_branch_list();
+    }
+    else if (args[0] == "-d" && args.size()==2){
+        std::string branch_name = args[1];
+        if (fs::exists(git_path / get_full_branch_name(branch_name))){
+            git_branch_delete(branch_name);
+        }
+        else{
+            throw "git branch delete error. " +args[1]+ "is not an existing branch name";
+        }
+    }
+    else if (args.size()==1){
+        std::string branch_name = args[1];
+        if(fs::exists(git_path / get_full_branch_name(branch_name))){
+            throw "git branch create error. " +args[1]+ "is already an existing branch name";
+        }
+        else{
+            git_branch_new(branch_name);
+        }
+    }
+    else{
+        throw "invalid git branch usage";
+    }
 }
 
 void git_cat_file(fs::path obj, const string& fmt){
