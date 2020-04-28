@@ -9,13 +9,14 @@
 #include <unordered_map>
 #include <map>
 #include <set>
+#include <climits>
 using namespace std;
 
 void walk_tree_and_replace(fs::path tree_write_path, GitObject* obj) {
     fs::path git_path = repo_find(tree_write_path) / ".cpp-git";
 
     GitTree* tree_obj = dynamic_cast<GitTree*>(obj);
-    cout << "Tree listing: " << endl;
+    /* cout << "Tree listing: " << endl; */
     printer(tree_obj->directory);
     for (auto node : tree_obj->directory) {
         if (node.type == "blob") {
@@ -256,10 +257,11 @@ void cmd_checkout(const vector<string>& args){
         throw CHECKOUT_USAGE;
     }
     std::string branch_or_file = args[0];
+    fs::path git_path = repo_find(fs::current_path()) /".cpp-git";
     if (fs::exists(git_path / get_full_branch_name(branch_or_file))){
         git_checkout_branch(branch_or_file, git_path);
     }
-    else if (fs::exists(fs::canonical(branch_or_file)){
+    else if (fs::exists(fs::canonical(branch_or_file))){
         git_checkout_file(fs::canonical(branch_or_file),git_path);
     }
     else{
@@ -643,8 +645,9 @@ void split_into_deleted_modified_new(map<string,string>& commit_diff_hashes, map
 
 }
 
-void git_status_index_vs_project(const fs::path git_path){
-    fs::path project_base_path = repo_find(git_path);
+void git_status_index_vs_project(){
+    fs::path project_base_path = repo_find(fs::current_path());
+    fs::path git_path = project_base_path / ".cpp-git";
     GitTree* index_tree = get_index_tree(git_path);
     set<string> index_leaf_hashes;
 
@@ -659,11 +662,12 @@ void git_status_index_vs_project(const fs::path git_path){
     }
 }
 
-void git_status_commit_index(const fs::path git_path){
+void git_status_commit_index(void){
+    fs::path project_base_path = repo_find(fs::current_path());
+    fs::path git_path = project_base_path / ".cpp-git";
     cout << "---------------Files staged for commit:------------" << endl;
     // EC: no index
     // EC : no head
-    fs::path project_base_path = repo_find(git_path);
     GitTree* index_tree = get_index_tree(git_path);
     GitTree* head_tree = get_head_tree(git_path);
 
@@ -807,18 +811,18 @@ void cmd_tag(const vector<string> &args) {
 }
 
 void cmd_log(const vector<string> &args) {
+    fs::path project_base_path = repo_find(fs::current_path());
     if (args.size() == 0 || (args.size() == 2 && args[0] == "-n")){
         int num = INT_MAX;
         if (args.size() > 0)
             num = std::stoi(args[1]);
-        git_log(num);
+        git_log(num,project_base_path);
     }
     else
         throw LOG_USAGE;
 }
 
-void git_log(int num) {
-    fs::path project_base_path = repo_find(fs::current_path());
+void git_log(int num,fs::path project_base_path) {
     fs::path git_path = project_base_path / ".cpp-git";
 
     string current_branch_name = get_current_branch_full(git_path);
@@ -840,8 +844,8 @@ void git_log(int num) {
     while( !current_commit_hash.empty() and num > 0);
 }
 
-void cmd_status(const fs::path git_path){
-    git_status_commit_index(git_path);
-    git_status_index_vs_project(git_path);
+void cmd_status(const std::vector<std::string>& args){
+    git_status_commit_index();
+    git_status_index_vs_project();
 }
 

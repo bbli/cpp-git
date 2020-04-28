@@ -143,7 +143,7 @@ string read_project_folder_and_write_tree(const fs::path& adding_directory, bool
     }
     string output = write_object(&tree_obj);
     if (index) {
-        cout << "Should write to index now" << endl;
+        /* cout << "Should write to index now" << endl; */
         write_file(git_path / "index", output);
     }
     return output;

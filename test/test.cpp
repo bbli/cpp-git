@@ -516,7 +516,7 @@ TEST(Status, working_vs_index_multipleLevelNewFile){
     fs::path project_base_path = repo_find(fs::current_path() / folder_name);
     std::cout << "Project base path: " << project_base_path << std::endl;
     fs::path git_path = project_base_path / ".cpp-git";
-
+    fs::current_path(project_base_path);
 
     // Create new files and create tree object
     write_file(project_base_path / "stage1.txt", "stage1");
@@ -529,7 +529,8 @@ TEST(Status, working_vs_index_multipleLevelNewFile){
     // create new file in subfolder and see untracked/modified file
     write_file(project_base_path /"folder" /"stage4.txt", "stage4");
     std::cout << "should say folder/stage4.txt is unstaged" << std::endl;
-    git_status_index_vs_project(git_path);
+    git_status_index_vs_project();
+    fs::current_path("..");
 }
 
 TEST(Status, commit_vs_index_oneLevelNewFile){
@@ -538,7 +539,7 @@ TEST(Status, commit_vs_index_oneLevelNewFile){
     fs::path project_base_path = repo_find(fs::current_path() / folder_name);
     std::cout << "Project base path: " << project_base_path << std::endl;
     fs::path git_path = project_base_path / ".cpp-git";
-
+    fs::current_path(project_base_path);
     // Create new files
     write_file(project_base_path / "stage1.txt", "stage1");
     write_file(project_base_path / "stage2.txt", "stage2");
@@ -554,7 +555,8 @@ TEST(Status, commit_vs_index_oneLevelNewFile){
     std::string index_hash = read_project_folder_and_write_tree(project_base_path,true);
 
     std::cout << "Should say stage 3 is staged" << std::endl;
-    git_status_commit_index(git_path);
+    git_status_commit_index();
+    fs::current_path("..");
 }
 
 TEST(Status, commit_vs_index_multipleLevelNewFile){
@@ -563,6 +565,7 @@ TEST(Status, commit_vs_index_multipleLevelNewFile){
     fs::path project_base_path = repo_find(fs::current_path() / folder_name);
     std::cout << "Project base path: " << project_base_path << std::endl;
     fs::path git_path = project_base_path / ".cpp-git";
+    fs::current_path(project_base_path);
 
     // Create new files and create tree object
     write_file(project_base_path / "stage1.txt", "stage1");
@@ -582,7 +585,8 @@ TEST(Status, commit_vs_index_multipleLevelNewFile){
 
     std::cout << "Should say stage 4 is staged" << std::endl;
     // See new/modified file
-    git_status_commit_index(git_path);
+    git_status_commit_index();
+    fs::current_path("..");
 }
 
 TEST(Status, commit_vs_index_oneLevelDeletedFile){
@@ -591,6 +595,7 @@ TEST(Status, commit_vs_index_oneLevelDeletedFile){
     fs::path project_base_path = repo_find(fs::current_path() / folder_name);
     std::cout << "Project base path: " << project_base_path << std::endl;
     fs::path git_path = project_base_path / ".cpp-git";
+    fs::current_path(project_base_path);
 
     // Create new files and create tree object
     write_file(project_base_path / "stage1.txt", "stage1");
@@ -609,7 +614,8 @@ TEST(Status, commit_vs_index_oneLevelDeletedFile){
     git_add_folder(project_base_path );
 
     std::cout << "Should say stage 2 is deleted" << std::endl;
-    git_status_commit_index(git_path);
+    git_status_commit_index();
+    fs::current_path("..");
 }
 
 TEST(Status, commit_vs_index_multipleLevelDeletedFile){
@@ -618,6 +624,7 @@ TEST(Status, commit_vs_index_multipleLevelDeletedFile){
     fs::path project_base_path = repo_find(fs::current_path() / folder_name);
     std::cout << "Project base path: " << project_base_path << std::endl;
     fs::path git_path = project_base_path / ".cpp-git";
+    fs::current_path(project_base_path);
 
     // Create new files and create tree object
     write_file(project_base_path / "stage1.txt", "stage1");
@@ -637,7 +644,8 @@ TEST(Status, commit_vs_index_multipleLevelDeletedFile){
     git_add_folder(project_base_path / "folder");
 
     std::cout << "Should say stage 3 is deleted" << std::endl;
-    git_status_commit_index(git_path);
+    git_status_commit_index();
+    fs::current_path("..");
 
 }
 
@@ -647,6 +655,7 @@ TEST(Status, commit_vs_index_multipleLevelModifiedFile){
     fs::path project_base_path = repo_find(fs::current_path() / folder_name);
     std::cout << "Project base path: " << project_base_path << std::endl;
     fs::path git_path = project_base_path / ".cpp-git";
+    fs::current_path(project_base_path);
 
     // Create new files and create tree object
     write_file(project_base_path / "stage1.txt", "stage1");
@@ -666,7 +675,8 @@ TEST(Status, commit_vs_index_multipleLevelModifiedFile){
     git_add_folder(project_base_path / "folder");
 
     std::cout << "Should say stage 3 is modified" << std::endl;
-    git_status_commit_index(git_path);
+    git_status_commit_index();
+    fs::current_path("..");
 
 }
 
@@ -676,6 +686,8 @@ TEST(Status, everything){
     fs::path project_base_path = repo_find(fs::current_path() / folder_name);
     std::cout << "Project base path: " << project_base_path << std::endl;
     fs::path git_path = project_base_path / ".cpp-git";
+
+    fs::current_path(project_base_path);
 
     // Create new files and create tree object
     write_file(project_base_path / "stage1.txt", "stage1");
@@ -696,7 +708,10 @@ TEST(Status, everything){
     git_add_folder(project_base_path );
 
     std::cout << "Should say stage2 is deleted, stage3 is changed, stage4 is new" << std::endl;
-    cmd_status(git_path);
+    git_status_commit_index();
+    git_status_index_vs_project();
+
+    fs::current_path("..");
 }
 
 TEST(Checkout, file){
