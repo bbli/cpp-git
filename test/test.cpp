@@ -961,6 +961,7 @@ TEST(Branching, new_branch){
     fs::path project_base_path = repo_find(fs::current_path() / folder_name);
     std::cout << "Project base path: " << project_base_path << std::endl;
     fs::path git_path = project_base_path / ".cpp-git";
+    fs::current_path(project_base_path);
 
     // Create new files
     write_file(project_base_path / "stage1.txt", "stage1");
@@ -971,10 +972,10 @@ TEST(Branching, new_branch){
     git_add_folder(project_base_path);
     git_commit("first commit",git_path);
 
-    git_branch_new("new_branch",git_path);
+    git_branch_new("new_branch");
     git_checkout_branch("new_branch",git_path);
     ASSERT_EQ(read_file(git_path/ "HEAD"),"ref: refs/heads/new_branch");
-
+    fs::current_path("..");
 }
 
 TEST(Branching, branch_delete){
@@ -983,6 +984,7 @@ TEST(Branching, branch_delete){
     fs::path project_base_path = repo_find(fs::current_path() / folder_name);
     std::cout << "Project base path: " << project_base_path << std::endl;
     fs::path git_path = project_base_path / ".cpp-git";
+    fs::current_path(project_base_path);
 
     // Create new files
     write_file(project_base_path / "stage1.txt", "stage1");
@@ -993,14 +995,15 @@ TEST(Branching, branch_delete){
     git_add_folder(project_base_path);
     git_commit("first commit",git_path);
 
-    git_branch_new("new_branch",git_path);
-    git_branch_delete("new_branch",git_path);
+    git_branch_new("new_branch");
+    git_branch_delete("new_branch");
     try{
         git_checkout_branch("new_branch",git_path);
     }
     catch (char const* e){
         std::cout << e << std::endl;
     }
+    fs::current_path("..");
 }
 
 TEST(Branching, branch_list){
@@ -1009,9 +1012,11 @@ TEST(Branching, branch_list){
     fs::path project_base_path = repo_find(fs::current_path() / folder_name);
     std::cout << "Project base path: " << project_base_path << std::endl;
     fs::path git_path = project_base_path / ".cpp-git";
+    fs::current_path(project_base_path);
 
-    git_branch_new("new_branch",git_path);
-    git_branch_new("new_branch2",git_path);
+    git_branch_new("new_branch");
+    git_branch_new("new_branch2");
     std::cout << "Should list master, new_branch, new_branch2" << std::endl;
-    git_branch_list(git_path);
+    git_branch_list();
+    fs::current_path("..");
 }

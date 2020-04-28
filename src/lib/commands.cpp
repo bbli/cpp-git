@@ -184,9 +184,11 @@ void git_checkout_branch(string branch_name, fs::path git_path){
     write_file(git_path / "HEAD", "ref: "+ full_branch_name);
 }
 
-void git_branch_new(string branch_name,fs::path git_path){
-    fs::path full_branch_name = fs::path("refs/heads") / branch_name;
-    fs::path full_branch_path = git_path / full_branch_name;
+void git_branch_new(string branch_name){
+    fs::path project_base_path = repo_find(fs::current_path());
+    fs::path git_path = project_base_path / ".cpp-git";
+
+    fs::path full_branch_path = git_path / get_full_branch_name(branch_name);
     if (fs::exists(full_branch_path)){
         throw "error. branch already exists";
     }
@@ -197,10 +199,11 @@ void git_branch_new(string branch_name,fs::path git_path){
     write_file(full_branch_path, current_commit_hash);
 }
 
-void git_branch_delete(string branch_name, fs::path git_path){
-    fs::path full_branch_name = fs::path("refs/heads") / branch_name;
-    fs::path full_branch_path = git_path / full_branch_name;
-
+void git_branch_delete(string branch_name){
+    fs::path project_base_path = repo_find(fs::current_path());
+    fs::path git_path = project_base_path / ".cpp-git";
+    
+    fs::path full_branch_path = git_path / get_full_branch_name(branch_name);
     if (!fs::exists(full_branch_path)){
         throw "error. branch does not exist";
     }
@@ -208,7 +211,10 @@ void git_branch_delete(string branch_name, fs::path git_path){
     fs::remove(full_branch_path);
 }
 
-void git_branch_list(fs::path git_path){
+void git_branch_list(){
+    fs::path project_base_path = repo_find(fs::current_path());
+    fs::path git_path = project_base_path / ".cpp-git";
+
     std::cout << "Branches:" << std::endl;
     for (auto entry: fs::directory_iterator(git_path / "refs/heads")){
         std::cout << entry.path().filename() << std::endl;
