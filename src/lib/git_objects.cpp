@@ -123,7 +123,7 @@ void GitTag::to_internal(const string& data) {
         throw "sommething wrong with tag file";
     }
     std::copy(data.begin(), commit_hash_point, back_inserter(commit_hash));
-    std::copy(commit_hash_point, data.end(), back_inserter(tag_message));
+    std::copy(commit_hash_point + 1, data.end(), back_inserter(tag_message));
 }
 
 void GitBlob::to_internal(const string& data) { this->data = data; }

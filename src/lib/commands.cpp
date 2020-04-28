@@ -394,7 +394,6 @@ string git_add_file(const fs::path& file_path) {
     return new_tree_hash;
 }
 
-
 string git_add_folder(const fs::path folder_path) {
     fs::path project_base_path = repo_find(folder_path);
     fs::path git_path = project_base_path / ".cpp-git";
@@ -744,7 +743,7 @@ void git_show_tag() {
     fs::path tag_path = repo_base_path / ".cpp-git" / "refs" / "tags";
     auto refs = ref_list(tag_path);
     for ( auto it = refs.begin(); it != refs.end(); ++it )
-        cout << it->second << " " << it->first << endl;
+        cout << it->first.substr(5) << endl;
     cout << endl;
 }
 
@@ -769,9 +768,14 @@ void cmd_tag(const vector<string> &args) {
         git_show_tag();
     } else if (args.size() == 1 || (args.size() == 2 && args[0] != "-a")) {
         // git tag NAME [OBJECT]: create a new lightweight tag NAME, pointing at HEAD (default) or OBJECT
-        string commit_hash = "HEAD";
+        string commit_hash;
         if (args.size() == 2)
             string commit_hash = args[1];
+        else {
+            fs::path git_path = repo_find(fs::current_path()) / ".cpp-git";
+            string current_full_branch_name = get_current_branch_full(git_path);
+            commit_hash = get_commit_hash_from_branch(current_full_branch_name,git_path); // Default Value (HEAD)
+        }
         git_create_tag(args[0], commit_hash, false);
     }
     else if (args[0] == "-a" && (args.size() >= 2)) {
