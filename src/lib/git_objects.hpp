@@ -18,20 +18,21 @@ namespace fs = std::filesystem;
 
 class GitObject {
    private:
+    virtual void to_internal(
+        const std::string& data) = 0;             // filesystem -> lift to internal representation
    public:
     fs::path git_path;
     /* std::string data; */
     /* const static inline std::string fmt; */
     GitObject(){};
     GitObject(fs::path git_path);
-    virtual void to_internal(
-        const std::string& data) = 0;             // filesystem -> lift to internal representation
     virtual std::string to_filesystem(void) = 0;  // internal representation -> write to filesystem
     virtual std::string get_fmt(void) = 0;
 };
 
 class GitCommit : public GitObject {
    private:
+    void to_internal(const std::string& data);
    public:
     std::string tree_hash;
     std::string parent_hash;
@@ -42,7 +43,6 @@ class GitCommit : public GitObject {
                 const std::string parent_hash, const std::string commit_message);
     // create a root commit without parent and any file
     GitCommit(fs::path git_path);
-    void to_internal(const std::string& data);
     virtual std::string to_filesystem(void);
 };
 
@@ -55,34 +55,34 @@ struct GitTreeNode {
 
 class GitTree : public GitObject {
    private:
+    void to_internal(const std::string& data);
    public:
     std::vector<GitTreeNode> directory;
     virtual std::string get_fmt(void);
     GitTree(){};
     GitTree(fs::path git_path, const std::string& data);
     GitTree(fs::path git_path);
-    void to_internal(const std::string& data);
     virtual std::string to_filesystem(void);
     void add_entry(std::string type, std::string file_name, std::string hash);
 };
 
 class GitTag : public GitObject {
    private:
+    void to_internal(const std::string& data);
    public:
     virtual std::string get_fmt(void);
     GitTag(fs::path git_path, const std::string& data);
-    void to_internal(const std::string& data);
     virtual std::string to_filesystem(void);
 };
 
 class GitBlob : public GitObject {
    private:
+    void to_internal(const std::string& data);
    public:
     std::string data;
     virtual std::string get_fmt(void);
     GitBlob(fs::path git_path, const std::string& data);
     /* std::string get_fmt(void); */
-    void to_internal(const std::string& data);
     virtual std::string to_filesystem(void);
 };
 

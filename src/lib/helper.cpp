@@ -86,7 +86,9 @@ string write_object(GitObject* obj, bool write) {
     /* cout << "Hash: " << hash << endl; */
 
     if (write) {
-        write_file(obj->git_path / "objects" / hash.substr(0, 2) / hash.substr(2), total);
+        fs::path object_path = obj->git_path / "objects" / hash.substr(0,2) / hash.substr(2);
+        if (!fs::exists(object_path))
+            write_file(object_path, total);
     }
     return hash;
 }
