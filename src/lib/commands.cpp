@@ -128,8 +128,10 @@ string get_subtree_hash_for_new_folder(GitTree* tree_obj, typename fs::path::ite
     return write_object(&new_tree_obj);
 }
 
-void git_checkout_file(fs::path file_path,fs::path git_path){
+void git_checkout_file(fs::path file_path){
     fs::path project_base_path = repo_find(file_path);
+    fs::path git_path = project_base_path / ".cpp-git";
+
     string full_branch_name = get_current_branch_full(git_path);
     string commit_hash = get_commit_hash_from_branch(full_branch_name,git_path);
     GitTree* head_tree = get_head_tree(git_path);
@@ -161,8 +163,10 @@ bool is_actually_a_hash(string branch_name, fs::path git_path){
         return false;
     }
 }
-void git_checkout_branch(string branch_name, fs::path git_path){
-    fs::path project_base_path = repo_find(git_path);
+void git_checkout_branch(string branch_name){
+    fs::path project_base_path = repo_find(fs::current_path());
+    fs::path git_path = project_base_path / ".cpp-git";
+
     string commit_hash;
     string full_branch_name = "refs/heads/" + branch_name;
     GitTree* index_tree = get_index_tree(git_path);
@@ -271,10 +275,10 @@ void cmd_checkout(const vector<string>& args){
     std::string branch_or_file = args[0];
     fs::path git_path = repo_find(fs::current_path()) /".cpp-git";
     if (fs::exists(git_path / get_full_branch_name(branch_or_file))){
-        git_checkout_branch(branch_or_file, git_path);
+        git_checkout_branch(branch_or_file);
     }
     else if (fs::exists(fs::canonical(branch_or_file))){
-        git_checkout_file(fs::canonical(branch_or_file),git_path);
+        git_checkout_file(fs::canonical(branch_or_file));
     }
     else{
         throw CHECKOUT_USAGE;

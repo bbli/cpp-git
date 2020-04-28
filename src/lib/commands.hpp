@@ -40,13 +40,13 @@ void git_hash_object(fs::path path, const std::string& fmt);
 void git_reset(bool hard);
 void git_create_tag(std::string name, std::string object, bool if_create_object, std::string tag_message = "");
 void git_log(int num,fs::path project_base_path);
-void git_checkout_file(fs::path file_path, fs::path git_path);
-void git_checkout_branch(std::string branch_name, fs::path git_path);
+
+void git_checkout_file(fs::path file_path);
+void git_checkout_branch(std::string branch_name);
 
 void git_branch_new(std::string branch_name);
 void git_branch_delete(std::string branch_name);
 void git_branch_list(void);
-
 std::string git_add_file(const fs::path& file_path);
 std::string git_add_folder(const fs::path folder_path);
 void git_status_commit_index(void);

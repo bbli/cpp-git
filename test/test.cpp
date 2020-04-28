@@ -720,6 +720,7 @@ TEST(Checkout, file){
     fs::path project_base_path = repo_find(fs::current_path() / folder_name);
     std::cout << "Project base path: " << project_base_path << std::endl;
     fs::path git_path = project_base_path / ".cpp-git";
+    fs::current_path(project_base_path);
 
     // Create new files and create tree object
     write_file(project_base_path / "stage1.txt", "stage1");
@@ -733,8 +734,9 @@ TEST(Checkout, file){
     // change a file
     write_file(project_base_path / "folder" / "stage3.txt", "changed");
     // checkout previous version
-    git_checkout_file(project_base_path / "folder" / "stage3.txt",git_path);
+    git_checkout_file(project_base_path / "folder" / "stage3.txt");
     ASSERT_EQ(read_file(project_base_path/"folder" / "stage3.txt"),"stage3");
+    fs::current_path("..");
 }
 
 TEST(Checkout, branch){
@@ -743,6 +745,7 @@ TEST(Checkout, branch){
     fs::path project_base_path = repo_find(fs::current_path() / folder_name);
     std::cout << "Project base path: " << project_base_path << std::endl;
     fs::path git_path = project_base_path / ".cpp-git";
+    fs::current_path(project_base_path);
 
     // Create new files and create tree object
     write_file(project_base_path / "stage1.txt", "stage1");
@@ -757,9 +760,10 @@ TEST(Checkout, branch){
     write_file(project_base_path / "stage2.txt", "changed");
     write_file(project_base_path / "folder" / "stage3.txt", "changed");
     // checkout previous version
-    git_checkout_branch("master",git_path);
+    git_checkout_branch("master");
     ASSERT_EQ(read_file(project_base_path/"folder" / "stage3.txt"),"stage3");
     ASSERT_EQ(read_file(project_base_path/ "stage2.txt"),"stage2");
+    fs::current_path("..");
 }
 
 /* ********* Git Init	********* */
@@ -973,7 +977,7 @@ TEST(Branching, new_branch){
     git_commit("first commit",git_path);
 
     git_branch_new("new_branch");
-    git_checkout_branch("new_branch",git_path);
+    git_checkout_branch("new_branch");
     ASSERT_EQ(read_file(git_path/ "HEAD"),"ref: refs/heads/new_branch");
     fs::current_path("..");
 }
@@ -998,7 +1002,7 @@ TEST(Branching, branch_delete){
     git_branch_new("new_branch");
     git_branch_delete("new_branch");
     try{
-        git_checkout_branch("new_branch",git_path);
+        git_checkout_branch("new_branch");
     }
     catch (char const* e){
         std::cout << e << std::endl;
