@@ -232,14 +232,20 @@ void cmd_init(const vector<string>& args){
 
 
 void cmd_add(const vector<string> &args){
-    for(auto path: args){
-        if (path != "/") path = fs::canonical(path);
-        if (fs::is_directory(path)){
-            string ERROR = "TODO: add git add folder";
-        }
-        else{
-            git_add_file(path);
-        }
+    if (args.size() != 1)
+    {
+        throw "git add error. specify just the file or folder to add";
+    }
+    fs::path path = args[0];
+    path = fs::canonical(path);
+    if (fs::is_directory(path)){
+        git_add_folder(path);
+    }
+    else if (fs::is_regular_file(path)){
+        git_add_file(path);
+    }
+    else{
+        throw "git add error. cannot handle this kind of file";
     }
 }
 
