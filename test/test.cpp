@@ -729,7 +729,7 @@ TEST(Checkout, file){
     write_file(project_base_path /"folder" /"stage3.txt", "stage3");
     // git add and git commit
     git_add_folder(project_base_path);
-    git_commit("first commit",git_path);
+    git_commit("first commit");
 
     // change a file
     write_file(project_base_path / "folder" / "stage3.txt", "changed");
@@ -754,7 +754,7 @@ TEST(Checkout, branch){
     write_file(project_base_path /"folder" /"stage3.txt", "stage3");
     // git add and git commit
     git_add_folder(project_base_path);
-    git_commit("first commit",git_path);
+    git_commit("first commit");
 
     // change some files
     write_file(project_base_path / "stage2.txt", "changed");
@@ -810,7 +810,7 @@ TEST(GitCommand, git_commit){
 
         // A new commit,
         std::string message = "Initial commit";
-        git_commit(message,git_path);
+        git_commit(message);
         
         std::cout<<"Finish invoking git commit"<<std::endl;
         // Check that index has been cleared
@@ -851,7 +851,7 @@ TEST(GitCommand, cmd_tag){
         std::string filename = "test.txt", content = "Now test git_commit command";
         add_testing_file(worktree / filename, content);
         std::string message = "Initial commit";
-        git_commit(message, git_path);
+        git_commit(message);
         cmd_tag({"v0.1"});
         cmd_tag({"-a", "v0.2", "-m", "hello world"});
         cmd_tag({"-a", "v0.3"});
@@ -891,13 +891,13 @@ TEST(GitCommand, cmd_log){
         std::string filename = "test.txt", content = "Now test git_commit command";
         add_testing_file(worktree / filename, content);
         std::string message = "Initial commit";
-        git_commit(message, git_path);
+        git_commit(message);
 
 //        cmd_log();
         filename = "test2.txt";
         add_testing_file(worktree / filename, content);
         message = "Second commit";
-        git_commit(message, git_path);
+        git_commit(message);
 
         std::cout << "Should Output all commit:" << std::endl;
         cmd_log({});
@@ -974,7 +974,7 @@ TEST(Branching, new_branch){
     write_file(project_base_path /"folder" /"stage3.txt", "stage3");
     // git add and git commit
     git_add_folder(project_base_path);
-    git_commit("first commit",git_path);
+    git_commit("first commit");
 
     git_branch_new("new_branch");
     git_checkout_branch("new_branch");
@@ -997,7 +997,7 @@ TEST(Branching, branch_delete){
     write_file(project_base_path /"folder" /"stage3.txt", "stage3");
     // git add and git commit
     git_add_folder(project_base_path);
-    git_commit("first commit",git_path);
+    git_commit("first commit");
 
     git_branch_new("new_branch");
     git_branch_delete("new_branch");

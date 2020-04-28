@@ -290,9 +290,7 @@ void cmd_commit(const vector<string>& args){
     {
         throw "Currently only support `git commit -m 'your commit message'`";
     }
-    fs::path project_base_path = repo_find(fs::current_path());
-    fs::path git_path = project_base_path / ".cpp-git";
-    git_commit(args[1],git_path);
+    git_commit(args[1]);
 }
 
 void cmd_reset(const vector<string>& args){
@@ -340,8 +338,9 @@ void git_checkout(string hash){
     }
 }
 
-void git_commit(string commit_message,fs::path git_path){
-    fs::path project_base_path = repo_find(git_path);
+void git_commit(string commit_message){
+    fs::path project_base_path = repo_find(fs::current_path());
+    fs::path git_path = project_base_path / ".cpp-git";
     
     string current_full_branch_name = get_current_branch_full(git_path);
     // Hash of the previous commit (aka HEAD), might be empty if it's the first commit
@@ -832,13 +831,14 @@ void cmd_log(const vector<string> &args) {
         int num = INT_MAX;
         if (args.size() > 0)
             num = std::stoi(args[1]);
-        git_log(num,project_base_path);
+        git_log(num);
     }
     else
         throw LOG_USAGE;
 }
 
-void git_log(int num,fs::path project_base_path) {
+void git_log(int num) {
+    fs::path project_base_path = repo_find(fs::current_path());
     fs::path git_path = project_base_path / ".cpp-git";
 
     string current_branch_name = get_current_branch_full(git_path);
