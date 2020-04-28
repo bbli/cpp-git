@@ -237,7 +237,7 @@ void cmd_init(const vector<string>& args){
     {
         throw GIT_INIT_USAGE;
     }
-    git_init(args[0]);
+    git_init(fs::current_path());
 }
 
 

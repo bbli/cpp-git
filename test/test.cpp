@@ -777,7 +777,9 @@ TEST(GitCommand, git_init){
     if (fs::exists(worktree)) {
         fs::remove_all(worktree);
     }
-    cmd_init(std::vector<std::string>{worktree});
+    fs::create_directory(worktree);
+    fs::current_path(worktree);
+    cmd_init({});
     fs::path git_path = worktree / ".cpp-git";
     ASSERT_TRUE(fs::exists(git_path / "HEAD"));
     ASSERT_TRUE(fs::exists(git_path / "objects"));
@@ -787,6 +789,7 @@ TEST(GitCommand, git_init){
     ASSERT_TRUE(fs::exists(git_path / "refs" / "heads"));
     ASSERT_TRUE(fs::exists(git_path / "refs" / "heads" / "master"));
     ASSERT_EQ(read_file(git_path / "HEAD"), "ref: refs/heads/master");
+    fs::current_path("..");
 }
 
 void add_testing_file(fs::path file_path, std::string content){

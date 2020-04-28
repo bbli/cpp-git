@@ -24,6 +24,7 @@ void cmd_add(const std::vector<std::string> &args);
 void cmd_cat_file(const std::vector<std::string>& args);
 void cmd_checkout(const std::vector<std::string>& args);
 void cmd_commit(const std::vector<std::string>& args);
+void cmd_branch(const std::vector<std::string>& args);
 void cmd_show_ref(const std::vector<std::string> &args);
 void cmd_hash_object(const std::vector<std::string> &args);
 void cmd_reset(const std::vector<std::string>& args);
