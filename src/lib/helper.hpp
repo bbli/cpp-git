@@ -50,6 +50,7 @@ bool is_in_set(const std::set<std::string>& set,std::string val);
 bool is_in_set(const std::map<std::string,std::string>& map,std::string val);
 
 /* Commit Operations */
+std::string get_full_branch_name(std::string branch_name);
 std::string get_current_branch_full(fs::path git_path);
 std::string get_commit_hash_from_branch(std::string full_branch_name, fs::path git_path);
 GitCommit* get_commit_from_hash(std::string commit_hash, fs::path git_path);

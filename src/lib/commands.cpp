@@ -183,7 +183,7 @@ void git_checkout_branch(string branch_name, fs::path git_path){
     write_file(git_path / "HEAD", "ref: "+ full_branch_name);
 }
 
-void git_branch_new(std::string branch_name,fs::path git_path){
+void git_branch_new(string branch_name,fs::path git_path){
     fs::path full_branch_name = fs::path("refs/heads") / branch_name;
     fs::path full_branch_path = git_path / full_branch_name;
     if (fs::exists(full_branch_path)){
@@ -196,7 +196,7 @@ void git_branch_new(std::string branch_name,fs::path git_path){
     write_file(full_branch_path, current_commit_hash);
 }
 
-void git_branch_delete(std::string branch_name, fs::path git_path){
+void git_branch_delete(string branch_name, fs::path git_path){
     fs::path full_branch_name = fs::path("refs/heads") / branch_name;
     fs::path full_branch_path = git_path / full_branch_name;
 
@@ -255,7 +255,16 @@ void cmd_checkout(const vector<string>& args){
     {
         throw CHECKOUT_USAGE;
     }
-    git_checkout(args[0]);
+    std::string branch_or_file = args[0];
+    if (fs::exists(git_path / get_full_branch_name(branch_or_file))){
+        git_checkout_branch(branch_or_file, git_path);
+    }
+    else if (fs::exists(fs::canonical(branch_or_file)){
+        git_checkout_file(fs::canonical(branch_or_file),git_path);
+    }
+    else{
+        throw CHECKOUT_USAGE;
+    }
 }
 
 void cmd_commit(const vector<string>& args){
@@ -436,22 +445,22 @@ string git_add_folder(const fs::path folder_path) {
     return new_tree_hash;
 }
 
-void get_project_file_hashes(fs::path directory,vector<string>& project_leaf_hashes,unordered_map<string,string>& path_to_hash_dict, const fs::path git_path){
-    for (auto entry: fs::directory_iterator(directory)){
-        fs::path entry_path = entry.path();
-        if (fs::is_regular_file(entry_path)){
-            string file_hash = read_project_file_and_write_object(git_path,entry_path);
-            project_leaf_hashes.push_back(file_hash);
-            path_to_hash_dict.insert({entry_path.string(),file_hash});
-        }
-        else if (fs::is_directory(entry_path)){
-            get_project_file_hashes(entry_path,project_leaf_hashes,path_to_hash_dict,git_path);
-        }
-        else{
-            throw "cpp-git cannot handle this file";
-        }
-    }
-}
+/* void get_project_file_hashes(fs::path directory,vector<string>& project_leaf_hashes,unordered_map<string,string>& path_to_hash_dict, const fs::path git_path){ */
+/*     for (auto entry: fs::directory_iterator(directory)){ */
+/*         fs::path entry_path = entry.path(); */
+/*         if (fs::is_regular_file(entry_path)){ */
+/*             string file_hash = read_project_file_and_write_object(git_path,entry_path); */
+/*             project_leaf_hashes.push_back(file_hash); */
+/*             path_to_hash_dict.insert({entry_path.string(),file_hash}); */
+/*         } */
+/*         else if (fs::is_directory(entry_path)){ */
+/*             get_project_file_hashes(entry_path,project_leaf_hashes,path_to_hash_dict,git_path); */
+/*         } */
+/*         else{ */
+/*             throw "cpp-git cannot handle this file"; */
+/*         } */
+/*     } */
+/* } */
 
 
 
@@ -475,14 +484,14 @@ void get_project_file_hashes(fs::path directory,vector<string>& project_leaf_has
 /*     } */
 /* } */
 
-set<string> set_difference_of_leaf_hashes(vector<string>& leaf_hashes_1, vector<string>& leaf_hashes_2){
-    sort(leaf_hashes_1.begin(),leaf_hashes_1.end());
-    sort(leaf_hashes_2.begin(),leaf_hashes_2.end());
+/* set<string> set_difference_of_leaf_hashes(vector<string>& leaf_hashes_1, vector<string>& leaf_hashes_2){ */
+/*     sort(leaf_hashes_1.begin(),leaf_hashes_1.end()); */
+/*     sort(leaf_hashes_2.begin(),leaf_hashes_2.end()); */
 
-    vector<string> diff_hashes;
-    set_difference(leaf_hashes_1.begin(),leaf_hashes_1.end(),leaf_hashes_2.begin(),leaf_hashes_2.end(),back_inserter(diff_hashes));
-    return set<string>(diff_hashes.begin(),diff_hashes.end());
-}
+/*     vector<string> diff_hashes; */
+/*     set_difference(leaf_hashes_1.begin(),leaf_hashes_1.end(),leaf_hashes_2.begin(),leaf_hashes_2.end(),back_inserter(diff_hashes)); */
+/*     return set<string>(diff_hashes.begin(),diff_hashes.end()); */
+/* } */
 
 /* ********* 	********* */
 void get_leaf_hashes_of_tree(GitTree* tree_obj,set<string>& index_leaf_hashes, const fs::path git_path){

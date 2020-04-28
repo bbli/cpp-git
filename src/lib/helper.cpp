@@ -286,6 +286,10 @@ string get_current_branch_full(fs::path git_path){
     return content;
 }
 
+string get_full_branch_name(string branch_name){
+    return "refs/heads/" + branch_name;
+}
+
 GitTree* get_index_tree(fs::path git_path) {
     string tree_hash = read_file(git_path / "index");
     if (tree_hash==""){

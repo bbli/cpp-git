@@ -6,7 +6,6 @@
 #include <unordered_map>
 // To get the data structures
 #include "git_objects.hpp"
-/* #include <helper.hpp> */
 
 /* ********* Global Variables ********** */
 const std::set<std::string> CAT_FILE_SUBCMDS = {"blob", "commit", "tag", "tree"};
@@ -40,6 +39,16 @@ void git_hash_object(fs::path path, const std::string& fmt);
 void git_reset(bool hard);
 void git_create_tag(std::string name, std::string object, bool if_create_object, std::string tag_message = "");
 void git_log(int num);
+void git_checkout_file(fs::path file_path, fs::path git_path);
+void git_checkout_branch(std::string branch_name, fs::path git_path);
+void git_branch_new(std::string branch_name, fs::path git_path);
+void git_branch_delete(std::string branch_name, fs::path git_path);
+void git_branch_list(std::string branch_name, fs::path git_path);
+std::string git_add_file(const fs::path& file_path);
+std::string git_add_folder(const fs::path folder_path);
+void git_status_index_vs_project(const fs::path git_path);
+void git_status_commit_index(const fs::path git_path);
+
 
 int test_function(void);
 
