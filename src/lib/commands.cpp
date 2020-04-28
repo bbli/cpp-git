@@ -7,6 +7,7 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
+#include <map>
 #include <set>
 using namespace std;
 
@@ -125,6 +126,93 @@ string get_subtree_hash_for_new_folder(GitTree* tree_obj, typename fs::path::ite
     /* printer(new_tree_obj.directory); */
     return write_object(&new_tree_obj);
 }
+
+void git_checkout_file(fs::path file_path,fs::path git_path){
+    fs::path project_base_path = repo_find(file_path);
+    string full_branch_name = get_current_branch_full(git_path);
+    string commit_hash = get_commit_hash_from_branch(full_branch_name,git_path);
+    GitTree* head_tree = get_head_tree(git_path);
+    // Run file_it
+    auto base_it = project_base_path.begin();
+    auto file_it = file_path.begin();
+    while (base_it != project_base_path.end()) {
+        base_it++;
+        file_it++;
+    }
+
+    string file_hash = find_hash_in_tree(head_tree,file_it,file_path.end(),git_path);
+    if (file_hash==""){
+        /* cout << "File has not previously been checked in"; */
+        throw "error. File has not previously been checked in";
+    }
+    else{
+        write_object_to_project_file(file_path,file_hash);
+    }
+}
+bool is_actually_a_hash(string branch_name, fs::path git_path){
+    if (branch_name.length() < 4){
+        return false;
+    }
+    if (fs::exists(git_path / "objects" / branch_name.substr(0,2) / branch_name.substr(2))){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+void git_checkout_branch(string branch_name, fs::path git_path){
+    fs::path project_base_path = repo_find(git_path);
+    string commit_hash;
+    string full_branch_name = "refs/heads/" + branch_name;
+    GitTree* index_tree = get_index_tree(git_path);
+    if(index_tree){
+        throw "error. Please commit changes before changing branches";
+    }
+
+    if (is_actually_a_hash(branch_name,git_path)){
+        commit_hash = branch_name;
+    }
+    else{
+        // will throw if not a valid branch
+        commit_hash= get_commit_hash_from_branch(full_branch_name,git_path);
+    }
+    GitCommit* commit = get_commit_from_hash(commit_hash,git_path);
+    GitTree* commit_tree = get_tree_from_hash(commit->tree_hash,git_path);
+    walk_tree_and_replace(project_base_path,commit_tree);
+    // now update HEAD as we have switched over
+    write_file(git_path / "HEAD", "ref: "+ full_branch_name);
+}
+
+void git_branch_new(std::string branch_name,fs::path git_path){
+    fs::path full_branch_name = fs::path("refs/heads") / branch_name;
+    fs::path full_branch_path = git_path / full_branch_name;
+    if (fs::exists(full_branch_path)){
+        throw "error. branch already exists";
+    }
+
+    // make new branch point to current branch's commit
+    string current_full_branch_name = get_current_branch_full(git_path);
+    string current_commit_hash = get_commit_hash_from_branch(current_full_branch_name,git_path);
+    write_file(full_branch_path, current_commit_hash);
+}
+
+void git_branch_delete(std::string branch_name, fs::path git_path){
+    fs::path full_branch_name = fs::path("refs/heads") / branch_name;
+    fs::path full_branch_path = git_path / full_branch_name;
+
+    if (!fs::exists(full_branch_path)){
+        throw "error. branch does not exist";
+    }
+
+    fs::remove(full_branch_path);
+}
+
+void git_branch_list(fs::path git_path){
+    std::cout << "Branches:" << std::endl;
+    for (auto entry: fs::directory_iterator(git_path / "refs/heads")){
+        std::cout << entry.path().filename() << std::endl;
+    }
+}
 /* ********* 	********* */
 int test_function(void) {
     vector<int> test;
@@ -175,7 +263,9 @@ void cmd_commit(const vector<string>& args){
     {
         throw "Currently only support `git commit -m 'your commit message'`";
     }
-    git_commit(args[1]);
+    fs::path project_base_path = repo_find(fs::current_path());
+    fs::path git_path = project_base_path / ".cpp-git";
+    git_commit(args[1],git_path);
 }
 
 void cmd_reset(const vector<string>& args){
@@ -223,22 +313,26 @@ void git_checkout(string hash){
     }
 }
 
-void git_commit(string commit_message){
-    fs::path project_base_path = repo_find(fs::current_path());
-    fs::path git_path = project_base_path / ".cpp-git";
+void git_commit(string commit_message,fs::path git_path){
+    fs::path project_base_path = repo_find(git_path);
     
+    string current_full_branch_name = get_current_branch_full(git_path);
     // Hash of the previous commit (aka HEAD), might be empty if it's the first commit
-    string current_branch_name = get_current_branch(git_path);
-    string current_commit_hash = get_commit_hash_from_branch(current_branch_name,git_path);
+    string current_commit_hash = get_commit_hash_from_branch(current_full_branch_name,git_path);
 
     // Hash of the new tree in index
     string index_tree_hash = get_tree_hash_of_index(git_path);
-
-    GitCommit new_commit_obj = GitCommit(git_path, index_tree_hash, current_commit_hash, commit_message);
-    string new_commit_hash = write_object(&new_commit_obj);
-    write_file(git_path / current_branch_name, new_commit_hash);
-    // clean index for the next round
-    write_file(git_path / "index", "");
+    if (index_tree_hash.length() == 0){
+        std::cout << "Error. Nothing to commit" << std::endl;
+    }
+    else{
+        GitCommit new_commit_obj = GitCommit(git_path,index_tree_hash,current_commit_hash,commit_message);
+        string new_commit_hash = write_object(&new_commit_obj);
+        // move ref to new commit
+        write_file(git_path / current_full_branch_name, new_commit_hash);
+        // clean index for the next round
+        write_file(git_path / "index", "");
+    }
 }
 
 void git_reset(bool hard){
@@ -406,6 +500,21 @@ void get_leaf_hashes_of_tree(GitTree* tree_obj,set<string>& index_leaf_hashes, c
         }
     }
 }
+void get_leaf_hashes_of_tree(GitTree* tree_obj,map<string,string>& leaf_hashes, fs::path current_path,const fs::path git_path){
+    for (auto node: tree_obj->directory){
+        string path_name = string(current_path / node.name);
+        if (node.type=="blob"){
+            leaf_hashes.insert({node.hash,path_name});
+        }
+        else if (node.type == "tree"){
+            GitTree* subtree = get_tree_from_hash(node.hash,git_path);
+            get_leaf_hashes_of_tree(subtree,leaf_hashes,path_name, git_path);
+        }
+        else{
+            throw "cpp-git cannot handle this file";
+        }
+    }
+}
 
 void print_unstaged_project_files(fs::path directory, const set<string>& index_leaf_hashes, const fs::path git_path, const fs::path project_base_path){
     for(auto project_file: fs::directory_iterator(directory)){
@@ -430,10 +539,10 @@ void print_unstaged_project_files(fs::path directory, const set<string>& index_l
     }
 }
 
-void print_new_index_nodes_and_calc_delete(GitTree* index_tree,set<string>& delete_hashes, const set<string>& head_leaf_hashes,const fs::path git_path){
+void print_new_index_nodes_and_calc_delete(GitTree* tree,set<string>& delete_hashes, const set<string>& head_leaf_hashes,const fs::path git_path){
     /* cout << "Listing:" << endl; */
-    /* printer(index_tree->directory); */
-    for (auto index_node: index_tree->directory){
+    /* printer(tree->directory); */
+    for (auto index_node: tree->directory){
         if (index_node.type == "blob"){
             bool found = is_in_set(head_leaf_hashes,index_node.hash);
             // This is not in commit set, so print
@@ -450,6 +559,28 @@ void print_new_index_nodes_and_calc_delete(GitTree* index_tree,set<string>& dele
             print_new_index_nodes_and_calc_delete(subtree,delete_hashes,head_leaf_hashes,git_path);
         }
     }
+}
+
+void walk_index_and_calc_set_differences(GitTree* tree, map<string,string>& commit_diff_hashes, map<string,string>& index_diff_hashes, fs::path current_path, const map<string,string>& head_leaf_hashes, const fs::path git_path){
+    for (auto index_node: tree->directory){
+        fs::path new_path = current_path / index_node.name;
+        if (index_node.type == "blob"){
+            bool index_hash_not_common = is_in_set(head_leaf_hashes,index_node.hash);
+            // This is not in commit set, so print
+            if (!index_hash_not_common){
+                index_diff_hashes.insert({index_node.hash,new_path});
+            }
+            // This node is in the commit set, so should not exist in delete_hashes
+            else{
+                commit_diff_hashes.erase(index_node.hash);
+            }
+        }
+        else if (index_node.type == "tree"){
+            GitTree* subtree = get_tree_from_hash(index_node.hash,git_path);
+            walk_index_and_calc_set_differences(subtree,commit_diff_hashes,index_diff_hashes,new_path,head_leaf_hashes,git_path);
+        }
+    }
+
 }
 
 void print_deleted_head_nodes(GitTree* head_tree, const set<string>& delete_hashes, fs::path rel_path, const fs::path git_path){
@@ -470,6 +601,40 @@ void print_deleted_head_nodes(GitTree* head_tree, const set<string>& delete_hash
     }
 }
 
+vector<string> convert_map_to_sorted_values(map<string,string> my_map){
+    vector<string> output;
+    output.reserve(my_map.size());
+    for (auto& pair:my_map){
+        output.push_back(pair.second);
+    }
+    std::sort(output.begin(),output.end());
+    return output;
+}
+
+void split_into_deleted_modified_new(map<string,string>& commit_diff_hashes, map<string,string>& index_diff_hashes,const fs::path project_base_path){
+    vector<string> commit_paths = convert_map_to_sorted_values(commit_diff_hashes);
+    vector<string> index_paths = convert_map_to_sorted_values(index_diff_hashes);
+
+    vector<string> modified_files;
+    std::set_intersection(commit_paths.begin(),commit_paths.end(),index_paths.begin(),index_paths.end(),std::back_inserter(modified_files));
+    for(auto path:modified_files){
+        cout << "modified: " << path_relative_to_project(project_base_path,path) << endl;
+    }
+
+    vector<string> deleted_files;
+    std::set_difference(commit_paths.begin(),commit_paths.end(),index_paths.begin(),index_paths.end(),std::back_inserter(deleted_files));
+    for(auto path:deleted_files){
+        cout << "deleted: " << path_relative_to_project(project_base_path,path) << endl;
+    }
+
+    vector<string> new_files;
+    std::set_difference(index_paths.begin(),index_paths.end(),commit_paths.begin(),commit_paths.end(),std::back_inserter(new_files));
+    for(auto path:new_files){
+        cout << "new: " << path_relative_to_project(project_base_path,path) << endl;
+    }
+
+}
+
 void git_status_index_vs_project(const fs::path git_path){
     fs::path project_base_path = repo_find(git_path);
     GitTree* index_tree = get_index_tree(git_path);
@@ -488,24 +653,30 @@ void git_status_index_vs_project(const fs::path git_path){
 
 void git_status_commit_index(const fs::path git_path){
     cout << "---------------Files staged for commit:------------" << endl;
-    set<string> head_leaf_hashes;
-    set<string> delete_hashes;
     // EC: no index
     // EC : no head
+    fs::path project_base_path = repo_find(git_path);
     GitTree* index_tree = get_index_tree(git_path);
     GitTree* head_tree = get_head_tree(git_path);
 
     if (index_tree){
         if (!head_tree){
-            // Pass empty head_leaf_hashes so everything is new
-            print_new_index_nodes_and_calc_delete(index_tree,delete_hashes,head_leaf_hashes,git_path);
+            set<string> delete_hashes;
+            set<string> set_head_hashes;
+            // Pass empty set_head_hashes so everything is new
+            print_new_index_nodes_and_calc_delete(index_tree,delete_hashes,set_head_hashes,git_path);
         }
         else{
+            map<string,string> head_leaf_hashes;
+            map<string,string> commit_diff_hashes;
+            map<string,string> index_diff_hashes;
             // COMMON CASE, both index and head trees exist
-            get_leaf_hashes_of_tree(head_tree,head_leaf_hashes,git_path);
-            delete_hashes = head_leaf_hashes;
-            print_new_index_nodes_and_calc_delete(index_tree,delete_hashes,head_leaf_hashes,git_path);
-            print_deleted_head_nodes(head_tree,delete_hashes,"",git_path);
+            // TODO: overload
+            get_leaf_hashes_of_tree(head_tree,head_leaf_hashes,project_base_path,git_path);
+            commit_diff_hashes = head_leaf_hashes;
+            walk_index_and_calc_set_differences(index_tree,commit_diff_hashes,index_diff_hashes,project_base_path,head_leaf_hashes,git_path);
+
+            split_into_deleted_modified_new(commit_diff_hashes,index_diff_hashes,project_base_path);
         }
     }
     // Otherwise there is nothing staged
@@ -655,3 +826,9 @@ void git_log(int num) {
     }
     while( !current_commit_hash.empty() and num > 0);
 }
+
+void cmd_status(const fs::path git_path){
+    git_status_commit_index(git_path);
+    git_status_index_vs_project(git_path);
+}
+
