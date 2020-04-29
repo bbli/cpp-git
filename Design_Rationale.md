@@ -1,5 +1,17 @@
-### Design Decisions
+## Design Decisions
+
+### Git Objects
+* Modeling of git objects with classes
+* Our GitObjects had minimal methods, and instead most of our codebase are functions. One reason for this is that methods are often used to changed the internal state of any object, and git instead favors the functional style of creating new objects, as we shall see later
+    * Indeed,(see picture of tree method)
+* Actually, if we had split our read_object function into a seperate function for each object, we could have eliminate the use of the heap entirely, as given the functionality of git and how it internals work, we always know the type before we read
+    * So runtime polymorphism is not needed
 * why we used the ranges library
+    * Picture of what we wanted to split
+    * Without the ranges library, we would need to iterate through the file once to get all the markers for each line, and then once again to split each of the entries.
+    * Or, we need to do a lot of iterator manipulating to parse in it one pass.
+    * That said, perhaps more trouble than it was worth, because the error messages generate by the ranges library were rather long, even for C++ error messages. Also, I had to convert the input to a vector for the splitting to work, so there essentially was no speedup
+
 * explain design decision
     * get_fmt?
     * tree refers to tree object, project refers to source files/working directory
@@ -9,6 +21,7 @@
         - to me, this is a better representation given the immutability of git objects. Git does not take a copy of the HEAD tree and modify it. Rather, everytime you add to the index, you are actually creating a new tree, in which some of its nodes, in particular the tree nodes(both root and subtree kinds), will not be used in the final tree that gets commited.
 
 ### In Depth Documentation
+* Data format for each object
 * explain GIT internals
     * content addressable file system(one implication is lazy writes)
 * explain differences with Git
