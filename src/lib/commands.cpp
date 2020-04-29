@@ -17,7 +17,7 @@ void walk_tree_and_replace(fs::path tree_write_path, GitObject* obj) {
 
     GitTree* tree_obj = dynamic_cast<GitTree*>(obj);
     /* cout << "Tree listing: " << endl; */
-    printer(tree_obj->directory);
+    /* printer(tree_obj->directory); */
     for (auto node : tree_obj->directory) {
         if (node.type == "blob") {
             /* cout << "Write Path: "<< (tree_write_path / node.name) << endl; */
@@ -69,14 +69,14 @@ string get_subtree_hash_for_new_file(GitTree* tree_obj, typename fs::path::itera
         }
     }
     // EC: if at end and we haven't found the file in the old tree directory
-    cout << "Currently at: " << *file_it << endl;
+    /* cout << "Currently at: " << *file_it << endl; */
     if (end_of_path(file_it,end_it) && !found) {
         string blob_hash = read_project_file_and_write_object(git_path, file_path);
         new_tree_obj.add_entry("blob", file_path.filename(), blob_hash);
     }
     // Write Tree and return hash
-    cout << "Post Listing: " << endl;
-    printer(new_tree_obj.directory);
+    /* cout << "Post Listing: " << endl; */
+    /* printer(new_tree_obj.directory); */
     return write_object(&new_tree_obj);
 }
 string get_subtree_hash_for_new_folder(GitTree* tree_obj, typename fs::path::iterator file_it,
@@ -250,9 +250,11 @@ void cmd_add(const vector<string> &args){
     path = fs::canonical(path);
     if (fs::is_directory(path)){
         git_add_folder(path);
+        /* std::cout << "calling add folder" << std::endl; */
     }
     else if (fs::is_regular_file(path)){
         git_add_file(path);
+        /* std::cout << "calling add file" << std::endl; */
     }
     else{
         throw "git add error. cannot handle this kind of file";
@@ -309,18 +311,18 @@ void cmd_branch(const vector<string>& args){
         git_branch_list();
     }
     else if (args[0] == "-d" && args.size()==2){
-        std::string branch_name = args[1];
+        string branch_name = args[1];
         if (fs::exists(git_path / get_full_branch_name(branch_name))){
             git_branch_delete(branch_name);
         }
         else{
-            throw "git branch delete error. " +args[1]+ "is not an existing branch name";
+            throw "git branch delete error. This is not an existing branch name";
         }
     }
     else if (args.size()==1){
-        std::string branch_name = args[1];
+        std::string branch_name = args[0];
         if(fs::exists(git_path / get_full_branch_name(branch_name))){
-            throw "git branch create error. " +args[1]+ "is already an existing branch name";
+            throw "git branch create error. This is already an existing branch name";
         }
         else{
             git_branch_new(branch_name);
@@ -399,7 +401,7 @@ void git_reset(bool hard){
     string head_commit_hash = ref_resolve(git_path / "HEAD");
     GitCommit* head_commit = dynamic_cast<GitCommit*>(read_object(git_path, head_commit_hash));
     string head_commit_tree_hash = head_commit->tree_hash;
-    write_file(git_path / "index", head_commit_tree_hash);
+    write_file(git_path / "index", "");
 
     if (hard){
         GitTree* tree = dynamic_cast<GitTree*>(read_object(git_path, head_commit_tree_hash));
@@ -446,7 +448,7 @@ string git_add_file(const fs::path& file_path) {
             get_subtree_hash_for_new_file(index_tree, file_it, file_path.end(), git_path, file_path);
     }
 
-    cout << "Should write to index now" << endl;
+    /* cout << "Should write to index now" << endl; */
     write_file(git_path / "index", new_tree_hash);
     return new_tree_hash;
 }
@@ -695,12 +697,20 @@ void git_status_index_vs_project(){
     fs::path project_base_path = repo_find(fs::current_path());
     fs::path git_path = project_base_path / ".cpp-git";
     GitTree* index_tree = get_index_tree(git_path);
+    GitTree* head_tree = get_head_tree(git_path);
     set<string> index_leaf_hashes;
 
     cout << "---------------Files not yet staged------------" << endl;
     if (!index_tree){
-        // pass in empty index leaf hash
-        print_unstaged_project_files(project_base_path,index_leaf_hashes,git_path,project_base_path);
+        if (!head_tree){
+            // pass in empty index leaf hash
+            print_unstaged_project_files(project_base_path,index_leaf_hashes,git_path,project_base_path);
+        }
+        else{
+            set<string> commit_leaf_hashes;
+            get_leaf_hashes_of_tree(head_tree,commit_leaf_hashes,git_path);
+            print_unstaged_project_files(project_base_path,commit_leaf_hashes,git_path,project_base_path);
+        }
     }
     else{
         get_leaf_hashes_of_tree(index_tree,index_leaf_hashes,git_path);

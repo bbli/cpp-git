@@ -12,7 +12,7 @@ namespace fs = std::filesystem;
 template <typename T>
 void printer(T container) {
     for (auto x : container) {
-        std::cout << x << " ";
+        std::cout << x << ",";
     }
     std::cout << std::endl;
 }
