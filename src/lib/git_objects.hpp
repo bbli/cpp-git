@@ -56,6 +56,7 @@ struct GitTreeNode {
 class GitTree : public GitObject {
    private:
     void to_internal(const std::string& data);
+    typename std::string::const_iterator extract_one_tree_node(typename std::string::const_iterator start_it,const std::string &data);
    public:
     std::vector<GitTreeNode> directory;
     virtual std::string get_fmt(void);

@@ -4,12 +4,12 @@
 #include <commands.cpp>
 #include <helper.cpp>
 #include <helper.hpp>
+#include <git_objects.hpp>
+#include <git_objects.cpp>
 #include <iostream>
-#include <range/v3/algorithm.hpp>
-#include <range/v3/view.hpp>
 #include <vector>
 
-using namespace ranges;
+/* using namespace ranges; */
 /* TEST(Suite,test1){ */
 /*     EXPECT_EQ(test_function(),0); */
 /* } */
@@ -65,43 +65,43 @@ TEST(Scratch, directory_iterator_hidden_files) {
     fs::remove_all(folder_path);
 }
 
-TEST(Scratch, basic_range) {
-    auto new_range = "ab\ncd" | views::split('\n');
-    std::cout << new_range << std::endl;
-}
-TEST(Scratch, nested_range) {
-    auto test_range = "ab cd ef\ngh ij kl" | views::split('\n');
-    std::cout << test_range << std::endl;
-    for (auto x : test_range) {
-        auto x_parts = x | views::split(' ');
-        /* for (auto s : x_parts) { */
-            /* auto cnt = ranges::count_if(s, [](const auto& s) {return true;} ); */
-            /* std::cout << cnt << std::endl; */
-        /* } */
-        std::cout << "New range: " << x_parts << std::endl;
-    }
-}
-TEST(Scratch, enumerate_range_seeWhichComesFirst) {
-    auto test_range = "ab cd ef\ngh ij kl" | views::split('\n');
-    /* std::cout << test_range << std::endl; */
-    for (auto [idx, part] : views::enumerate(test_range)) {
-        std::cout << "Idx: " << idx << "Part: " << part << std::endl;
-    }
-}
+/* TEST(Scratch, basic_range) { */
+/*     auto new_range = "ab\ncd" | views::split('\n'); */
+/*     std::cout << new_range << std::endl; */
+/* } */
+/* TEST(Scratch, nested_range) { */
+/*     auto test_range = "ab cd ef\ngh ij kl" | views::split('\n'); */
+/*     std::cout << test_range << std::endl; */
+/*     for (auto x : test_range) { */
+/*         auto x_parts = x | views::split(' '); */
+/*         /1* for (auto s : x_parts) { *1/ */
+/*             /1* auto cnt = ranges::count_if(s, [](const auto& s) {return true;} ); *1/ */
+/*             /1* std::cout << cnt << std::endl; *1/ */
+/*         /1* } *1/ */
+/*         std::cout << "New range: " << x_parts << std::endl; */
+/*     } */
+/* } */
+/* TEST(Scratch, enumerate_range_seeWhichComesFirst) { */
+/*     auto test_range = "ab cd ef\ngh ij kl" | views::split('\n'); */
+/*     /1* std::cout << test_range << std::endl; *1/ */
+/*     for (auto [idx, part] : views::enumerate(test_range)) { */
+/*         std::cout << "Idx: " << idx << "Part: " << part << std::endl; */
+/*     } */
+/* } */
 
-TEST(Scratch, nest_vector_range) {
-    std::string null_string = "ab cd ef\ngh ij kl";
-    std::cout << "Length of string: " << null_string.length() << std::endl;
-    std::vector<char> no_null(null_string.begin(), null_string.end());
-    std::cout << "Length of vector:" << no_null.size() << std::endl;
+/* TEST(Scratch, nest_vector_range) { */
+/*     std::string null_string = "ab cd ef\ngh ij kl"; */
+/*     std::cout << "Length of string: " << null_string.length() << std::endl; */
+/*     std::vector<char> no_null(null_string.begin(), null_string.end()); */
+/*     std::cout << "Length of vector:" << no_null.size() << std::endl; */
 
-    auto test_range = no_null | views::split('\n');
-    std::cout << test_range << std::endl;
-    for (auto x : test_range) {
-        auto x_parts = x | views::split(' ');
-        std::cout << "New range: " << x_parts << std::endl;
-    }
-}
+/*     auto test_range = no_null | views::split('\n'); */
+/*     std::cout << test_range << std::endl; */
+/*     for (auto x : test_range) { */
+/*         auto x_parts = x | views::split(' '); */
+/*         std::cout << "New range: " << x_parts << std::endl; */
+/*     } */
+/* } */
 
 class GitTreeTest : public ::testing::Test {
    protected:
@@ -568,24 +568,32 @@ TEST(Status, commit_vs_index_multipleLevelNewFile){
     fs::current_path(project_base_path);
 
     // Create new files and create tree object
-    write_file(project_base_path / "stage1.txt", "stage1");
-    write_file(project_base_path / "stage2.txt", "stage2");
-    fs::create_directory(project_base_path / "folder");
-    write_file(project_base_path /"folder" /"stage3.txt", "stage3");
+    try{
+        write_file(project_base_path / "stage1.txt", "stage1");
+        write_file(project_base_path / "stage2.txt", "stage2");
+        fs::create_directory(project_base_path / "folder");
+        write_file(project_base_path /"folder" /"stage3.txt", "stage3");
 
-    //write tree , write commit, and write to master
-    std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
-    GitCommit commit_obj(git_path,tree_hash,"","first commit");
-    std::string commit_hash = write_object(&commit_obj);
-    write_file(git_path / get_current_branch_full(git_path), commit_hash);
-    
-    // create new file in subfolder, and add to index
-    write_file(project_base_path /"folder" /"stage4.txt", "stage4");
-    git_add_file(project_base_path/"folder" /"stage4.txt");
+        //write tree , write commit, and write to master
+        std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
+        GitCommit commit_obj(git_path,tree_hash,"","first commit");
+        std::string commit_hash = write_object(&commit_obj);
+        write_file(git_path / get_current_branch_full(git_path), commit_hash);
+        
+        // create new file in subfolder, and add to index
+        write_file(project_base_path /"folder" /"stage4.txt", "stage4");
+        git_add_file(project_base_path/"folder" /"stage4.txt");
 
-    std::cout << "Should say stage 4 is staged" << std::endl;
-    // See new/modified file
-    git_status_commit_index();
+        std::cout << "Should say stage 4 is staged" << std::endl;
+        // See new/modified file
+        git_status_commit_index();
+    }
+    catch (const char *e)
+    {
+        std::cout << e << std::endl;
+        fs::current_path("..");
+        throw e;
+    }
     fs::current_path("..");
 }
 
@@ -618,6 +626,43 @@ TEST(Status, commit_vs_index_oneLevelDeletedFile){
     fs::current_path("..");
 }
 
+TEST(Status, commit_vs_index_multipleLevelDeletedFileButNonEmptyFolder){
+    std::string folder_name = "commit_vs_index_multipleLevelDeletedFileBuNonEmptyFolder";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+    fs::current_path(project_base_path);
+
+    try{
+        // Create new files and create tree object
+        write_file(project_base_path / "stage1.txt", "stage1");
+        write_file(project_base_path / "stage2.txt", "stage2");
+        fs::create_directory(project_base_path / "folder");
+        write_file(project_base_path /"folder" /"stage3.txt", "stage3");
+        write_file(project_base_path /"folder" /"stage4.txt", "stage4");
+
+        //write tree , write commit, and write to master
+        std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
+        GitCommit commit_obj(git_path,tree_hash,"","first commit");
+        std::string commit_hash = write_object(&commit_obj);
+        write_file(git_path / get_current_branch_full(git_path), commit_hash);
+
+        // Delete a file and add to index. 
+        // NOTE this means folder is now empty
+        fs::remove(project_base_path / "folder" / "stage3.txt");
+        git_add_folder(project_base_path / "folder");
+
+        std::cout << "Should say stage 3 is deleted" << std::endl;
+        git_status_commit_index();
+    }
+    catch (char const *e){
+        std::cout << e << std::endl;
+        fs::current_path("..");
+        throw e;
+    }
+    fs::current_path("..");
+}
 TEST(Status, commit_vs_index_multipleLevelDeletedFile){
     std::string folder_name = "commit_vs_index_multipleLevelDeletedFile";
     git_folder_setup(folder_name);
@@ -626,28 +671,35 @@ TEST(Status, commit_vs_index_multipleLevelDeletedFile){
     fs::path git_path = project_base_path / ".cpp-git";
     fs::current_path(project_base_path);
 
-    // Create new files and create tree object
-    write_file(project_base_path / "stage1.txt", "stage1");
-    write_file(project_base_path / "stage2.txt", "stage2");
-    fs::create_directory(project_base_path / "folder");
-    write_file(project_base_path /"folder" /"stage3.txt", "stage3");
+    try{
+        // Create new files and create tree object
+        write_file(project_base_path / "stage1.txt", "stage1");
+        write_file(project_base_path / "stage2.txt", "stage2");
+        fs::create_directory(project_base_path / "folder");
+        write_file(project_base_path /"folder" /"stage3.txt", "stage3");
 
-    //write tree , write commit, and write to master
-    std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
-    GitCommit commit_obj(git_path,tree_hash,"","first commit");
-    std::string commit_hash = write_object(&commit_obj);
-    write_file(git_path / get_current_branch_full(git_path), commit_hash);
+        //write tree , write commit, and write to master
+        std::string tree_hash = read_project_folder_and_write_tree(project_base_path);
+        GitCommit commit_obj(git_path,tree_hash,"","first commit");
+        std::string commit_hash = write_object(&commit_obj);
+        write_file(git_path / get_current_branch_full(git_path), commit_hash);
 
-    // Delete a file and add to index. 
-    // NOTE this means folder is now empty
-    fs::remove(project_base_path / "folder" / "stage3.txt");
-    git_add_folder(project_base_path / "folder");
+        // Delete a file and add to index. 
+        // NOTE this means folder is now empty
+        fs::remove(project_base_path / "folder" / "stage3.txt");
+        git_add_folder(project_base_path / "folder");
 
-    std::cout << "Should say stage 3 is deleted" << std::endl;
-    git_status_commit_index();
+        std::cout << "Should say stage 3 is deleted" << std::endl;
+        git_status_commit_index();
+    }
+    catch (char const *e){
+        std::cout << e << std::endl;
+        fs::current_path("..");
+        throw e;
+    }
     fs::current_path("..");
-
 }
+
 
 TEST(Status, commit_vs_index_multipleLevelModifiedFile){
     std::string folder_name = "commit_vs_index_multipleLevelModifiedFile";
@@ -1026,4 +1078,61 @@ TEST(Branching, branch_list){
     std::cout << "Should list master, new_branch, new_branch2" << std::endl;
     git_branch_list();
     fs::current_path("..");
+}
+
+TEST(Latest, check_find_error){
+    std::string test_string = "nospaces\n";
+    auto space_delimiter = [](auto x){return x==' ';};
+
+    auto endpoint_it = std::find_if(test_string.cbegin(),test_string.cend(),space_delimiter);
+    try{
+        check_find_error(endpoint_it,test_string.end(),"tree");
+    }
+    catch (std::string& e){
+        std::cout << e << std::endl;
+    }
+}
+
+TEST(Latest, extract_one_tree_node_oneNode){
+    std::string folder_name = "extract_one_tree_node_oneNode";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+    fs::current_path(project_base_path);
+
+    GitTree tree_obj(git_path);
+    tree_obj.add_entry("blob","file1","abhash");
+    std::string tree_hash = write_object(&tree_obj);
+
+    GitTree* same_tree_obj = dynamic_cast<GitTree*>(read_object(git_path,tree_hash));
+    GitTreeNode node = same_tree_obj->directory[0];
+    ASSERT_EQ(node.type,"blob");
+    ASSERT_EQ(node.name,"file1");
+    ASSERT_EQ(node.hash,"abhash");
+
+}
+TEST(Latest, extract_one_tree_node_twoNode){
+    std::string folder_name = "extract_one_tree_node_twoNode";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+    fs::current_path(project_base_path);
+
+    GitTree tree_obj(git_path);
+    tree_obj.add_entry("blob","file1","abhash");
+    tree_obj.add_entry("tree","tree1","cdhash");
+    std::string tree_hash = write_object(&tree_obj);
+
+    GitTree* same_tree_obj = dynamic_cast<GitTree*>(read_object(git_path,tree_hash));
+    GitTreeNode node = same_tree_obj->directory[0];
+    GitTreeNode node2 = same_tree_obj->directory[1];
+    ASSERT_EQ(node.type,"blob");
+    ASSERT_EQ(node.name,"file1");
+    ASSERT_EQ(node.hash,"abhash");
+
+    ASSERT_EQ(node2.type,"tree");
+    ASSERT_EQ(node2.name,"tree1");
+    ASSERT_EQ(node2.hash,"cdhash");
 }

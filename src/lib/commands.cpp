@@ -80,7 +80,7 @@ string get_subtree_hash_for_new_file(GitTree* tree_obj, typename fs::path::itera
     return write_object(&new_tree_obj);
 }
 string get_subtree_hash_for_new_folder(GitTree* tree_obj, typename fs::path::iterator file_it,
-                                  typename fs::path::iterator end_it, const fs::path git_path,
+                                  const typename fs::path::iterator end_it, const fs::path git_path,
                                   const fs::path folder_path) {
     // New Tree Object we are creating
     GitTree new_tree_obj(git_path);
@@ -619,7 +619,9 @@ void print_new_index_nodes_and_calc_delete(GitTree* tree,set<string>& delete_has
     }
 }
 
-void walk_index_and_calc_set_differences(GitTree* tree, map<string,string>& commit_diff_hashes, map<string,string>& index_diff_hashes, fs::path current_path, const map<string,string>& head_leaf_hashes, const fs::path git_path){
+void walk_index_and_calc_set_differences(GitTree* tree, fs::path current_path, map<string,string>& commit_diff_hashes, map<string,string>& index_diff_hashes, const map<string,string>& head_leaf_hashes, const fs::path git_path){
+    /* std::cout << "Index Tree Listing:" << std::endl; */
+    /* printer(tree->directory); */
     for (auto index_node: tree->directory){
         fs::path new_path = current_path / index_node.name;
         if (index_node.type == "blob"){
@@ -635,7 +637,7 @@ void walk_index_and_calc_set_differences(GitTree* tree, map<string,string>& comm
         }
         else if (index_node.type == "tree"){
             GitTree* subtree = get_tree_from_hash(index_node.hash,git_path);
-            walk_index_and_calc_set_differences(subtree,commit_diff_hashes,index_diff_hashes,new_path,head_leaf_hashes,git_path);
+            walk_index_and_calc_set_differences(subtree,new_path,commit_diff_hashes,index_diff_hashes,head_leaf_hashes,git_path);
         }
     }
 
@@ -742,7 +744,7 @@ void git_status_commit_index(void){
             // TODO: overload
             get_leaf_hashes_of_tree(head_tree,head_leaf_hashes,project_base_path,git_path);
             commit_diff_hashes = head_leaf_hashes;
-            walk_index_and_calc_set_differences(index_tree,commit_diff_hashes,index_diff_hashes,project_base_path,head_leaf_hashes,git_path);
+            walk_index_and_calc_set_differences(index_tree,project_base_path,commit_diff_hashes,index_diff_hashes,head_leaf_hashes,git_path);
 
             split_into_deleted_modified_new(commit_diff_hashes,index_diff_hashes,project_base_path);
         }

@@ -1,6 +1,4 @@
 #include "git_objects.hpp"
-#include <range/v3/view.hpp>
-#include <range/v3/range/conversion.hpp>
 #include <helper.hpp>
 using namespace std;
 
@@ -73,49 +71,124 @@ void GitCommit::to_internal(const string& data) {
 /* set_part(string &member, T range){ */
 /*     transform() */
 /* } */
+//TODO: unit test for this since throw concats
+// ohh, concats implies throw is now a std::string rather than char*
+static void check_find_error(typename string::const_iterator point,typename string::const_iterator endpoint,string file_type){
+    if (point == endpoint){
+        throw "something is wrong with this " + file_type + " file";
+        /* throw "something is wrong with this file"; */
+    }
+}
+
+static typename string::const_iterator extract_string(typename string::const_iterator start_it, typename string::const_iterator end_it,string& node_part){
+    // Q: will this actually work/ I guess find_if deduces the type
+    // with first two arguments, which then enforces the type of the
+    // space_delimiter template
+    auto space_delimiter = [](auto x){return x==' ';};
+
+    // find copy endpoint
+    auto endpoint_it = std::find_if(start_it,end_it,space_delimiter);
+    check_find_error(endpoint_it,end_it,"tree");
+
+    // copy range
+    std::copy(start_it,endpoint_it,std::back_inserter(node_part));
+
+    return endpoint_it;
+}
+
+static typename string::const_iterator extract_hash(typename string::const_iterator start_it,typename string::const_iterator end_it,string& node_part){
+    auto new_line_delimiter = [](auto x){return x=='\n';};
+
+    // find copy endpoint
+    auto endpoint_it = std::find_if(start_it,end_it,new_line_delimiter);
+
+    // copy range
+    std::copy(start_it,endpoint_it,std::back_inserter(node_part));
+
+    return endpoint_it;
+
+}
+
+
+typename string::const_iterator GitTree::extract_one_tree_node(typename string::const_iterator start_it, const string &data){
+    GitTreeNode new_tree_node;
+    string type;
+    string name;
+    string hash;
+
+    //extract parts
+    auto type_endpoint = extract_string(start_it,data.end(),type);
+    auto name_endpoint = extract_string(++type_endpoint,data.end(),name);
+    auto hash_endpoint = extract_hash(++name_endpoint,data.end(),hash);
+
+    new_tree_node.type = type;
+    new_tree_node.name = name;
+    new_tree_node.hash = hash;
+
+    this->directory.push_back(new_tree_node);
+    return hash_endpoint;
+}
 
 ostream& operator<<(ostream& os, GitTreeNode& t) {
     os << "Name: " << t.name << " Type: " << t.type << " Hash: " << t.hash << endl;
     return os;
 }
 
-void GitTree::to_internal(const string& data) {
-    using namespace ranges;
-    vector<char> no_null(data.length() + 1);
-    std::copy(data.begin(), data.end(), no_null.begin());
-    /* cout << "Before remove:" << endl; */
-    /* printer(no_null); */
-    no_null.pop_back();
-    /* cout << "After remove:" << endl; */
-    /* printer(no_null); */
-
-    auto entry_list = no_null | views::split('\n');
-    for (auto entry : entry_list) {
-        // extract the parts
-        auto entry_parts = entry | views::split(' ');
-        GitTreeNode tmp;
-        for (auto [idx, part] : views::enumerate(entry_parts)) {
-            if (idx == 0) {
-                /* set_part(tmp.name,part); */
-                /* tmp.name = string(part.begin(),part.end()); */
-                tmp.type = to<string>(part);
-            } else if (idx == 1) {
-                /* set_part(tmp.type,part); */
-                /* tmp.type = string(part.begin(),part.end()); */
-                tmp.name = to<string>(part);
-            } else if (idx == 2) {
-                /* set_part(tmp.hash,part); */
-                /* tmp.hash = string(part.begin(),part.end()); */
-                tmp.hash = to<string>(part);
-            } else {
-                throw "should not have more than 3 parts";
-            }
+void GitTree::to_internal(const string &data){
+    typename string::const_iterator curr_it = data.begin();
+    while (curr_it != data.end()){
+        curr_it = this->extract_one_tree_node(curr_it,data);
+        if (curr_it == data.end()){
+            break;
         }
-        // update vector
-        directory.push_back(tmp);
+        else if (*curr_it != '\n'){
+            throw("parsing error");
+        }
+        else{
+            curr_it++;
+        }
     }
-    /* printer(directory); */
+    std::cout << "To internal finished. Tree object is:" << std::endl;
+    printer(this->directory);
 }
+
+/* void GitTree::to_internal(const string& data) { */
+/*     using namespace ranges; */
+/*     vector<char> no_null(data.length() + 1); */
+/*     std::copy(data.begin(), data.end(), no_null.begin()); */
+/*     /1* cout << "Before remove:" << endl; *1/ */
+/*     /1* printer(no_null); *1/ */
+/*     no_null.pop_back(); */
+/*     /1* cout << "After remove:" << endl; *1/ */
+/*     /1* printer(no_null); *1/ */
+
+/*     auto entry_list = no_null | views::split('\n'); */
+/*     for (auto entry : entry_list) { */
+/*         // extract the parts */
+/*         auto entry_parts = entry | views::split(' '); */
+/*         GitTreeNode tmp; */
+/*         for (auto [idx, part] : views::enumerate(entry_parts)) { */
+/*             if (idx == 0) { */
+/*                 /1* set_part(tmp.name,part); *1/ */
+/*                 /1* tmp.name = string(part.begin(),part.end()); *1/ */
+/*                 tmp.type = to<string>(part); */
+/*             } else if (idx == 1) { */
+/*                 /1* set_part(tmp.type,part); *1/ */
+/*                 /1* tmp.type = string(part.begin(),part.end()); *1/ */
+/*                 tmp.name = to<string>(part); */
+/*             } else if (idx == 2) { */
+/*                 /1* set_part(tmp.hash,part); *1/ */
+/*                 /1* tmp.hash = string(part.begin(),part.end()); *1/ */
+/*                 tmp.hash = to<string>(part); */
+/*             } else { */
+/*                 throw "should not have more than 3 parts"; */
+/*             } */
+/*         } */
+/*         // update vector */
+/*         directory.push_back(tmp); */
+/*     } */
+/*     /1* printer(directory); *1/ */
+/* } */
 
 void GitTag::to_internal(const string& data) {
     auto commit_hash_point = find_if(data.begin(), data.end(), [](auto x) { return x == '\n'; });

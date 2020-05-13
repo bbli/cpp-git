@@ -2,9 +2,10 @@
 ---
 
 ## How to compile project
+Just your standard way to compile a project with cmake:
 1. make a build directory
 2. cd into build directory
-3. run `cmake ..`
+3. run `cmake ..`(if build directory is beneath project root)
 4. run `make`
 
 ## TODO
@@ -35,28 +36,11 @@
 * git cat-file = take the hash and try to find the file. If found, read it in using read_file and print the contents. Otherwise throw not found error
 * git commit [DONE]
 
-* command
-    * cat-file [DONE]
-    * init [DONE]
-    * add
-    * cat-file
-    * checkout 
-    * commit   
-    * hash-object
-    * init     
-    * log      
-    * ls-tree 
-    * merge    
-    * rebase   
-    * rev-parse
-    * rm  
-    * show-ref
-    * tag
    
 ### Future Work
-* change throws to classes
-* make strings into binary
-
+* make strings into binary??
+* add compression
+* clean up tests 
 
 
 ## External Libraries
