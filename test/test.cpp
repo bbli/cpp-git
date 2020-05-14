@@ -145,8 +145,9 @@ TEST_F(GitTreeTest, write_object_and_read_object) {
 
     GitTree tree_obj(git_path, message);
     std::string hash = write_object(&tree_obj);
-    GitObject* read_result = read_object(git_path, hash);
-    ASSERT_EQ(hash, write_object(read_result, false));
+    GitTree read_result;
+    read_into_object(read_result,git_path, hash);
+    ASSERT_EQ(hash, write_object(&read_result, false));
 }
 
 TEST(GitBlob, to_internal_and_to_filesystem) {
@@ -873,16 +874,19 @@ TEST(GitCommand, git_commit){
         // Get commit from HEAD and check it's content
         ASSERT_EQ(read_file(git_path / "HEAD"), "ref: refs/heads/master");
         std::string hash = ref_resolve(git_path / "HEAD");
-        GitCommit* commit_obj = dynamic_cast<GitCommit*>(read_object(git_path, hash));
-        ASSERT_EQ(commit_obj->commit_message, message);
+        GitCommit commit_obj;
+        read_into_object(commit_obj,git_path,hash);
+        ASSERT_EQ(commit_obj.commit_message, message);
         std::cout<<"Finish testing content"<<std::endl;
 
         // Get tree node and check if there's a txt file with correct content
-        GitTree* tree_obj = dynamic_cast<GitTree*>(read_object(git_path, commit_obj->tree_hash));
-        ASSERT_EQ(tree_obj->directory.size(), 1);
-        ASSERT_EQ(tree_obj->directory[0].name, filename);
-        GitBlob* blob_obj = dynamic_cast<GitBlob*>(read_object(git_path, tree_obj->directory[0].hash));
-        ASSERT_EQ(blob_obj->data, content);
+        GitTree tree_obj;
+        read_into_object(tree_obj,git_path,commit_obj.tree_hash);
+        ASSERT_EQ(tree_obj.directory.size(), 1);
+        ASSERT_EQ(tree_obj.directory[0].name, filename);
+        GitBlob blob_obj;
+        read_into_object(blob_obj,git_path,tree_obj.directory[0].hash);
+        ASSERT_EQ(blob_obj.data, content);
     }
     catch (char const *e)
     {
@@ -914,15 +918,17 @@ TEST(GitCommand, cmd_tag){
         cmd_tag({});
 
         std::string hash = ref_resolve(git_path / "refs" / "tags" / "v0.2");
-        GitTag* tag_obj = dynamic_cast<GitTag*>(read_object(git_path, hash));
+        GitTag tag_obj;
+        read_into_object(tag_obj,git_path,hash);
         std::string head_commit_hash = ref_resolve(git_path / "HEAD");
-        ASSERT_EQ(tag_obj->tag_message, "hello world");
-        ASSERT_EQ(tag_obj->commit_hash, head_commit_hash);
+        ASSERT_EQ(tag_obj.tag_message, "hello world");
+        ASSERT_EQ(tag_obj.commit_hash, head_commit_hash);
 
         hash = ref_resolve(git_path / "refs" / "tags" / "v0.3");
-        tag_obj = dynamic_cast<GitTag*>(read_object(git_path, hash));
-        ASSERT_EQ(tag_obj->tag_message, "");
-        ASSERT_EQ(tag_obj->commit_hash, head_commit_hash);
+        GitTag tag_obj2;
+        read_into_object(tag_obj2,git_path,hash);
+        ASSERT_EQ(tag_obj2.tag_message, "");
+        ASSERT_EQ(tag_obj2.commit_hash, head_commit_hash);
     }
     catch (char const *e)
     {
@@ -1105,8 +1111,9 @@ TEST(Latest, extract_one_tree_node_oneNode){
     tree_obj.add_entry("blob","file1","abhash");
     std::string tree_hash = write_object(&tree_obj);
 
-    GitTree* same_tree_obj = dynamic_cast<GitTree*>(read_object(git_path,tree_hash));
-    GitTreeNode node = same_tree_obj->directory[0];
+    GitTree same_tree_obj;
+    read_into_object(same_tree_obj,git_path,tree_hash);
+    GitTreeNode node = same_tree_obj.directory[0];
     ASSERT_EQ(node.type,"blob");
     ASSERT_EQ(node.name,"file1");
     ASSERT_EQ(node.hash,"abhash");
@@ -1125,9 +1132,10 @@ TEST(Latest, extract_one_tree_node_twoNode){
     tree_obj.add_entry("tree","tree1","cdhash");
     std::string tree_hash = write_object(&tree_obj);
 
-    GitTree* same_tree_obj = dynamic_cast<GitTree*>(read_object(git_path,tree_hash));
-    GitTreeNode node = same_tree_obj->directory[0];
-    GitTreeNode node2 = same_tree_obj->directory[1];
+    GitTree same_tree_obj;
+    read_into_object(same_tree_obj,git_path,tree_hash);
+    GitTreeNode node = same_tree_obj.directory[0];
+    GitTreeNode node2 = same_tree_obj.directory[1];
     ASSERT_EQ(node.type,"blob");
     ASSERT_EQ(node.name,"file1");
     ASSERT_EQ(node.hash,"abhash");

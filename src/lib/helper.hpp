@@ -8,14 +8,6 @@
 namespace fs = std::filesystem;
 #include <iostream>
 
-template <typename T>
-void printer(T container) {
-    for (auto x : container) {
-        std::cout << x << ",";
-    }
-    std::cout << std::endl;
-}
-
 /* File Operation */
 std::string read_file(fs::path path);
 void write_file(fs::path file_path, std::string message);
@@ -54,4 +46,25 @@ std::string get_current_branch_full(fs::path git_path);
 std::string get_commit_hash_from_branch(std::string full_branch_name, fs::path git_path);
 GitCommit* get_commit_from_hash(std::string commit_hash, fs::path git_path);
 
+/* Templates */
+template <typename T>
+void printer(T container) {
+    for (auto x : container) {
+        std::cout << x << ",";
+    }
+    std::cout << std::endl;
+}
+
+template<typename GitObject>
+void read_into_object(GitObject& obj,fs::path git_path, std::string hash){
+    fs::path object_path = git_path / "objects" / hash.substr(0, 2) / hash.substr(2);
+    std::string content = read_file(object_path);
+    auto split_index = content.find('\0');
+    std::string type = content.substr(0, split_index);
+    std::string data = content.substr(split_index + 1);
+    if (type != obj.get_fmt()){
+        throw "this file is not a " + obj.get_fmt() + " object file";
+    }
+    obj.to_internal(data);
+}
 #endif

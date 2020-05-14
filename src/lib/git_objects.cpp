@@ -148,8 +148,8 @@ void GitTree::to_internal(const string &data){
             curr_it++;
         }
     }
-    std::cout << "To internal finished. Tree object is:" << std::endl;
-    printer(this->directory);
+    /* std::cout << "To internal finished. Tree object is:" << std::endl; */
+    /* printer(this->directory); */
 }
 
 /* void GitTree::to_internal(const string& data) { */

@@ -13,8 +13,9 @@ namespace fs = std::filesystem;
 using namespace std;
 
 void print_tree(fs::path git_path, string tree_hash) {
-    GitTree* tree_obj = dynamic_cast<GitTree*>(read_object(git_path, tree_hash));
-    printer(tree_obj->directory);
+    GitTree tree_obj;
+    read_into_object(tree_obj,git_path,tree_hash);
+    printer(tree_obj.directory);
 }
 
 /* ********* Lower Level Functions	********* */
@@ -108,10 +109,10 @@ string read_project_file_and_write_object(const fs::path git_path, const fs::pat
 
 void write_object_to_project_file(fs::path project_blob_path, string blob_hash) {
     fs::path git_path = repo_find(project_blob_path) / ".cpp-git";
-    GitObject* obj = read_object(git_path, blob_hash);
+    GitBlob blob_obj;
+    read_into_object(blob_obj,git_path,blob_hash);
 
-    GitBlob* blob_obj = dynamic_cast<GitBlob*>(obj);
-    write_file(project_blob_path, blob_obj->data);
+    write_file(project_blob_path, blob_obj.data);
 }
 
 string read_project_folder_and_write_tree(const fs::path& adding_directory, bool index) {
