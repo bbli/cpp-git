@@ -218,10 +218,18 @@ void git_branch_delete(string branch_name){
 void git_branch_list(){
     fs::path project_base_path = repo_find(fs::current_path());
     fs::path git_path = project_base_path / ".cpp-git";
+    fs::path full_branch_name = get_current_branch_full(git_path);
 
     std::cout << "Branches:" << std::endl;
     for (auto entry: fs::directory_iterator(git_path / "refs/heads")){
-        std::cout << entry.path().filename() << std::endl;
+        /* std::cout << "Full branch name's filename" << full_branch_name.filename() << std::endl; */
+        /* std::cout << "Entry's filename" << entry.path().filename() << std::endl; */
+        if (entry.path().filename() == full_branch_name.filename()){
+            std::cout << "-> " << entry.path().filename() << std::endl;
+        }
+        else{
+            std::cout << entry.path().filename() << std::endl;
+        }
     }
 }
 /* ********* 	********* */
