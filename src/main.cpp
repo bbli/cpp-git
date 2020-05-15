@@ -63,7 +63,7 @@ int main(int argc, char **argv)
         auto parser = InputParser(argc, argv);
         parser.execute_cmd();
     }
-    catch (char const *e)
+    catch (std::string& e)
     {
         cout << e << endl;
     }

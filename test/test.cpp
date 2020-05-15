@@ -589,10 +589,9 @@ TEST(Status, commit_vs_index_multipleLevelNewFile){
         // See new/modified file
         git_status_commit_index();
     }
-    catch (const char *e)
+    catch (std::string& e)
     {
         std::cout << e << std::endl;
-        fs::current_path("..");
         throw e;
     }
     fs::current_path("..");
@@ -657,9 +656,8 @@ TEST(Status, commit_vs_index_multipleLevelDeletedFileButNonEmptyFolder){
         std::cout << "Should say stage 3 is deleted" << std::endl;
         git_status_commit_index();
     }
-    catch (char const *e){
+    catch (std::string& e){
         std::cout << e << std::endl;
-        fs::current_path("..");
         throw e;
     }
     fs::current_path("..");
@@ -693,9 +691,8 @@ TEST(Status, commit_vs_index_multipleLevelDeletedFile){
         std::cout << "Should say stage 3 is deleted" << std::endl;
         git_status_commit_index();
     }
-    catch (char const *e){
+    catch (std::string& e){
         std::cout << e << std::endl;
-        fs::current_path("..");
         throw e;
     }
     fs::current_path("..");
@@ -793,7 +790,7 @@ TEST(Checkout, file){
 }
 
 TEST(Checkout, branch){
-    std::string folder_name = "checkout_file";
+    std::string folder_name = "checkout_branch";
     git_folder_setup(folder_name);
     fs::path project_base_path = repo_find(fs::current_path() / folder_name);
     std::cout << "Project base path: " << project_base_path << std::endl;
@@ -888,7 +885,7 @@ TEST(GitCommand, git_commit){
         read_into_object(blob_obj,git_path,tree_obj.directory[0].hash);
         ASSERT_EQ(blob_obj.data, content);
     }
-    catch (char const *e)
+    catch (std::string& e)
     {
         std::cout << e << std::endl;
         throw e;
@@ -930,7 +927,7 @@ TEST(GitCommand, cmd_tag){
         ASSERT_EQ(tag_obj2.tag_message, "");
         ASSERT_EQ(tag_obj2.commit_hash, head_commit_hash);
     }
-    catch (char const *e)
+    catch (std::string& e)
     {
         std::cout << e << std::endl;
         throw e;
@@ -966,7 +963,7 @@ TEST(GitCommand, cmd_log){
         std::cout << "Should Output the second commit only:" << std::endl;
         cmd_log({"-n", "1"});
     }
-    catch (char const *e)
+    catch (std::string& e)
     {
         std::cout << e << std::endl;
         throw e;
@@ -1012,7 +1009,7 @@ TEST(GitCommand, git_reset){
         ASSERT_EQ(read_file(git_path / "index"), HEAD_tree_hash);
         ASSERT_EQ(read_file(worktree / filename), content);
     }
-    catch (char const *e)
+    catch (std::string& e)
     {
         std::cout << e << std::endl;
         throw e;
@@ -1021,7 +1018,7 @@ TEST(GitCommand, git_reset){
 }
 #endif
 TEST(Branching, new_branch){
-    std::string folder_name = "checkout_file";
+    std::string folder_name = "new_branch";
     git_folder_setup(folder_name);
     fs::path project_base_path = repo_find(fs::current_path() / folder_name);
     std::cout << "Project base path: " << project_base_path << std::endl;
@@ -1044,7 +1041,7 @@ TEST(Branching, new_branch){
 }
 
 TEST(Branching, branch_delete){
-    std::string folder_name = "checkout_file";
+    std::string folder_name = "branch_delete";
     git_folder_setup(folder_name);
     fs::path project_base_path = repo_find(fs::current_path() / folder_name);
     std::cout << "Project base path: " << project_base_path << std::endl;
@@ -1065,14 +1062,14 @@ TEST(Branching, branch_delete){
     try{
         git_checkout_branch("new_branch");
     }
-    catch (char const* e){
+    catch (std::string& e){
         std::cout << e << std::endl;
     }
     fs::current_path("..");
 }
 
 TEST(Branching, branch_list){
-    std::string folder_name = "checkout_file";
+    std::string folder_name = "branch_list";
     git_folder_setup(folder_name);
     fs::path project_base_path = repo_find(fs::current_path() / folder_name);
     std::cout << "Project base path: " << project_base_path << std::endl;

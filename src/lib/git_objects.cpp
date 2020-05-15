@@ -48,7 +48,7 @@ void GitCommit::to_internal(const string& data) {
     // extract tree_hash
     auto tree_hash_point = find_if(data.begin(), data.end(), [](auto x) { return x == '\n'; });
     if (tree_hash_point == data.end()) {
-        throw "sommething wrong with commit file";
+        throw string("sommething wrong with commit file");
     }
     std::copy(data.begin(), tree_hash_point, back_inserter(tree_hash));
     /* cout << "Tree hash length: " << tree_hash.length() << endl; */
@@ -57,7 +57,7 @@ void GitCommit::to_internal(const string& data) {
     auto parent_hash_point =
         find_if(tree_hash_point, data.end(), [](auto x) { return x == '\n'; });
     if (parent_hash_point == data.end()) {
-        throw "sommething wrong with commit file";
+        throw string("sommething wrong with commit file");
     }
     std::copy(tree_hash_point, parent_hash_point, back_inserter(parent_hash));
     /* cout << "Parent hash length: " << parent_hash.length() << endl; */
@@ -75,8 +75,8 @@ void GitCommit::to_internal(const string& data) {
 // ohh, concats implies throw is now a std::string rather than char*
 static void check_find_error(typename string::const_iterator point,typename string::const_iterator endpoint,string file_type){
     if (point == endpoint){
-        throw "something is wrong with this " + file_type + " file";
-        /* throw "something is wrong with this file"; */
+        throw string("something is wrong with this " + file_type + " file");
+        /* throw string("something is wrong with this file"); */
     }
 }
 
@@ -142,7 +142,7 @@ void GitTree::to_internal(const string &data){
             break;
         }
         else if (*curr_it != '\n'){
-            throw("parsing error");
+            throw string("parsing error");
         }
         else{
             curr_it++;
@@ -181,7 +181,7 @@ void GitTree::to_internal(const string &data){
 /*                 /1* tmp.hash = string(part.begin(),part.end()); *1/ */
 /*                 tmp.hash = to<string>(part); */
 /*             } else { */
-/*                 throw "should not have more than 3 parts"; */
+/*                 throw string("should not have more than 3 parts"); */
 /*             } */
 /*         } */
 /*         // update vector */
@@ -193,7 +193,7 @@ void GitTree::to_internal(const string &data){
 void GitTag::to_internal(const string& data) {
     auto commit_hash_point = find_if(data.begin(), data.end(), [](auto x) { return x == '\n'; });
     if (commit_hash_point == data.end()) {
-        throw "sommething wrong with tag file";
+        throw string("sommething wrong with tag file");
     }
     std::copy(data.begin(), commit_hash_point, back_inserter(commit_hash));
     std::copy(commit_hash_point + 1, data.end(), back_inserter(tag_message));
@@ -234,6 +234,6 @@ void GitTree::add_entry(string type, string file_name, string hash) {
     if (type == "blob" || type == "tree") {
         directory.push_back({type, file_name, hash});
     } else {
-        throw "Type should only be blob or tree";
+        throw string("Type should only be blob or tree");
     }
 }

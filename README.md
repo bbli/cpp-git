@@ -41,6 +41,7 @@ Just your standard way to compile a project with cmake:
 * make strings into binary??
 * add compression
 * clean up tests 
+* clean up header files(in particular in commands.hpp. Too many function are being exported right now)
 
 
 ## External Libraries

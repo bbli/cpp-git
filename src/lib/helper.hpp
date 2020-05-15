@@ -63,7 +63,8 @@ void read_into_object(GitObject& obj,fs::path git_path, std::string hash){
     std::string type = content.substr(0, split_index);
     std::string data = content.substr(split_index + 1);
     if (type != obj.get_fmt()){
-        throw "this file is not a " + obj.get_fmt() + " object file";
+
+        throw std::string("this file is not a ") + obj.get_fmt() + std::string(" object file");
     }
     obj.to_internal(data);
 }
