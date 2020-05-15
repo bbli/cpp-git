@@ -196,7 +196,7 @@ class TreeTraversal : public ::testing::Test {
 
 TEST_F(TreeTraversal, one_level_tree) {
     /* // Now walk */
-    walk_tree_and_replace(project_base_path,&tree_obj);
+    walk_tree_and_replace(project_base_path,tree_obj);
 
     // Check that we have written to project's path and that content is the same
     std::string final_message_1 = read_file(project_base_path / "file1.txt");
@@ -219,7 +219,7 @@ TEST_F(TreeTraversal, two_level_tree) {
     std::string root_hash = write_object(&root_tree_obj);
 
     // Now walk from root
-    walk_tree_and_replace(project_base_path,&root_tree_obj);
+    walk_tree_and_replace(project_base_path,root_tree_obj);
 
     // Check that everything is the same
     ASSERT_EQ(message_3, read_file(project_base_path / "file3.txt"));
@@ -323,8 +323,8 @@ TEST(Staging, git_add_file_twoLevelsNewFile) {
     // compare the two tree objects
     /* std::cout << "New Tree Listing" << std::endl; */
     /* print_tree(git_path,new_tree_hash); */
-    GitBlob* stage4_blob = find_project_file_from_tree_hash(new_tree_hash, "folder/stage4.txt", git_path);
-    ASSERT_EQ(stage4_blob->data, "stage4");
+    GitBlob stage4_blob = find_project_file_from_tree_hash(new_tree_hash, "folder/stage4.txt", git_path);
+    ASSERT_EQ(stage4_blob.data, "stage4");
 
     fs::remove_all(project_base_path);
 }
@@ -350,11 +350,11 @@ TEST(Staging, git_add_folder_twoLevelsNewFile) {
     // Add new file under folder
     write_file(project_base_path / "folder" / "stage4.txt", "stage4");
     std::string new_tree_hash = git_add_folder(project_base_path / "folder");
-    GitBlob* stage4_blob = find_project_file_from_tree_hash(new_tree_hash, "folder/stage4.txt", git_path);
-    ASSERT_EQ(stage4_blob->data, "stage4");
-    GitTree* folder = find_project_folder_from_tree(new_tree_hash, "folder", git_path);
+    GitBlob stage4_blob = find_project_file_from_tree_hash(new_tree_hash, "folder/stage4.txt", git_path);
+    ASSERT_EQ(stage4_blob.data, "stage4");
+    GitTree folder = find_project_folder_from_tree(new_tree_hash, "folder", git_path);
     std::cout << "folder listing: " << std::endl;
-    printer(folder->directory);
+    printer(folder.directory);
 
     fs::remove_all(project_base_path);
 }
@@ -382,9 +382,9 @@ TEST(Staging, git_add_folder_twoLevelsNewFolder) {
     write_file(project_base_path / "folder" / "new_folder" / "new.txt", "new");
 
     std::string new_tree_hash = git_add_folder(project_base_path / "folder");
-    GitTree* folder = find_project_folder_from_tree(new_tree_hash, "folder/new_folder", git_path);
+    GitTree folder = find_project_folder_from_tree(new_tree_hash, "folder/new_folder", git_path);
     std::cout << "new_folder listing: " << std::endl;
-    printer(folder->directory);
+    printer(folder.directory);
 
     fs::remove_all(project_base_path);
 }
@@ -468,8 +468,8 @@ TEST(Staging, git_add_file_blankIndexCompareWithHEAD){
     std::string index_hash = read_file(project_base_path / ".cpp-git" / "index");
 
     // check that git add file was based off HEAD
-    GitBlob* stage1_blob = find_project_file_from_tree_hash(new_tree_hash,"stage1.txt",git_path);
-    ASSERT_EQ(stage1_blob->data,"stage1");
+    GitBlob stage1_blob = find_project_file_from_tree_hash(new_tree_hash,"stage1.txt",git_path);
+    ASSERT_EQ(stage1_blob.data,"stage1");
 }
 
 TEST(Staging, git_add_folder_blankIndexCompareWithHEAD){
@@ -497,8 +497,8 @@ TEST(Staging, git_add_folder_blankIndexCompareWithHEAD){
     std::string index_hash = read_file(project_base_path / ".cpp-git" / "index");
 
     // check that git add file was based off HEAD
-    GitBlob* stage4_blob = find_project_file_from_tree_hash(new_tree_hash,"folder/stage4.txt",git_path);
-    ASSERT_EQ(stage4_blob->data,"stage4");
+    GitBlob stage4_blob = find_project_file_from_tree_hash(new_tree_hash,"folder/stage4.txt",git_path);
+    ASSERT_EQ(stage4_blob.data,"stage4");
 }
 
 

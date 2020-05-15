@@ -234,32 +234,37 @@ string find_hash_in_tree(GitTree* tree_obj, typename fs::path::iterator file_it,
             else {
                 file_it++;
                 check_if_tree(node);
-                GitTree* subtree = get_tree_from_hash(node.hash,git_path);
-                return find_hash_in_tree(subtree, file_it, end_it, git_path);
+                GitTree subtree;
+                read_into_object(subtree,git_path,node.hash);
+                return find_hash_in_tree(&subtree, file_it, end_it, git_path);
             }
         }
     }
     return "";
 }
 
-GitBlob* find_project_file_from_tree_hash(string tree_hash, fs::path relative_path, const fs::path git_path) {
+GitBlob find_project_file_from_tree_hash(string tree_hash, fs::path relative_path, const fs::path git_path) {
     auto path_it = relative_path.begin();
     auto end_it = relative_path.end();
-    GitTree* root_tree = get_tree_from_hash(tree_hash,git_path);
-    string file_hash = find_hash_in_tree(root_tree, path_it, end_it, git_path);
-    GitObject* obj = read_object(git_path, file_hash);
-    return dynamic_cast<GitBlob*>(obj);
+    GitTree root_tree;
+    read_into_object(root_tree,git_path,tree_hash);
+    string file_hash = find_hash_in_tree(&root_tree, path_it, end_it, git_path);
+    GitBlob file_obj;
+    read_into_object(file_obj,git_path,file_hash);
+    return file_obj;
 }
 
-GitTree* find_project_folder_from_tree(string tree_hash, fs::path relative_path,
+GitTree find_project_folder_from_tree(string tree_hash, fs::path relative_path,
                             const fs::path git_path) {
     auto path_it = relative_path.begin();
     auto end_it = relative_path.end();
     /* cout << "Starting Folder Find" << endl; */
-    GitTree* root_tree = get_tree_from_hash(tree_hash,git_path);
-    string file_hash = find_hash_in_tree(root_tree, path_it, end_it, git_path);
-    GitObject* obj = read_object(git_path, file_hash);
-    return dynamic_cast<GitTree*>(obj);
+    GitTree root_tree;
+    read_into_object(root_tree,git_path,tree_hash);
+    string folder_hash = find_hash_in_tree(&root_tree, path_it, end_it, git_path);
+    GitTree tree_obj;
+    read_into_object(tree_obj,git_path,tree_hash);
+    return tree_obj;
 }
 
 
@@ -302,9 +307,10 @@ GitTree* get_index_tree(fs::path git_path) {
     }
 }
 
-GitCommit* get_commit_from_hash(string commit_hash, fs::path git_path){
-        GitObject* obj = read_object(git_path,commit_hash);
-        return dynamic_cast<GitCommit*>(obj);
+GitCommit get_commit_from_hash(string commit_hash, fs::path git_path){
+        GitCommit commit_obj;
+        read_into_object(commit_obj,git_path,commit_hash);
+        return commit_obj;
 }
 
 GitTree* get_head_tree(fs::path git_path) {
@@ -315,9 +321,9 @@ GitTree* get_head_tree(fs::path git_path) {
     }
     else{
         /* cout << "Commit Hash: " << tree_hash << endl; */
-        GitCommit* commit_obj = get_commit_from_hash(commit_hash,git_path);
+        GitCommit commit_obj = get_commit_from_hash(commit_hash,git_path);
         /* cout << "Commit tree: " << (commit_obj->tree_hash) << endl; */
-        return get_tree_from_hash(commit_obj->tree_hash,git_path);
+        return get_tree_from_hash(commit_obj.tree_hash,git_path);
     }
 }
 string get_tree_hash_of_index(fs::path git_path) {

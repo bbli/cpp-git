@@ -42,6 +42,7 @@ Just your standard way to compile a project with cmake:
 * add compression
 * clean up tests 
 * clean up header files(in particular in commands.hpp. Too many function are being exported right now)
+* have default GitTree constructor be an indicator of "null tree" -> so that I can finish converting all heap allocated objects to the stack
 
 
 ## External Libraries

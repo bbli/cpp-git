@@ -12,20 +12,20 @@
 #include <climits>
 using namespace std;
 
-void walk_tree_and_replace(fs::path tree_write_path, GitObject* obj) {
+void walk_tree_and_replace(fs::path tree_write_path,GitTree tree_obj) {
     fs::path git_path = repo_find(tree_write_path) / ".cpp-git";
 
-    GitTree* tree_obj = dynamic_cast<GitTree*>(obj);
     /* cout << "Tree listing: " << endl; */
     /* printer(tree_obj->directory); */
-    for (auto node : tree_obj->directory) {
+    for (auto node : tree_obj.directory) {
         if (node.type == "blob") {
             /* cout << "Write Path: "<< (tree_write_path / node.name) << endl; */
             write_object_to_project_file(tree_write_path / node.name, node.hash);
         } else if (node.type == "tree") {
             /* cout << "Got here" << endl; */
-            GitObject* obj = read_object(git_path, node.hash);
-            walk_tree_and_replace(tree_write_path / node.name, obj);
+            GitTree subtree;
+            read_into_object(subtree,git_path,node.hash);
+            walk_tree_and_replace(tree_write_path / node.name, subtree);
         } else {
             cout << "Node should only be tree or blob" << endl;
             throw string("Node type should only be tree or blob");
@@ -56,10 +56,11 @@ string get_subtree_hash_for_new_file(GitTree* tree_obj, typename fs::path::itera
             // SubCase 2 : still haven't reached file
             else {
                 check_if_tree(node);
-                GitTree* subtree = get_tree_from_hash(node.hash,git_path);
+                GitTree subtree;
+                read_into_object(subtree,git_path,node.hash);
                 auto new_it = file_it;
                 string subtree_hash =
-                    get_subtree_hash_for_new_file(subtree, ++new_it, end_it, git_path, file_path);
+                    get_subtree_hash_for_new_file(&subtree, ++new_it, end_it, git_path, file_path);
                 new_tree_obj.add_entry("tree", node.name, subtree_hash);
             }
         }
@@ -103,10 +104,11 @@ string get_subtree_hash_for_new_folder(GitTree* tree_obj, typename fs::path::ite
             // SubCase 2 : still haven't reached folder
             else {
                 check_if_tree(node);
-                GitTree* subtree = get_tree_from_hash(node.hash,git_path);
+                GitTree subtree;
+                read_into_object(subtree,git_path,node.hash);
                 auto new_it = file_it;
                 string subtree_hash =
-                    get_subtree_hash_for_new_folder(subtree, ++new_it, end_it, git_path, folder_path);
+                    get_subtree_hash_for_new_folder(&subtree, ++new_it, end_it, git_path, folder_path);
                 new_tree_obj.add_entry("tree", node.name, subtree_hash);
             }
         }
@@ -181,8 +183,9 @@ void git_checkout_branch(string branch_name){
         // will throw if not a valid branch
         commit_hash= get_commit_hash_from_branch(full_branch_name,git_path);
     }
-    GitCommit* commit = get_commit_from_hash(commit_hash,git_path);
-    GitTree* commit_tree = get_tree_from_hash(commit->tree_hash,git_path);
+    GitCommit commit = get_commit_from_hash(commit_hash,git_path);
+    GitTree commit_tree;
+    read_into_object(commit_tree,git_path,commit.tree_hash);
     walk_tree_and_replace(project_base_path,commit_tree);
     // now update HEAD as we have switched over
     write_file(git_path / "HEAD", "ref: "+ full_branch_name);
@@ -403,17 +406,19 @@ void git_commit(string commit_message){
 }
 
 void git_reset(bool hard){
-    fs::path worktree = repo_find(fs::current_path());
-    fs::path git_path = worktree / ".cpp-git";
+    fs::path project_base_path = repo_find(fs::current_path());
+    fs::path git_path = project_base_path / ".cpp-git";
     // Get tree_hash from HEAD
     string head_commit_hash = ref_resolve(git_path / "HEAD");
-    GitCommit* head_commit = dynamic_cast<GitCommit*>(read_object(git_path, head_commit_hash));
-    string head_commit_tree_hash = head_commit->tree_hash;
+    GitCommit head_commit;
+    read_into_object(head_commit,git_path,head_commit_hash);
+    string head_commit_tree_hash = head_commit.tree_hash;
     write_file(git_path / "index", "");
 
     if (hard){
-        GitTree* tree = dynamic_cast<GitTree*>(read_object(git_path, head_commit_tree_hash));
-        walk_tree_and_replace(worktree, tree);
+        GitTree tree;
+        read_into_object(tree,git_path,head_commit_tree_hash);
+        walk_tree_and_replace(project_base_path, tree);
     }
 }
 
@@ -558,8 +563,9 @@ void get_leaf_hashes_of_tree(GitTree* tree_obj,set<string>& index_leaf_hashes, c
             index_leaf_hashes.insert(node.hash);
         }
         else if (node.type == "tree"){
-            GitTree* subtree = get_tree_from_hash(node.hash,git_path);
-            get_leaf_hashes_of_tree(subtree,index_leaf_hashes,git_path);
+            GitTree subtree;
+            read_into_object(subtree,git_path,node.hash);
+            get_leaf_hashes_of_tree(&subtree,index_leaf_hashes,git_path);
         }
         else{
             throw string("cpp-git cannot handle this file");
@@ -573,8 +579,9 @@ void get_leaf_hashes_of_tree(GitTree* tree_obj,map<string,string>& leaf_hashes, 
             leaf_hashes.insert({node.hash,path_name});
         }
         else if (node.type == "tree"){
-            GitTree* subtree = get_tree_from_hash(node.hash,git_path);
-            get_leaf_hashes_of_tree(subtree,leaf_hashes,path_name, git_path);
+            GitTree subtree;
+            read_into_object(subtree,git_path,node.hash);
+            get_leaf_hashes_of_tree(&subtree,leaf_hashes,path_name, git_path);
         }
         else{
             throw string("cpp-git cannot handle this file");
@@ -621,8 +628,9 @@ void print_new_index_nodes_and_calc_delete(GitTree* tree,set<string>& delete_has
             }
         }
         else if (index_node.type == "tree"){
-            GitTree* subtree = get_tree_from_hash(index_node.hash,git_path);
-            print_new_index_nodes_and_calc_delete(subtree,delete_hashes,head_leaf_hashes,git_path);
+            GitTree subtree;
+            read_into_object(subtree,git_path,index_node.hash);
+            print_new_index_nodes_and_calc_delete(&subtree,delete_hashes,head_leaf_hashes,git_path);
         }
     }
 }
@@ -644,8 +652,9 @@ void walk_index_and_calc_set_differences(GitTree* tree, fs::path current_path, m
             }
         }
         else if (index_node.type == "tree"){
-            GitTree* subtree = get_tree_from_hash(index_node.hash,git_path);
-            walk_index_and_calc_set_differences(subtree,new_path,commit_diff_hashes,index_diff_hashes,head_leaf_hashes,git_path);
+            GitTree subtree;
+            read_into_object(subtree,git_path,index_node.hash);
+            walk_index_and_calc_set_differences(&subtree,new_path,commit_diff_hashes,index_diff_hashes,head_leaf_hashes,git_path);
         }
     }
 
@@ -660,8 +669,9 @@ void print_deleted_head_nodes(GitTree* head_tree, const set<string>& delete_hash
             }
         }
         else if (head_node.type == "tree"){
-            GitTree* subtree = get_tree_from_hash(head_node.hash, git_path);
-            print_deleted_head_nodes(subtree,delete_hashes,rel_path / head_node.name, git_path);
+            GitTree subtree;
+            read_into_object(subtree,git_path,head_node.hash);
+            print_deleted_head_nodes(&subtree,delete_hashes,rel_path / head_node.name, git_path);
         }
         else{
             throw string("cpp-git cannot handle this file");
@@ -899,13 +909,11 @@ void git_log(int num) {
         return;
 
     do {
-        GitObject *obj = read_object(git_path, current_commit_hash);
-        string fmt = obj->get_fmt();
-        if (fmt != "commit")
-            throw string("Shouldn't reach here");
-        GitCommit *commit_obj = dynamic_cast<GitCommit *>(obj);
-        cout << "commit " + commit_obj->tree_hash << endl << commit_obj->commit_message << endl << endl;
-        current_commit_hash = commit_obj->parent_hash;
+        GitCommit commit_obj;
+        read_into_object(commit_obj,git_path,current_commit_hash);
+    
+        cout << "commit " + commit_obj.tree_hash << endl << commit_obj.commit_message << endl << endl;
+        current_commit_hash = commit_obj.parent_hash;
         num -= 1;
     }
     while( !current_commit_hash.empty() and num > 0);
