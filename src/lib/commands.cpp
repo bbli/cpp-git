@@ -268,7 +268,7 @@ void cmd_add(const vector<string> &args){
         /* std::cout << "calling add file" << std::endl; */
     }
     else{
-        throw string("git add error. cannot handle this kind of file");
+        throw string("git add error. cannot handle this kind of file/specified file does not exist on filesystem");
     }
 }
 
@@ -307,10 +307,25 @@ void cmd_commit(const vector<string>& args){
 }
 
 void cmd_reset(const vector<string>& args){
-    if (args.size() == 0 || args[0] == "--mixed")
-        git_reset(false);
-    else if (args[0] == "--hard")
-        git_reset(true);
+    if (args.size() == 0){
+        git_reset_project(false);
+    }
+    else if (args[0] == "--mixed"){
+        if (args.size()==2){
+            git_reset_file(args[1],false);
+        }
+        else{
+            git_reset_project(false);
+        }
+    }
+    else if (args[0] == "--hard"){
+        if (args.size()==2){
+            git_reset_file(args[1],true);
+        }
+        else{
+            git_reset_project(true);
+        }
+    }
     else
         throw string("git reset error.");
 }
@@ -405,7 +420,80 @@ void git_commit(string commit_message){
     }
 }
 
-void git_reset(bool hard){
+
+static string unstage_file(GitTree* tree_obj,bool* found, typename fs::path::iterator file_it, const fs::path file_path, const fs::path git_path, const bool replace){
+    GitTree new_tree_obj(git_path);
+
+    for (auto node : tree_obj->directory) {
+        // Case 1: Same branch as file
+        if (check_node_name(node,*file_it)) {
+            bool end = end_of_path(file_it,file_path.end());
+            if (end) {
+                *found = true;
+                if (replace)
+                    git_checkout_file(file_path);
+                // otherwise do nothing/don't add to tree listing
+            }
+            else{
+                check_if_tree(node);
+                GitTree subtree;
+                read_into_object(subtree,git_path,node.hash);
+                auto new_it = file_it;
+                string subtree_hash = unstage_file(&subtree,found,++new_it,file_path,git_path,replace);
+                new_tree_obj.add_entry("tree",node.name,subtree_hash);
+            }
+        }
+        else{
+            new_tree_obj.add_entry(node.type,node.name,node.hash);
+        }
+    }
+}
+
+string git_reset_file(fs::path file_path,bool hard){
+    fs::path project_base_path = repo_find(fs::current_path());
+    fs::path git_path = project_base_path / ".cpp-git";
+    string new_index_tree_hash;
+
+    // Run file_it
+    auto base_it = project_base_path.begin();
+    auto file_it = file_path.begin();
+    while (base_it != project_base_path.end()) {
+        base_it++;
+        file_it++;
+    }
+
+    bool found = false;
+    GitTree* index_tree = get_index_tree(git_path);
+    if (index_tree){
+        GitTree* head_tree = get_head_tree(git_path);
+        if (head_tree){
+            // SubCase 1: replace with head's version/hash at file_path's location
+            new_index_tree_hash = unstage_file(index_tree,&found,file_it,file_path,git_path,true);
+        }
+        else{
+            // SubCase 2: just ignore during traversal
+            new_index_tree_hash = unstage_file(index_tree,&found,file_it,file_path,git_path,false);
+        }
+    }
+    else{
+        throw string("nothing to reset in index");
+    }
+
+    if (!found){
+        throw string("this file does not exist in the index");
+    }
+    
+    if (hard){
+        git_checkout_file(file_path);
+    }
+    write_file(git_path / "index", new_index_tree_hash);
+    return new_index_tree_hash;
+}
+
+void git_reset_file_hard(fs::path file_path){
+}
+
+void git_reset_project(bool hard){
     fs::path project_base_path = repo_find(fs::current_path());
     fs::path git_path = project_base_path / ".cpp-git";
     // Get tree_hash from HEAD

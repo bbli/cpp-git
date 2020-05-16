@@ -806,10 +806,15 @@ TEST(Checkout, branch){
     git_add_folder(project_base_path);
     git_commit("first commit");
 
-    // change some files
+    // make new branch, check out new branch,change some files,commit
+    git_branch_new("new_branch");
+    git_checkout_branch("new_branch");
     write_file(project_base_path / "stage2.txt", "changed");
     write_file(project_base_path / "folder" / "stage3.txt", "changed");
-    // checkout previous version
+    git_add_folder(project_base_path);
+    git_commit("new_branch commit");
+
+    // checkout master branch
     git_checkout_branch("master");
     ASSERT_EQ(read_file(project_base_path/"folder" / "stage3.txt"),"stage3");
     ASSERT_EQ(read_file(project_base_path/ "stage2.txt"),"stage2");
@@ -972,7 +977,7 @@ TEST(GitCommand, cmd_log){
 }
 
 #if 0
-TEST(GitCommand, git_reset){
+TEST(GitCommand, git_reset_project){
     fs::path worktree = "test_git_reset";
     git_folder_setup(worktree);
     worktree = fs::canonical(worktree);
@@ -1083,7 +1088,7 @@ TEST(Branching, branch_list){
     fs::current_path("..");
 }
 
-TEST(Latest, check_find_error){
+TEST(Static_Objects, check_find_error){
     std::string test_string = "nospaces\n";
     auto space_delimiter = [](auto x){return x==' ';};
 
@@ -1096,7 +1101,7 @@ TEST(Latest, check_find_error){
     }
 }
 
-TEST(Latest, extract_one_tree_node_oneNode){
+TEST(Static_Objects, extract_one_tree_node_oneNode){
     std::string folder_name = "extract_one_tree_node_oneNode";
     git_folder_setup(folder_name);
     fs::path project_base_path = repo_find(fs::current_path() / folder_name);
@@ -1114,9 +1119,10 @@ TEST(Latest, extract_one_tree_node_oneNode){
     ASSERT_EQ(node.type,"blob");
     ASSERT_EQ(node.name,"file1");
     ASSERT_EQ(node.hash,"abhash");
+    fs::current_path("..");
 
 }
-TEST(Latest, extract_one_tree_node_twoNode){
+TEST(Static_Objects, extract_one_tree_node_twoNode){
     std::string folder_name = "extract_one_tree_node_twoNode";
     git_folder_setup(folder_name);
     fs::path project_base_path = repo_find(fs::current_path() / folder_name);
@@ -1140,4 +1146,33 @@ TEST(Latest, extract_one_tree_node_twoNode){
     ASSERT_EQ(node2.type,"tree");
     ASSERT_EQ(node2.name,"tree1");
     ASSERT_EQ(node2.hash,"cdhash");
+    fs::current_path("..");
+}
+
+TEST(Reset, git_reset_project_Hard){
+    std::string folder_name = "git_reset_project_Hard";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+    fs::current_path(project_base_path);
+
+    // Create new files and create tree object
+    write_file(project_base_path / "stage1.txt", "stage1");
+    write_file(project_base_path / "stage2.txt", "stage2");
+    fs::create_directory(project_base_path / "folder");
+    write_file(project_base_path /"folder" /"stage3.txt", "stage3");
+    // git add and git commit
+    git_add_folder(project_base_path);
+    git_commit("first commit");
+
+    //change some files
+    write_file(project_base_path / "stage2.txt", "changed");
+    write_file(project_base_path / "folder" / "stage3.txt", "changed");
+
+    git_reset_project(true);
+    ASSERT_EQ(read_file(project_base_path/"folder" / "stage3.txt"),"stage3");
+    ASSERT_EQ(read_file(project_base_path/ "stage2.txt"),"stage2");
+    fs::current_path("..");
+
 }
