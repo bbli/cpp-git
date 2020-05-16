@@ -1333,3 +1333,47 @@ TEST(Reset, git_reset_file_HeadTreeMultipleLevelNotFound){
     }
     fs::current_path("..");
 }
+
+TEST(Clean, git_clean_oneLevel){
+    std::string folder_name = "git_clean_oneLevel";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+    fs::current_path(project_base_path);
+
+    write_file(project_base_path / "file1.txt", "file1");
+    write_file(project_base_path / "file2.txt", "file2");
+    // git add + create commit
+    git_add_folder(project_base_path);
+    git_commit("first commit");
+    // add a new file + change old one
+    write_file(project_base_path / "file3.txt", "file3");
+    write_file(project_base_path / "file1.txt", "changed");
+
+    std::cout << "Should print file3" << std::endl;
+    git_clean(false);
+}
+
+TEST(Clean, git_clean_multipleLevel){
+    std::string folder_name = "git_clean_multipleLevel";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+    fs::current_path(project_base_path);
+
+    write_file(project_base_path / "file1.txt", "file1");
+    write_file(project_base_path / "file2.txt", "file2");
+    fs::create_directory(project_base_path / "folder");
+    write_file(project_base_path /"folder" /"file3.txt", "file3");
+    // git add + create commit
+    git_add_folder(project_base_path);
+    git_commit("first commit");
+    // add a new file + change old one
+    write_file(project_base_path / "folder" / "file4.txt", "file4");
+    write_file(project_base_path / "folder" / "file3.txt", "changed");
+
+    std::cout << "Should print file4" << std::endl;
+    git_clean(false);
+}

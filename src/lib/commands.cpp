@@ -868,6 +868,80 @@ void git_status_commit_index(void){
     // Otherwise there is nothing staged
 }
 
+static void delete_new_files(map<string,string>& commit_diff_hashes, map<string,string>& working_diff_hashes, fs::path project_base_path,bool remove){
+    vector<string> commit_paths = convert_map_to_sorted_values(commit_diff_hashes);
+    vector<string> working_paths = convert_map_to_sorted_values(working_diff_hashes);
+
+    vector<string> new_files;
+    std::set_difference(working_paths.begin(),working_paths.end(),commit_paths.begin(),commit_paths.end(),std::back_inserter(new_files));
+
+    if (remove)
+        std::cout << "Deleting These Files: " << std::endl;
+    else
+        std::cout << "Would Delete These Files: " << std::endl;
+
+    for(auto path:new_files){
+        cout << path_relative_to_project(project_base_path,path) << endl;
+        if (remove)
+            fs::remove(path);
+    }
+
+}
+
+static void walk_working_and_calc_set_differences(fs::path current_path, map<string,string>& commit_diff_hashes, map<string,string>& working_diff_hashes, const map<string,string>& head_leaf_hashes, const fs::path git_path){
+    for (auto entry : fs::directory_iterator(current_path)) {
+        fs::path path = entry.path();
+        if (is_git_repo(current_path)){
+            continue;
+        }
+
+        if (fs::is_regular_file(entry)){
+            // read in the file + get its hash
+            string blob_hash = read_project_file_and_write_object(git_path, path);
+            // see if it's in the head_leaf_hashes
+            bool inside_commit_tree = is_in_set(head_leaf_hashes,blob_hash);
+            
+            if (inside_commit_tree){
+                // Case 1: in set -> same file as in commit tree
+                commit_diff_hashes.erase(blob_hash);
+            }
+            else{
+                // Case 2: not in set -> 
+                working_diff_hashes.insert({blob_hash,path});
+            }
+        }
+        else if (fs::is_directory(path)){
+            // recurse 
+            walk_working_and_calc_set_differences(path,commit_diff_hashes,working_diff_hashes,head_leaf_hashes,git_path);
+        }
+        else{
+            throw string("cpp-git cannot handle this file");
+        }
+    }
+}
+
+void git_clean(bool remove){
+    fs::path project_base_path = repo_find(fs::current_path());
+    fs::path git_path = project_base_path / ".cpp-git";
+    GitTree* head_tree = get_head_tree(git_path);
+
+    if (head_tree){
+        map<string,string> head_leaf_hashes;
+        map<string,string> commit_diff_hashes;
+        map<string,string> working_diff_hashes;
+
+        get_leaf_hashes_of_tree(head_tree,head_leaf_hashes,project_base_path,git_path);
+        commit_diff_hashes = head_leaf_hashes;
+        walk_working_and_calc_set_differences(project_base_path,commit_diff_hashes,working_diff_hashes,head_leaf_hashes,git_path);
+
+        delete_new_files(commit_diff_hashes,working_diff_hashes,project_base_path,remove);
+    }
+    // Otherwise shouldn't clean
+    else{
+        throw string("Cannot clean until a commit has been made");
+    }
+}
+
 static string ref_resolve(const fs::path& path, bool return_file_path=false) {
     string data = read_file(path);
     //No content if it's an initial commit
@@ -1022,3 +1096,13 @@ void cmd_status(const std::vector<std::string>& args){
     git_status_index_vs_project();
 }
 
+void cmd_clean(const std::vector<std::string>& args){
+    if (args.size()>0){
+        if (args[0] == "-n"){
+            git_clean(false);
+        }
+    }
+    else{
+        git_clean(true);
+    }
+}

@@ -1,6 +1,8 @@
 # README
 ---
 
+## Differences with Git
+
 ## How to compile project
 Just your standard way to compile a project with cmake:
 1. make a build directory
@@ -36,6 +38,7 @@ Just your standard way to compile a project with cmake:
 * delete git path member from all the objects -> currently can't because part of test code/`write_object` relies on it
 * add context dictionary for optimizations/less arguments passed to functions -> for example, sometimes the code logic will call `get_head_tree` twice, which amounts to 2 I/Os
 * make algorithms account for same content in different file case
+* implement garbage collection `git gc`: keep a set of all hashes as you traversethe git DAG backwards/into each tree, with branches and tags as "sources". Afterwards, traverse the object directory and delete any file which is not in this set
 
 
 ## External Libraries
