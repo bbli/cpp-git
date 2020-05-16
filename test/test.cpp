@@ -1353,6 +1353,7 @@ TEST(Clean, git_clean_oneLevel){
 
     std::cout << "Should print file3" << std::endl;
     git_clean(false);
+    fs::current_path("..");
 }
 
 TEST(Clean, git_clean_multipleLevel){
@@ -1376,4 +1377,75 @@ TEST(Clean, git_clean_multipleLevel){
 
     std::cout << "Should print file4" << std::endl;
     git_clean(false);
+    fs::current_path("..");
+}
+
+TEST(Amend, git_amend_noHEAD){
+    std::string folder_name = "git_amend_noHEAD";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+    fs::current_path(project_base_path);
+
+    // Create new files and create tree object
+    write_file(project_base_path / "stage1.txt", "stage1");
+    write_file(project_base_path / "stage2.txt", "stage2");
+    fs::create_directory(project_base_path / "folder");
+    write_file(project_base_path /"folder" /"stage3.txt", "stage3");
+    // git add and git commit
+    try{
+        git_add_folder(project_base_path);
+        git_amend("modified commit");
+    }
+    catch (std::string& e){
+        std::cout << e << std::endl;
+    }
+    fs::current_path("..");
+}
+
+TEST(Amend, git_amend){
+    std::string folder_name = "git_amend_noHEAD";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+    fs::current_path(project_base_path);
+
+    // Create new files and create tree object
+    write_file(project_base_path / "stage1.txt", "stage1");
+    write_file(project_base_path / "stage2.txt", "stage2");
+    fs::create_directory(project_base_path / "folder");
+    write_file(project_base_path /"folder" /"stage3.txt", "stage3");
+    // git add and git commit
+    git_add_folder(project_base_path);
+    git_commit("first commit");
+    // make changes and add
+    write_file(project_base_path /"folder" /"stage3.txt", "changed");
+    git_add_folder(project_base_path);
+    git_amend("modified commit");
+    git_log(10);
+    fs::current_path("..");
+}
+
+TEST(Amend, git_amend_noIndexTreeChange){
+    std::string folder_name = "git_amend_noHEAD";
+    git_folder_setup(folder_name);
+    fs::path project_base_path = repo_find(fs::current_path() / folder_name);
+    std::cout << "Project base path: " << project_base_path << std::endl;
+    fs::path git_path = project_base_path / ".cpp-git";
+    fs::current_path(project_base_path);
+
+    // Create new files and create tree object
+    write_file(project_base_path / "stage1.txt", "stage1");
+    write_file(project_base_path / "stage2.txt", "stage2");
+    fs::create_directory(project_base_path / "folder");
+    write_file(project_base_path /"folder" /"stage3.txt", "stage3");
+    // git add and git commit
+    git_add_folder(project_base_path);
+    git_commit("first commit");
+    // change commit message
+    git_amend("modified commit");
+    git_log(10);
+    fs::current_path("..");
 }
