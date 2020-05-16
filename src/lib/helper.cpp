@@ -177,7 +177,7 @@ bool check_node_name(GitTreeNode& node, string file_it_name){
 }
 bool end_of_path(typename fs::path::iterator file_it, typename fs::path::iterator end_it){
     auto check_it = file_it;
-    return ++check_it == end_it;
+    return (++check_it) == end_it;
 }
 
 void check_if_tree(GitTreeNode& node){

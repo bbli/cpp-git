@@ -12,7 +12,7 @@
 #include <climits>
 using namespace std;
 
-void walk_tree_and_replace(fs::path tree_write_path,GitTree tree_obj) {
+static void walk_tree_and_replace(fs::path tree_write_path,GitTree tree_obj) {
     fs::path git_path = repo_find(tree_write_path) / ".cpp-git";
 
     /* cout << "Tree listing: " << endl; */
@@ -34,7 +34,7 @@ void walk_tree_and_replace(fs::path tree_write_path,GitTree tree_obj) {
 }
 /* ********* Traversal Algorithms	********* */
 
-string get_subtree_hash_for_new_file(GitTree* tree_obj, typename fs::path::iterator file_it,
+static string get_subtree_hash_for_new_file(GitTree* tree_obj, typename fs::path::iterator file_it,
                                 const typename fs::path::iterator end_it, const fs::path git_path,
                                 const fs::path& file_path) {
     // New Tree Object we are creating
@@ -80,7 +80,7 @@ string get_subtree_hash_for_new_file(GitTree* tree_obj, typename fs::path::itera
     /* printer(new_tree_obj.directory); */
     return write_object(&new_tree_obj);
 }
-string get_subtree_hash_for_new_folder(GitTree* tree_obj, typename fs::path::iterator file_it,
+static string get_subtree_hash_for_new_folder(GitTree* tree_obj, typename fs::path::iterator file_it,
                                   const typename fs::path::iterator end_it, const fs::path git_path,
                                   const fs::path folder_path) {
     // New Tree Object we are creating
@@ -421,25 +421,28 @@ void git_commit(string commit_message){
 }
 
 
-static string unstage_file(GitTree* tree_obj,bool* found, typename fs::path::iterator file_it, const fs::path file_path, const fs::path git_path, const bool replace){
+static string unstage_file(GitTree* tree_obj,bool* found, typename fs::path::iterator file_it, const typename fs::path::iterator start_file_it, const fs::path file_path, const fs::path git_path, const bool replace){
     GitTree new_tree_obj(git_path);
 
     for (auto node : tree_obj->directory) {
         // Case 1: Same branch as file
         if (check_node_name(node,*file_it)) {
             bool end = end_of_path(file_it,file_path.end());
+            auto test_it = file_it;
             if (end) {
                 *found = true;
-                if (replace)
-                    git_checkout_file(file_path);
-                // otherwise do nothing/don't add to tree listing
+                if (replace){
+                    GitTree* head_tree = get_head_tree(git_path);
+                    string old_file_hash = find_hash_in_tree(head_tree,start_file_it,file_path.end(),git_path);
+                    new_tree_obj.add_entry("blob",node.name,old_file_hash);
+                }
+                // else do nothing/don't add to tree listing
             }
             else{
                 check_if_tree(node);
                 GitTree subtree;
                 read_into_object(subtree,git_path,node.hash);
-                auto new_it = file_it;
-                string subtree_hash = unstage_file(&subtree,found,++new_it,file_path,git_path,replace);
+                string subtree_hash = unstage_file(&subtree,found,++file_it,start_file_it,file_path,git_path,replace);
                 new_tree_obj.add_entry("tree",node.name,subtree_hash);
             }
         }
@@ -456,11 +459,15 @@ string git_reset_file(fs::path file_path,bool hard){
 
     // Run file_it
     auto base_it = project_base_path.begin();
+    /* typename fs::path::iterator file_it = file_path.begin(); */
     auto file_it = file_path.begin();
     while (base_it != project_base_path.end()) {
         base_it++;
         file_it++;
     }
+    auto start_file_it = file_it;
+
+
 
     bool found = false;
     GitTree* index_tree = get_index_tree(git_path);
@@ -468,11 +475,11 @@ string git_reset_file(fs::path file_path,bool hard){
         GitTree* head_tree = get_head_tree(git_path);
         if (head_tree){
             // SubCase 1: replace with head's version/hash at file_path's location
-            new_index_tree_hash = unstage_file(index_tree,&found,file_it,file_path,git_path,true);
+            new_index_tree_hash = unstage_file(index_tree,&found,file_it,start_file_it,file_path,git_path,true);
         }
         else{
             // SubCase 2: just ignore during traversal
-            new_index_tree_hash = unstage_file(index_tree,&found,file_it,file_path,git_path,false);
+            new_index_tree_hash = unstage_file(index_tree,&found,file_it,start_file_it,file_path,git_path,false);
         }
     }
     else{
@@ -490,14 +497,13 @@ string git_reset_file(fs::path file_path,bool hard){
     return new_index_tree_hash;
 }
 
-void git_reset_file_hard(fs::path file_path){
-}
 
 void git_reset_project(bool hard){
     fs::path project_base_path = repo_find(fs::current_path());
     fs::path git_path = project_base_path / ".cpp-git";
     // Get tree_hash from HEAD
-    string head_commit_hash = ref_resolve(git_path / "HEAD");
+    string full_branch_name = get_current_branch_full(git_path);
+    string head_commit_hash = get_commit_hash_from_branch(full_branch_name,git_path);
     GitCommit head_commit;
     read_into_object(head_commit,git_path,head_commit_hash);
     string head_commit_tree_hash = head_commit.tree_hash;
@@ -645,7 +651,7 @@ string git_add_folder(const fs::path folder_path) {
 /* } */
 
 /* ********* 	********* */
-void get_leaf_hashes_of_tree(GitTree* tree_obj,set<string>& index_leaf_hashes, const fs::path git_path){
+static void get_leaf_hashes_of_tree(GitTree* tree_obj,set<string>& index_leaf_hashes, const fs::path git_path){
     for (auto node: tree_obj->directory){
         if (node.type=="blob"){
             index_leaf_hashes.insert(node.hash);
@@ -660,7 +666,7 @@ void get_leaf_hashes_of_tree(GitTree* tree_obj,set<string>& index_leaf_hashes, c
         }
     }
 }
-void get_leaf_hashes_of_tree(GitTree* tree_obj,map<string,string>& leaf_hashes, fs::path current_path,const fs::path git_path){
+static void get_leaf_hashes_of_tree(GitTree* tree_obj,map<string,string>& leaf_hashes, fs::path current_path,const fs::path git_path){
     for (auto node: tree_obj->directory){
         string path_name = string(current_path / node.name);
         if (node.type=="blob"){
@@ -677,7 +683,7 @@ void get_leaf_hashes_of_tree(GitTree* tree_obj,map<string,string>& leaf_hashes, 
     }
 }
 
-void print_unstaged_project_files(fs::path directory, const set<string>& index_leaf_hashes, const fs::path git_path, const fs::path project_base_path){
+static void print_unstaged_project_files(fs::path directory, const set<string>& index_leaf_hashes, const fs::path git_path, const fs::path project_base_path){
     for(auto project_file: fs::directory_iterator(directory)){
         fs::path project_file_path = project_file.path();
         /* cout << "file path: " << project_file_path << endl; */
@@ -700,7 +706,7 @@ void print_unstaged_project_files(fs::path directory, const set<string>& index_l
     }
 }
 
-void print_new_index_nodes_and_calc_delete(GitTree* tree,set<string>& delete_hashes, const set<string>& head_leaf_hashes,const fs::path git_path){
+static void print_new_index_nodes_and_calc_delete(GitTree* tree,set<string>& delete_hashes, const set<string>& head_leaf_hashes,const fs::path git_path){
     /* cout << "Listing:" << endl; */
     /* printer(tree->directory); */
     for (auto index_node: tree->directory){
@@ -723,7 +729,7 @@ void print_new_index_nodes_and_calc_delete(GitTree* tree,set<string>& delete_has
     }
 }
 
-void walk_index_and_calc_set_differences(GitTree* tree, fs::path current_path, map<string,string>& commit_diff_hashes, map<string,string>& index_diff_hashes, const map<string,string>& head_leaf_hashes, const fs::path git_path){
+static void walk_index_and_calc_set_differences(GitTree* tree, fs::path current_path, map<string,string>& commit_diff_hashes, map<string,string>& index_diff_hashes, const map<string,string>& head_leaf_hashes, const fs::path git_path){
     /* std::cout << "Index Tree Listing:" << std::endl; */
     /* printer(tree->directory); */
     for (auto index_node: tree->directory){
@@ -748,7 +754,7 @@ void walk_index_and_calc_set_differences(GitTree* tree, fs::path current_path, m
 
 }
 
-void print_deleted_head_nodes(GitTree* head_tree, const set<string>& delete_hashes, fs::path rel_path, const fs::path git_path){
+static void print_deleted_head_nodes(GitTree* head_tree, const set<string>& delete_hashes, fs::path rel_path, const fs::path git_path){
     for (auto head_node: head_tree->directory){
         if (head_node.type == "blob"){
             bool deleted = is_in_set(delete_hashes,head_node.hash);
@@ -767,7 +773,7 @@ void print_deleted_head_nodes(GitTree* head_tree, const set<string>& delete_hash
     }
 }
 
-vector<string> convert_map_to_sorted_values(map<string,string> my_map){
+static vector<string> convert_map_to_sorted_values(map<string,string> my_map){
     vector<string> output;
     output.reserve(my_map.size());
     for (auto& pair:my_map){
@@ -777,7 +783,7 @@ vector<string> convert_map_to_sorted_values(map<string,string> my_map){
     return output;
 }
 
-void split_into_deleted_modified_new(map<string,string>& commit_diff_hashes, map<string,string>& index_diff_hashes,const fs::path project_base_path){
+static void split_into_deleted_modified_new(map<string,string>& commit_diff_hashes, map<string,string>& index_diff_hashes,const fs::path project_base_path){
     vector<string> commit_paths = convert_map_to_sorted_values(commit_diff_hashes);
     vector<string> index_paths = convert_map_to_sorted_values(index_diff_hashes);
 
@@ -858,7 +864,7 @@ void git_status_commit_index(void){
     // Otherwise there is nothing staged
 }
 
-string ref_resolve(const fs::path& path, bool return_file_path) {
+static string ref_resolve(const fs::path& path, bool return_file_path=false) {
     string data = read_file(path);
     //No content if it's an initial commit
     if (data.size() == 0) return "";
@@ -870,7 +876,7 @@ string ref_resolve(const fs::path& path, bool return_file_path) {
         return data;
 }
 
-unordered_map<string, string> ref_list(const fs::path& base_path) {
+static unordered_map<string, string> ref_list(const fs::path& base_path) {
     unordered_map<string, string> ret;
     fs::path repo_base_path = repo_find(fs::current_path());
     fs::path ref_path = repo_base_path / ".cpp-git" / "refs";

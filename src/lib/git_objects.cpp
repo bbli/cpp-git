@@ -19,10 +19,9 @@ GitCommit::GitCommit(fs::path git_path, const string& tree_hash,
                     commit_message(commit_message){};
 
 GitCommit::GitCommit(fs::path git_path) : GitObject(git_path), parent_hash(""), commit_message("") {
-    GitTree* tree_obj = new GitTree(git_path);
-    string tree_obj_hash = write_object(tree_obj, true);
+    GitTree tree_obj = GitTree(git_path);
+    string tree_obj_hash = write_object(&tree_obj, true);
     this->tree_hash = tree_obj_hash;
-    delete tree_obj;
 }
 
 GitTree::GitTree(fs::path git_path, const string& data) : GitObject(git_path) {

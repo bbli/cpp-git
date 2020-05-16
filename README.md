@@ -30,8 +30,8 @@ Just your standard way to compile a project with cmake:
    
 ## Future Work
 * make strings into binary??
-* add compression
-* clean up tests -> some tests do not use the newer functions/are too hardcoded
+* add compression of object files-> easy but didn't do yet for debugging reasons
+* clean up tests -> some tests do not use the newer functions/are too hardcoded.  Also remove that one test fixture(as personally I now don't believe in the usefulness of test fixtures)
 * clean up header files -> in particular in commands.hpp. Too many function are being exported right now
 * delete git path member from all the objects -> currently can't because part of test code/`write_object` relies on it
 * add context dictionary for optimizations/less arguments passed to functions -> for example, sometimes the code logic will call `get_head_tree` twice, which amounts to 2 I/Os

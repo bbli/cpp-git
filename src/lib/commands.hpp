@@ -57,6 +57,4 @@ void git_status_index_vs_project(void);
 int test_function(void);
 
 
-std::string ref_resolve(const fs::path& path, bool return_file_path = false);
-std::unordered_map<std::string, std::string> ref_list(const fs::path& base_path);
 #endif
