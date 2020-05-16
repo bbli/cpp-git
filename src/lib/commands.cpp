@@ -421,20 +421,23 @@ void git_commit(string commit_message){
 }
 
 
-static string unstage_file(GitTree* tree_obj,bool* found, typename fs::path::iterator file_it, const typename fs::path::iterator start_file_it, const fs::path file_path, const fs::path git_path, const bool replace){
+static string unstage_file(GitTree* tree_obj,bool* found, typename fs::path::iterator file_it, const typename fs::path::iterator start_file_it, const typename fs::path::iterator end_it, const fs::path file_path, const fs::path git_path, const bool replace){
     GitTree new_tree_obj(git_path);
 
+#if 1
     for (auto node : tree_obj->directory) {
         // Case 1: Same branch as file
         if (check_node_name(node,*file_it)) {
-            bool end = end_of_path(file_it,file_path.end());
-            auto test_it = file_it;
+            bool end = end_of_path(file_it,end_it); // NOTE: cannot just call file_path.end() for some reason
             if (end) {
                 *found = true;
                 if (replace){
                     GitTree* head_tree = get_head_tree(git_path);
-                    string old_file_hash = find_hash_in_tree(head_tree,start_file_it,file_path.end(),git_path);
+                    string old_file_hash = find_hash_in_tree(head_tree,start_file_it,end_it,git_path);
                     new_tree_obj.add_entry("blob",node.name,old_file_hash);
+                    /* GitBlob file; */
+                    /* read_into_object(file,git_path,old_file_hash); */
+                    /* std::cout << file.data << std::endl; */
                 }
                 // else do nothing/don't add to tree listing
             }
@@ -442,7 +445,7 @@ static string unstage_file(GitTree* tree_obj,bool* found, typename fs::path::ite
                 check_if_tree(node);
                 GitTree subtree;
                 read_into_object(subtree,git_path,node.hash);
-                string subtree_hash = unstage_file(&subtree,found,++file_it,start_file_it,file_path,git_path,replace);
+                string subtree_hash = unstage_file(&subtree,found,++file_it,start_file_it,end_it, file_path,git_path,replace);
                 new_tree_obj.add_entry("tree",node.name,subtree_hash);
             }
         }
@@ -450,6 +453,8 @@ static string unstage_file(GitTree* tree_obj,bool* found, typename fs::path::ite
             new_tree_obj.add_entry(node.type,node.name,node.hash);
         }
     }
+#endif
+    return write_object(&new_tree_obj);
 }
 
 string git_reset_file(fs::path file_path,bool hard){
@@ -466,8 +471,7 @@ string git_reset_file(fs::path file_path,bool hard){
         file_it++;
     }
     auto start_file_it = file_it;
-
-
+    auto end_it = file_path.end();
 
     bool found = false;
     GitTree* index_tree = get_index_tree(git_path);
@@ -475,11 +479,11 @@ string git_reset_file(fs::path file_path,bool hard){
         GitTree* head_tree = get_head_tree(git_path);
         if (head_tree){
             // SubCase 1: replace with head's version/hash at file_path's location
-            new_index_tree_hash = unstage_file(index_tree,&found,file_it,start_file_it,file_path,git_path,true);
+            new_index_tree_hash = unstage_file(index_tree,&found,file_it,start_file_it,end_it,file_path,git_path,true);
         }
         else{
             // SubCase 2: just ignore during traversal
-            new_index_tree_hash = unstage_file(index_tree,&found,file_it,start_file_it,file_path,git_path,false);
+            new_index_tree_hash = unstage_file(index_tree,&found,file_it,start_file_it,end_it,file_path,git_path,false);
         }
     }
     else{
