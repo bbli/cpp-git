@@ -601,7 +601,7 @@ string git_add_folder(const fs::path folder_path) {
         }
     }
 
-    cout << "Should write to index now" << endl;
+    /* cout << "Should write to index now" << endl; */
     write_file(git_path / "index", new_tree_hash);
     return new_tree_hash;
 }
