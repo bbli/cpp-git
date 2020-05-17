@@ -11,4 +11,4 @@ add_executable(TEST test.cpp)
 # target_compile_features(TEST PUBLIC cxx_std_17)
 
 target_link_libraries(TEST PUBLIC command_library gtest_main sha1_library)
-install(TARGETS TEST DESTINATION ${INSTALL_BIN_DIR})
+# install(TARGETS TEST DESTINATION ${INSTALL_BIN_DIR})

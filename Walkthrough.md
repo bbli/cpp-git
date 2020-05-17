@@ -1,4 +1,3 @@
-
 ## Tutorial 
 1. git init -> call `tree .cpp-git`
 2. create 2 new files and a folder with one file -> call `cpg add .`

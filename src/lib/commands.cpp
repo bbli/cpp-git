@@ -305,6 +305,7 @@ void git_commit(string commit_message){
     }
 }
 
+#if 0
 static string get_prev_commit_hash_from_branch(string current_full_branch_name, fs::path git_path){
     string current_commit_hash = get_commit_hash_from_branch(current_full_branch_name,git_path);
     if (current_commit_hash==""){
@@ -313,6 +314,7 @@ static string get_prev_commit_hash_from_branch(string current_full_branch_name, 
     GitCommit current_commit = get_commit_from_hash(current_commit_hash,git_path);
     return current_commit.parent_hash;
 }
+#endif
 
 void git_amend(string commit_message){
     fs::path project_base_path = repo_find(fs::current_path());

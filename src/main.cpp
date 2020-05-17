@@ -44,6 +44,7 @@ private:
         {"init",        cmd_init},
         {"log",         cmd_log},
         {"status",         cmd_status},
+        {"clean", cmd_clean},
         /* {"ls-tree",     cmd_print}, */
         /* {"merge",       cmd_print}, */
         /* {"rebase",      cmd_print}, */

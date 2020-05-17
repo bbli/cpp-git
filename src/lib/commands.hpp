@@ -31,6 +31,7 @@ void cmd_reset(const std::vector<std::string>& args);
 void cmd_tag(const std::vector<std::string>& args);
 void cmd_log(const std::vector<std::string>& args);
 void cmd_status(const std::vector<std::string>& args);
+void cmd_clean(const std::vector<std::string>& args);
 // Actual functions executing commands
 void git_cat_file(fs::path obj, const std::string& fmt);
 void git_init(fs::path project_base_path);
