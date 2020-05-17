@@ -5,7 +5,9 @@ Just your standard way to compile a project with cmake:
 1. make a build directory
 2. cd into build directory
 3. run `cmake ..`(if build directory is beneath project root. Otherwise change `..` to the build directory path)
-4. run `make && make install`
+4. run `make && make install`(will be installed in "bin" directory in project root)
+
+(to install tests, clone the repo recusively and set `DPACKAGE_TESTS=ON` when running cmake. Then either run `make test` or `test/TEST` if you want to see the actual outputs)
 
 ## Intro/Differences with Git
 * No remote commands(such as `git pull`, `git push`, etc)
