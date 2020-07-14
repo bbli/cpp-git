@@ -1,6 +1,7 @@
 # README
 ---
 ## How to compile project
+* Make sure to clone repo recusively(i.e `git clone --recursive etc...`) as GoogleTest is a submodule
 Just your standard way to compile a project with cmake:
 1. make a build directory
 2. cd into build directory
