@@ -273,18 +273,6 @@ void git_init(fs::path project_base_path) {
     fs::create_directories(git_path / "refs" / "tags");
 }
 
-void git_checkout(string hash){
-    auto repo_base_path = repo_find(fs::current_path());
-    GitObject* obj = read_object(repo_base_path / ".cpp-git", hash);
-    string fmt = obj->get_fmt();
-    if (fmt == "commit") {
-        GitCommit* commit_obj = dynamic_cast<GitCommit*>(obj);
-        git_checkout(commit_obj->tree_hash);
-    } else {
-        throw string("Shouldn't reach here");
-    }
-}
-
 void git_commit(string commit_message){
     fs::path project_base_path = repo_find(fs::current_path());
     fs::path git_path = project_base_path / ".cpp-git";
