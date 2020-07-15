@@ -186,6 +186,12 @@ void check_if_tree(GitTreeNode& node){
     }
 }
 
+void check_if_tree_exists(Option<GitTree> option_tree){
+    if (!option_tree.exists){
+        throw string("tree doesn't exist");
+    }
+}
+
 GitTree* get_tree_from_hash(string hash, fs::path git_path){
     GitObject* obj = read_object(git_path,hash);
     return dynamic_cast<GitTree*>(obj);
@@ -314,17 +320,19 @@ GitCommit get_commit_from_hash(string commit_hash, fs::path git_path){
         return commit_obj;
 }
 
-GitTree* get_head_tree(fs::path git_path) {
+Option<GitTree> get_head_tree(fs::path git_path) {
     string full_branch_name = get_current_branch_full(git_path);
     string commit_hash = get_commit_hash_from_branch(full_branch_name,git_path);
+    GitTree tree;
     if (commit_hash==""){
-        return nullptr;
+        return Option<GitTree>{tree,false};
     }
     else{
         /* cout << "Commit Hash: " << tree_hash << endl; */
         GitCommit commit_obj = get_commit_from_hash(commit_hash,git_path);
         /* cout << "Commit tree: " << (commit_obj->tree_hash) << endl; */
-        return get_tree_from_hash(commit_obj.tree_hash,git_path);
+        read_into_object(tree,git_path,commit_obj.tree_hash);
+        return Option<GitTree>{tree,true};
     }
 }
 string get_tree_hash_of_index(fs::path git_path) {

@@ -136,7 +136,10 @@ void git_checkout_file(fs::path file_path){
 
     string full_branch_name = get_current_branch_full(git_path);
     string commit_hash = get_commit_hash_from_branch(full_branch_name,git_path);
-    GitTree* head_tree = get_head_tree(git_path);
+    Option<GitTree> option_head_tree = get_head_tree(git_path);
+    if (!option_head_tree.exists){
+        throw string("Git checkout error.Make a commit first");
+    }
     // Run file_it
     auto base_it = project_base_path.begin();
     auto file_it = file_path.begin();
@@ -145,7 +148,7 @@ void git_checkout_file(fs::path file_path){
         file_it++;
     }
 
-    string file_hash = find_hash_in_tree(head_tree,file_it,file_path.end(),git_path);
+    string file_hash = find_hash_in_tree(&option_head_tree.content,file_it,file_path.end(),git_path);
     if (file_hash==""){
         /* cout << "File has not previously been checked in"; */
         throw string("error. File has not previously been checked in");
@@ -356,8 +359,10 @@ static string unstage_file(GitTree* tree_obj,bool* found, typename fs::path::ite
             if (end) {
                 *found = true;
                 if (replace){
-                    GitTree* head_tree = get_head_tree(git_path);
-                    string old_file_hash = find_hash_in_tree(head_tree,start_file_it,end_it,git_path);
+                    Option<GitTree> option_head_tree = get_head_tree(git_path);
+                    // actually no need since caller(git_reset_file) will already check
+                    //check_if_tree_exists(option_head_tree);
+                    string old_file_hash = find_hash_in_tree(&option_head_tree.content,start_file_it,end_it,git_path);
                     new_tree_obj.add_entry("blob",node.name,old_file_hash);
                     /* GitBlob file; */
                     /* read_into_object(file,git_path,old_file_hash); */
@@ -401,8 +406,8 @@ string git_reset_file(fs::path file_path,bool hard){
     Option<GitTree> option_index_tree = get_index_tree(git_path);
     if (option_index_tree.exists){
         GitTree* index_tree = &option_index_tree.content;
-        GitTree* head_tree = get_head_tree(git_path);
-        if (head_tree){
+        Option<GitTree> option_head_tree = get_head_tree(git_path);
+        if (option_head_tree.exists){
             // SubCase 1: replace with head's version/hash at file_path's location
             new_index_tree_hash = unstage_file(index_tree,&found,file_it,start_file_it,end_it,file_path,git_path,true);
         }
@@ -465,8 +470,8 @@ string git_add_file(const fs::path& file_path) {
     Option<GitTree> option_index_tree = get_index_tree(git_path);
     if (!option_index_tree.exists){
         // SubCase 1: if even head is empty, just add from project folder instead of traversing git trees
-        GitTree* head_tree = get_head_tree(git_path);
-        if (!head_tree){
+        Option<GitTree> option_head_tree = get_head_tree(git_path);
+        if (!option_head_tree.exists){
             // TODO: check that folder path and project base path are the same
             string blob_hash = read_project_file_and_write_object(git_path,file_path);
             GitTree tree_obj(git_path);
@@ -476,7 +481,7 @@ string git_add_file(const fs::path& file_path) {
         }
         else{
         // SubCase 2: then base off head tree instead
-            new_tree_hash = get_subtree_hash_for_new_file(head_tree,file_it,file_path.end(),git_path,file_path);
+            new_tree_hash = get_subtree_hash_for_new_file(&option_head_tree.content,file_it,file_path.end(),git_path,file_path);
         }
     }
     else{
@@ -510,14 +515,14 @@ string git_add_folder(const fs::path folder_path) {
     else{
         Option<GitTree> option_index_tree = get_index_tree(git_path);
         if (!option_index_tree.exists){
-            GitTree* head_tree = get_head_tree(git_path);
-            if (!head_tree){
+            Option<GitTree> option_head_tree = get_head_tree(git_path);
+            if (!option_head_tree.exists){
                     throw string("git add error");
             }
             else{
                 // SubCase 2: then base off head tree instead
                 /* cout << "DEBUG: " << "no index but yes head" << endl; */
-                new_tree_hash = get_subtree_hash_for_new_folder(head_tree,file_it,folder_path.end(),git_path,folder_path);
+                new_tree_hash = get_subtree_hash_for_new_folder(&option_head_tree.content,file_it,folder_path.end(),git_path,folder_path);
             }
         }
         else{
@@ -741,18 +746,18 @@ void git_status_index_vs_project(){
     fs::path project_base_path = repo_find(fs::current_path());
     fs::path git_path = project_base_path / ".cpp-git";
     Option<GitTree> option_index_tree = get_index_tree(git_path);
-    GitTree* head_tree = get_head_tree(git_path);
+    Option<GitTree> option_head_tree = get_head_tree(git_path);
     set<string> index_leaf_hashes;
 
     cout << "---------------Files not yet staged------------" << endl;
     if (!option_index_tree.exists){
-        if (!head_tree){
+        if (!option_head_tree.exists){
             // pass in empty index leaf hash
             print_unstaged_project_files(project_base_path,index_leaf_hashes,git_path,project_base_path);
         }
         else{
             set<string> commit_leaf_hashes;
-            get_leaf_hashes_of_tree(head_tree,commit_leaf_hashes,git_path);
+            get_leaf_hashes_of_tree(&option_head_tree.content,commit_leaf_hashes,git_path);
             print_unstaged_project_files(project_base_path,commit_leaf_hashes,git_path,project_base_path);
         }
     }
@@ -769,10 +774,10 @@ void git_status_commit_index(void){
     // EC: no index
     // EC : no head
     Option<GitTree> option_index_tree = get_index_tree(git_path);
-    GitTree* head_tree = get_head_tree(git_path);
+    Option<GitTree> option_head_tree = get_head_tree(git_path);
 
     if (option_index_tree.exists){
-        if (!head_tree){
+        if (!option_head_tree.exists){
             set<string> delete_hashes;
             set<string> set_head_hashes;
             // Pass empty set_head_hashes so everything is new
@@ -784,7 +789,7 @@ void git_status_commit_index(void){
             map<string,string> index_diff_hashes;
             // COMMON CASE, both index and head trees exist
             // TODO: overload
-            get_leaf_hashes_of_tree(head_tree,head_leaf_hashes,project_base_path,git_path);
+            get_leaf_hashes_of_tree(&option_head_tree.content,head_leaf_hashes,project_base_path,git_path);
             commit_diff_hashes = head_leaf_hashes;
             walk_index_and_calc_set_differences(&option_index_tree.content,project_base_path,commit_diff_hashes,index_diff_hashes,head_leaf_hashes,git_path);
 
@@ -849,14 +854,14 @@ static void walk_working_and_calc_set_differences(fs::path current_path, map<str
 void git_clean(bool remove){
     fs::path project_base_path = repo_find(fs::current_path());
     fs::path git_path = project_base_path / ".cpp-git";
-    GitTree* head_tree = get_head_tree(git_path);
+    Option<GitTree> option_head_tree = get_head_tree(git_path);
 
-    if (head_tree){
+    if (option_head_tree.exists){
         map<string,string> head_leaf_hashes;
         map<string,string> commit_diff_hashes;
         map<string,string> working_diff_hashes;
 
-        get_leaf_hashes_of_tree(head_tree,head_leaf_hashes,project_base_path,git_path);
+        get_leaf_hashes_of_tree(&option_head_tree.content,head_leaf_hashes,project_base_path,git_path);
         commit_diff_hashes = head_leaf_hashes;
         walk_working_and_calc_set_differences(project_base_path,commit_diff_hashes,working_diff_hashes,head_leaf_hashes,git_path);
 

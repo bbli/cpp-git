@@ -50,7 +50,7 @@ std::string object_find(fs::path repo, fs::path obj, const std::string& fmt);
 
 std::string get_tree_hash_of_index(fs::path git_path);
 Option<GitTree> get_index_tree(fs::path git_path);
-GitTree* get_head_tree(fs::path git_path);
+Option<GitTree> get_head_tree(fs::path git_path);
 GitTree* get_tree_from_hash(std::string hash, fs::path git_path);
 std::string find_hash_in_tree(GitTree* tree_obj, typename fs::path::iterator file_it,
                              const typename fs::path::iterator end_it, const fs::path git_path);
@@ -60,6 +60,7 @@ bool is_git_repo(const fs::path& path);
 bool check_node_name(GitTreeNode& node, std::string file_it_name);
 bool end_of_path(typename fs::path::iterator file_it, typename fs::path::iterator end_it);
 void check_if_tree(GitTreeNode& node);
+void check_if_tree_exists(Option<GitTree> option_tree);
 
 std::string read_project_file_and_write_object(const fs::path git_path, const fs::path& file_path);
 std::string read_project_folder_and_write_tree(const fs::path& adding_directory, bool index=false);
