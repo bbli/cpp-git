@@ -296,14 +296,15 @@ string get_full_branch_name(string branch_name){
     return "refs/heads/" + branch_name;
 }
 
-GitTree* get_index_tree(fs::path git_path) {
+Option<GitTree> get_index_tree(fs::path git_path) {
     string tree_hash = read_file(git_path / "index");
-    if (tree_hash==""){
-        return nullptr;
+    GitTree tree;
+    if (tree_hash == ""){
+        return Option<GitTree>{tree,false};
     }
     else{
-        GitObject* obj = read_object(git_path, tree_hash);
-        return dynamic_cast<GitTree*>(obj);
+        read_into_object(tree,git_path,tree_hash);
+        return Option<GitTree>{tree,true};
     }
 }
 

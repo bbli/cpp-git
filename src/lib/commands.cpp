@@ -171,8 +171,8 @@ void git_checkout_branch(string branch_name){
 
     string commit_hash;
     string full_branch_name = "refs/heads/" + branch_name;
-    GitTree* index_tree = get_index_tree(git_path);
-    if(index_tree){
+    Option<GitTree> option_index_tree = get_index_tree(git_path);
+    if(option_index_tree.exists){
         throw string("error. Please commit changes before changing branches");
     }
 
@@ -398,8 +398,9 @@ string git_reset_file(fs::path file_path,bool hard){
     auto end_it = file_path.end();
 
     bool found = false;
-    GitTree* index_tree = get_index_tree(git_path);
-    if (index_tree){
+    Option<GitTree> option_index_tree = get_index_tree(git_path);
+    if (option_index_tree.exists){
+        GitTree* index_tree = &option_index_tree.content;
         GitTree* head_tree = get_head_tree(git_path);
         if (head_tree){
             // SubCase 1: replace with head's version/hash at file_path's location
@@ -461,8 +462,8 @@ string git_add_file(const fs::path& file_path) {
     // Paths are unique, but individual names arn't
     // EC: if file is one_level
     // EC: if file is new file
-    GitTree* index_tree = get_index_tree(git_path);
-    if (!index_tree){
+    Option<GitTree> option_index_tree = get_index_tree(git_path);
+    if (!option_index_tree.exists){
         // SubCase 1: if even head is empty, just add from project folder instead of traversing git trees
         GitTree* head_tree = get_head_tree(git_path);
         if (!head_tree){
@@ -480,7 +481,7 @@ string git_add_file(const fs::path& file_path) {
     }
     else{
         new_tree_hash =
-            get_subtree_hash_for_new_file(index_tree, file_it, file_path.end(), git_path, file_path);
+            get_subtree_hash_for_new_file(&option_index_tree.content, file_it, file_path.end(), git_path, file_path);
     }
 
     /* cout << "Should write to index now" << endl; */
@@ -507,8 +508,8 @@ string git_add_folder(const fs::path folder_path) {
         new_tree_hash = read_project_folder_and_write_tree(folder_path);
     }
     else{
-        GitTree* index_tree = get_index_tree(git_path);
-        if (!index_tree){
+        Option<GitTree> option_index_tree = get_index_tree(git_path);
+        if (!option_index_tree.exists){
             GitTree* head_tree = get_head_tree(git_path);
             if (!head_tree){
                     throw string("git add error");
@@ -520,6 +521,7 @@ string git_add_folder(const fs::path folder_path) {
             }
         }
         else{
+            GitTree* index_tree = &option_index_tree.content;
             new_tree_hash =
                 get_subtree_hash_for_new_folder(index_tree, file_it, folder_path.end(), git_path, folder_path);
         }
@@ -738,12 +740,12 @@ static void split_into_deleted_modified_new(map<string,string>& commit_diff_hash
 void git_status_index_vs_project(){
     fs::path project_base_path = repo_find(fs::current_path());
     fs::path git_path = project_base_path / ".cpp-git";
-    GitTree* index_tree = get_index_tree(git_path);
+    Option<GitTree> option_index_tree = get_index_tree(git_path);
     GitTree* head_tree = get_head_tree(git_path);
     set<string> index_leaf_hashes;
 
     cout << "---------------Files not yet staged------------" << endl;
-    if (!index_tree){
+    if (!option_index_tree.exists){
         if (!head_tree){
             // pass in empty index leaf hash
             print_unstaged_project_files(project_base_path,index_leaf_hashes,git_path,project_base_path);
@@ -755,7 +757,7 @@ void git_status_index_vs_project(){
         }
     }
     else{
-        get_leaf_hashes_of_tree(index_tree,index_leaf_hashes,git_path);
+        get_leaf_hashes_of_tree(&option_index_tree.content,index_leaf_hashes,git_path);
         print_unstaged_project_files(project_base_path,index_leaf_hashes,git_path,project_base_path);
     }
 }
@@ -766,15 +768,15 @@ void git_status_commit_index(void){
     cout << "---------------Files staged for commit:------------" << endl;
     // EC: no index
     // EC : no head
-    GitTree* index_tree = get_index_tree(git_path);
+    Option<GitTree> option_index_tree = get_index_tree(git_path);
     GitTree* head_tree = get_head_tree(git_path);
 
-    if (index_tree){
+    if (option_index_tree.exists){
         if (!head_tree){
             set<string> delete_hashes;
             set<string> set_head_hashes;
             // Pass empty set_head_hashes so everything is new
-            print_new_index_nodes_and_calc_delete(index_tree,delete_hashes,set_head_hashes,git_path);
+            print_new_index_nodes_and_calc_delete(&option_index_tree.content,delete_hashes,set_head_hashes,git_path);
         }
         else{
             map<string,string> head_leaf_hashes;
@@ -784,7 +786,7 @@ void git_status_commit_index(void){
             // TODO: overload
             get_leaf_hashes_of_tree(head_tree,head_leaf_hashes,project_base_path,git_path);
             commit_diff_hashes = head_leaf_hashes;
-            walk_index_and_calc_set_differences(index_tree,project_base_path,commit_diff_hashes,index_diff_hashes,head_leaf_hashes,git_path);
+            walk_index_and_calc_set_differences(&option_index_tree.content,project_base_path,commit_diff_hashes,index_diff_hashes,head_leaf_hashes,git_path);
 
             split_into_deleted_modified_new(commit_diff_hashes,index_diff_hashes,project_base_path);
         }

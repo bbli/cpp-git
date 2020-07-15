@@ -398,14 +398,14 @@ TEST(Staging, blank_index_read){
     fs::path git_path = project_base_path / ".cpp-git";
 
     // See if return ptr is nullptr
-    GitTree* tree_obj = get_index_tree(git_path);
-    if (!tree_obj){
+    Option<GitTree> option_tree_obj = get_index_tree(git_path);
+    if (!option_tree_obj.exists){
         std::cout << "YUP, tree_obj is null" << std::endl;
     }
     else{
         std::cout << "NOPE, tree_obj should have been null" << std::endl;
     }
-    ASSERT_EQ(tree_obj,nullptr);
+    ASSERT_EQ(option_tree_obj.exists,false);
 }
 
 TEST(Staging, git_add_folder_blank_index){

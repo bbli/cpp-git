@@ -7,10 +7,38 @@
 #include <map>
 namespace fs = std::filesystem;
 #include <iostream>
+/* Templates */
+template <typename T>
+void printer(T container) {
+    for (auto x : container) {
+        std::cout << x << ",";
+    }
+    std::cout << std::endl;
+}
+
+
+template<typename T>
+struct Option{
+    T content;
+    bool exists;
+};
 
 /* File Operation */
 std::string read_file(fs::path path);
 void write_file(fs::path file_path, std::string message);
+template<typename GitObject>
+void read_into_object(GitObject& obj,fs::path git_path, std::string hash){
+    fs::path object_path = git_path / "objects" / hash.substr(0, 2) / hash.substr(2);
+    std::string content = read_file(object_path);
+    auto split_index = content.find('\0');
+    std::string type = content.substr(0, split_index);
+    std::string data = content.substr(split_index + 1);
+    if (type != obj.get_fmt()){
+
+        throw std::string("this file is not a ") + obj.get_fmt() + std::string(" object file");
+    }
+    obj.to_internal(data);
+}
 
 fs::path repo_find(fs::path file_path);
 
@@ -21,7 +49,7 @@ std::string write_object(GitObject* obj, bool write = true);
 std::string object_find(fs::path repo, fs::path obj, const std::string& fmt);
 
 std::string get_tree_hash_of_index(fs::path git_path);
-GitTree* get_index_tree(fs::path git_path);
+Option<GitTree> get_index_tree(fs::path git_path);
 GitTree* get_head_tree(fs::path git_path);
 GitTree* get_tree_from_hash(std::string hash, fs::path git_path);
 std::string find_hash_in_tree(GitTree* tree_obj, typename fs::path::iterator file_it,
@@ -46,26 +74,4 @@ std::string get_current_branch_full(fs::path git_path);
 std::string get_commit_hash_from_branch(std::string full_branch_name, fs::path git_path);
 GitCommit get_commit_from_hash(std::string commit_hash, fs::path git_path);
 
-/* Templates */
-template <typename T>
-void printer(T container) {
-    for (auto x : container) {
-        std::cout << x << ",";
-    }
-    std::cout << std::endl;
-}
-
-template<typename GitObject>
-void read_into_object(GitObject& obj,fs::path git_path, std::string hash){
-    fs::path object_path = git_path / "objects" / hash.substr(0, 2) / hash.substr(2);
-    std::string content = read_file(object_path);
-    auto split_index = content.find('\0');
-    std::string type = content.substr(0, split_index);
-    std::string data = content.substr(split_index + 1);
-    if (type != obj.get_fmt()){
-
-        throw std::string("this file is not a ") + obj.get_fmt() + std::string(" object file");
-    }
-    obj.to_internal(data);
-}
 #endif
