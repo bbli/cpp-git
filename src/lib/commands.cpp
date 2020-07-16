@@ -34,11 +34,9 @@ static void walk_tree_and_replace(fs::path tree_write_path,GitTree tree_obj) {
 }
 /* ********* Traversal Algorithms	********* */
 
-static string get_subtree_hash_for_new_file(GitTree* tree_obj, typename fs::path::iterator file_it,
-                                const typename fs::path::iterator end_it, const fs::path git_path,
-                                const fs::path& file_path) {
+static string get_subtree_hash_for_new_file(GitTree* tree_obj, typename fs::path::iterator file_it,const fs::path& file_path, const Context context) {
     // New Tree Object we are creating
-    GitTree new_tree_obj(git_path);
+    GitTree new_tree_obj(context.git_path);
 
     /* cout << "Currently at: " << *file_it << endl; */
     bool found = false;
@@ -46,10 +44,10 @@ static string get_subtree_hash_for_new_file(GitTree* tree_obj, typename fs::path
         // Case 1: Same branch as file
         if (check_node_name(node,*file_it)) {
             // SubCase 1: file_it is at last element
-            bool end = end_of_path(file_it,end_it);
+            bool end = end_of_path(file_it,context.end_it);
             if (end) {
                 // create GitBlob object, write to .git, then add to tree obj
-                string blob_hash = read_project_file_and_write_object(git_path, file_path);
+                string blob_hash = read_project_file_and_write_object(context.git_path, file_path);
                 new_tree_obj.add_entry(node.type, node.name, blob_hash);
                 found = true;
             }
@@ -57,10 +55,10 @@ static string get_subtree_hash_for_new_file(GitTree* tree_obj, typename fs::path
             else {
                 check_if_tree(node);
                 GitTree subtree;
-                read_into_object(subtree,git_path,node.hash);
+                read_into_object(subtree,context.git_path,node.hash);
                 auto new_it = file_it;
                 string subtree_hash =
-                    get_subtree_hash_for_new_file(&subtree, ++new_it, end_it, git_path, file_path);
+                    get_subtree_hash_for_new_file(&subtree, ++new_it, file_path,context);
                 new_tree_obj.add_entry("tree", node.name, subtree_hash);
             }
         }
@@ -71,8 +69,8 @@ static string get_subtree_hash_for_new_file(GitTree* tree_obj, typename fs::path
     }
     // EC: if at end and we haven't found the file in the old tree directory
     /* cout << "Currently at: " << *file_it << endl; */
-    if (end_of_path(file_it,end_it) && !found) {
-        string blob_hash = read_project_file_and_write_object(git_path, file_path);
+    if (end_of_path(file_it,context.end_it) && !found) {
+        string blob_hash = read_project_file_and_write_object(context.git_path, file_path);
         new_tree_obj.add_entry("blob", file_path.filename(), blob_hash);
     }
     // Write Tree and return hash
@@ -81,10 +79,9 @@ static string get_subtree_hash_for_new_file(GitTree* tree_obj, typename fs::path
     return write_object(&new_tree_obj);
 }
 static string get_subtree_hash_for_new_folder(GitTree* tree_obj, typename fs::path::iterator file_it,
-                                  const typename fs::path::iterator end_it, const fs::path git_path,
-                                  const fs::path folder_path) {
+                                  const fs::path folder_path, Context context) {
     // New Tree Object we are creating
-    GitTree new_tree_obj(git_path);
+    GitTree new_tree_obj(context.git_path);
 
     /* cout << "Pre: currently at " << *file_it << endl; */
     bool found = false;
@@ -92,7 +89,7 @@ static string get_subtree_hash_for_new_folder(GitTree* tree_obj, typename fs::pa
         // Case 1: Same branch as file
         if (check_node_name(node,*file_it)) {
             // SubCase 1: node points to adding folder
-            bool end = end_of_path(file_it,end_it);
+            bool end = end_of_path(file_it,context.end_it);
             if (end) {
                 check_if_tree(node);
                 /* cout << "Node name: "  << node.name << endl; */
@@ -105,10 +102,10 @@ static string get_subtree_hash_for_new_folder(GitTree* tree_obj, typename fs::pa
             else {
                 check_if_tree(node);
                 GitTree subtree;
-                read_into_object(subtree,git_path,node.hash);
+                read_into_object(subtree,context.git_path,node.hash);
                 auto new_it = file_it;
                 string subtree_hash =
-                    get_subtree_hash_for_new_folder(&subtree, ++new_it, end_it, git_path, folder_path);
+                    get_subtree_hash_for_new_folder(&subtree, ++new_it, folder_path, context);
                 new_tree_obj.add_entry("tree", node.name, subtree_hash);
             }
         }
@@ -117,8 +114,10 @@ static string get_subtree_hash_for_new_folder(GitTree* tree_obj, typename fs::pa
             new_tree_obj.add_entry(node.type, node.name, node.hash);
         }
     }
+
+    //TODO: extract this out of the recursion, as technically I shouldn't create a local found variable everytime
     // EC: if at end and we haven't found the file in the old tree directory
-    if (end_of_path(file_it,end_it) && !found) {
+    if (end_of_path(file_it,context.end_it) && !found) {
         /* cout << "Name of mistaken write: " << folder_path.filename() << endl; */
         string subtree_hash = read_project_folder_and_write_tree(folder_path);
         // add to new_tree
@@ -336,21 +335,33 @@ void git_amend(string commit_message){
     }
 }
 
-static string unstage_file(GitTree* tree_obj,bool* found, typename fs::path::iterator file_it, const typename fs::path::iterator start_file_it, const typename fs::path::iterator end_it, const fs::path file_path, const fs::path git_path, const bool replace){
-    GitTree new_tree_obj(git_path);
+class UnStager{
+    private:
+        bool* found;
+        fs::path file_path;
+        bool replace;
+    public:
+        UnStager(bool* found, fs::path file_path, bool replace){
+            this->found = found;
+            this->file_path = file_path;
+            this->replace = replace;
+        }
+        string unstage_file(GitTree* tree_obj,typename fs::path::iterator file_it,Context context);
+};
+string UnStager::unstage_file(GitTree* tree_obj, typename fs::path::iterator file_it, Context context){
+    GitTree new_tree_obj(context.git_path);
 
 #if 1
     for (auto node : tree_obj->directory) {
         // Case 1: Same branch as file
         if (check_node_name(node,*file_it)) {
-            bool end = end_of_path(file_it,end_it); // NOTE: cannot just call file_path.end() for some reason
+            bool end = end_of_path(file_it,context.end_it); // NOTE: cannot just call file_path.end() for some reason
             if (end) {
                 *found = true;
                 if (replace){
-                    Option<GitTree> option_head_tree = get_head_tree(git_path);
                     // actually no need since caller(git_reset_file) will already check
                     //check_if_tree_exists(option_head_tree);
-                    string old_file_hash = find_hash_in_tree(&option_head_tree.content,start_file_it,end_it,git_path);
+                    string old_file_hash = find_hash_in_tree(&context.head_tree,context.start_file_it,context.end_it,context.git_path);
                     new_tree_obj.add_entry("blob",node.name,old_file_hash);
                     /* GitBlob file; */
                     /* read_into_object(file,git_path,old_file_hash); */
@@ -361,8 +372,8 @@ static string unstage_file(GitTree* tree_obj,bool* found, typename fs::path::ite
             else{
                 check_if_tree(node);
                 GitTree subtree;
-                read_into_object(subtree,git_path,node.hash);
-                string subtree_hash = unstage_file(&subtree,found,++file_it,start_file_it,end_it, file_path,git_path,replace);
+                read_into_object(subtree,context.git_path,node.hash);
+                string subtree_hash = this->unstage_file(&subtree,++file_it,context);
                 new_tree_obj.add_entry("tree",node.name,subtree_hash);
             }
         }
@@ -397,11 +408,16 @@ string git_reset_file(fs::path file_path,bool hard){
         Option<GitTree> option_head_tree = get_head_tree(git_path);
         if (option_head_tree.exists){
             // SubCase 1: replace with head's version/hash at file_path's location
-            new_index_tree_hash = unstage_file(index_tree,&found,file_it,start_file_it,end_it,file_path,git_path,true);
+            Context context{option_head_tree.content,start_file_it,end_it,git_path,project_base_path};
+            UnStager unstager{&found,file_path,true};
+            new_index_tree_hash = unstager.unstage_file(index_tree,file_it,context);
         }
         else{
             // SubCase 2: just ignore during traversal
-            new_index_tree_hash = unstage_file(index_tree,&found,file_it,start_file_it,end_it,file_path,git_path,false);
+            GitTree dummy_tree;
+            Context context{dummy_tree,start_file_it,end_it,git_path,project_base_path};
+            UnStager unstager{&found,file_path,false};
+            new_index_tree_hash = unstager.unstage_file(index_tree,file_it,context);
         }
     }
     else{
@@ -456,6 +472,9 @@ string git_add_file(const fs::path& file_path) {
     // EC: if file is one_level
     // EC: if file is new file
     Option<GitTree> option_index_tree = get_index_tree(git_path);
+    Context context;
+    context.end_it = file_path.end();
+    context.git_path = git_path;
     if (!option_index_tree.exists){
         // SubCase 1: if even head is empty, just add from project folder instead of traversing git trees
         Option<GitTree> option_head_tree = get_head_tree(git_path);
@@ -469,14 +488,14 @@ string git_add_file(const fs::path& file_path) {
         }
         else{
         // SubCase 2: then base off head tree instead
-            new_tree_hash = get_subtree_hash_for_new_file(&option_head_tree.content,file_it,file_path.end(),git_path,file_path);
+            new_tree_hash = get_subtree_hash_for_new_file(&option_head_tree.content,file_it,file_path,context);
         }
     }
     else{
         new_tree_hash =
-            get_subtree_hash_for_new_file(&option_index_tree.content, file_it, file_path.end(), git_path, file_path);
-    }
+            get_subtree_hash_for_new_file(&option_index_tree.content, file_it, file_path,context);
 
+    }
     /* cout << "Should write to index now" << endl; */
     write_file(git_path / "index", new_tree_hash);
     return new_tree_hash;
@@ -510,13 +529,17 @@ string git_add_folder(const fs::path folder_path) {
             else{
                 // SubCase 2: then base off head tree instead
                 /* cout << "DEBUG: " << "no index but yes head" << endl; */
-                new_tree_hash = get_subtree_hash_for_new_folder(&option_head_tree.content,file_it,folder_path.end(),git_path,folder_path);
+                Context context;
+                context.end_it = folder_path.end();
+                context.git_path = git_path;
+                new_tree_hash = get_subtree_hash_for_new_folder(&option_head_tree.content,file_it,folder_path,context);
             }
         }
         else{
-            GitTree* index_tree = &option_index_tree.content;
-            new_tree_hash =
-                get_subtree_hash_for_new_folder(index_tree, file_it, folder_path.end(), git_path, folder_path);
+            Context context;
+            context.end_it = folder_path.end();
+            context.git_path = git_path;
+            new_tree_hash = get_subtree_hash_for_new_folder(&option_index_tree.content, file_it, folder_path,context);
         }
     }
 

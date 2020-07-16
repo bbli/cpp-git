@@ -23,6 +23,14 @@ struct Option{
     bool exists;
 };
 
+struct Context{
+    GitTree head_tree;
+    typename fs::path::iterator start_file_it;
+    typename fs::path::iterator end_it;
+    fs::path git_path;
+    fs::path project_base_path;
+};
+
 /* File Operation */
 std::string read_file(fs::path path);
 void write_file(fs::path file_path, std::string message);
