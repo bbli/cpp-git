@@ -1,20 +1,21 @@
 #include "helper.hpp"
-#include "git_objects.hpp"
 
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <sha1.hpp>
-#include <vector>
 #include <map>
+#include <sha1.hpp>
 #include <unordered_map>
+#include <vector>
+
+#include "git_objects.hpp"
 namespace fs = std::filesystem;
 using namespace std;
 
 void print_tree(fs::path git_path, string tree_hash) {
     GitTree tree_obj;
-    read_into_object(tree_obj,git_path,tree_hash);
+    read_into_object(tree_obj, git_path, tree_hash);
     printer(tree_obj.directory);
 }
 
@@ -34,8 +35,7 @@ string read_file(fs::path path) {
     // Weakly typed, so should convert to string
     object_file.open(path);
     if (object_file.is_open()) {
-        string tmp = string((istreambuf_iterator<char>(object_file)),
-                                      istreambuf_iterator<char>());
+        string tmp = string((istreambuf_iterator<char>(object_file)), istreambuf_iterator<char>());
         // account for extra \n or EOF char
         tmp.pop_back();
         return tmp;
@@ -87,16 +87,13 @@ string write_object(GitObject* obj, bool write) {
     /* cout << "Hash: " << hash << endl; */
 
     if (write) {
-        fs::path object_path = obj->git_path / "objects" / hash.substr(0,2) / hash.substr(2);
-        if (!fs::exists(object_path))
-            write_file(object_path, total);
+        fs::path object_path = obj->git_path / "objects" / hash.substr(0, 2) / hash.substr(2);
+        if (!fs::exists(object_path)) write_file(object_path, total);
     }
     return hash;
 }
 
-string object_find(fs::path repo, fs::path obj, const string& fmt) {
-    return obj;
-}
+string object_find(fs::path repo, fs::path obj, const string& fmt) { return obj; }
 
 /* ********* Moving between project and git folders	********* */
 string read_project_file_and_write_object(const fs::path git_path, const fs::path& file_path) {
@@ -110,7 +107,7 @@ string read_project_file_and_write_object(const fs::path git_path, const fs::pat
 void write_object_to_project_file(fs::path project_blob_path, string blob_hash) {
     fs::path git_path = repo_find(project_blob_path) / ".cpp-git";
     GitBlob blob_obj;
-    read_into_object(blob_obj,git_path,blob_hash);
+    read_into_object(blob_obj, git_path, blob_hash);
 
     write_file(project_blob_path, blob_obj.data);
 }
@@ -172,67 +169,62 @@ bool is_git_repo(const fs::path& path) {
         return false;
     }
 }
-bool check_node_name(GitTreeNode& node, string file_it_name){
-    return node.name == file_it_name;
-}
-bool end_of_path(typename fs::path::iterator file_it, typename fs::path::iterator end_it){
+bool check_node_name(GitTreeNode& node, string file_it_name) { return node.name == file_it_name; }
+bool end_of_path(typename fs::path::iterator file_it, typename fs::path::iterator end_it) {
     auto check_it = file_it;
     return (++check_it) == end_it;
 }
 
-void check_if_tree(GitTreeNode& node){
+void check_if_tree(GitTreeNode& node) {
     if (node.type != "tree") {
         throw string("this isn't a tree");
     }
 }
 
-void check_if_tree_exists(Option<GitTree> option_tree){
-    if (!option_tree.exists){
+void check_if_tree_exists(Option<GitTree> option_tree) {
+    if (!option_tree.exists) {
         throw string("tree doesn't exist");
     }
 }
 
-GitTree* get_tree_from_hash(string hash, fs::path git_path){
-    GitObject* obj = read_object(git_path,hash);
+GitTree* get_tree_from_hash(string hash, fs::path git_path) {
+    GitObject* obj = read_object(git_path, hash);
     return dynamic_cast<GitTree*>(obj);
 }
 
-string path_relative_to_project(const fs::path project_base_path,fs::path entry_path){
+string path_relative_to_project(const fs::path project_base_path, fs::path entry_path) {
     string base = project_base_path.string();
     string entry = entry_path.string();
 
-    auto [rel,_] = mismatch(entry.begin(),entry.end(),base.begin());
-    auto idx = rel-entry.begin();
+    auto [rel, _] = mismatch(entry.begin(), entry.end(), base.begin());
+    auto idx = rel - entry.begin();
 
-    return entry.substr(idx+1);
+    return entry.substr(idx + 1);
 }
 
-bool is_in_set(const set<string>& set,string val){
+bool is_in_set(const set<string>& set, string val) {
     auto it = set.find(val);
-    if (it != set.end()){
+    if (it != set.end()) {
         return true;
-    }
-    else{
+    } else {
         return false;
     }
 }
-bool is_in_set(const map<string,string>& map,string val){
+bool is_in_set(const map<string, string>& map, string val) {
     auto it = map.find(val);
-    if (it != map.end()){
+    if (it != map.end()) {
         return true;
-    }
-    else{
+    } else {
         return false;
     }
 }
-
 
 /* ********* Finding Project File in GitTree	********* */
 string find_hash_in_tree(GitTree* tree_obj, typename fs::path::iterator file_it,
-                             const typename fs::path::iterator end_it, const fs::path git_path) {
+                         const typename fs::path::iterator end_it, const fs::path git_path) {
     for (auto node : tree_obj->directory) {
-        if (check_node_name(node,*file_it)) {
-            bool end = end_of_path(file_it,end_it);
+        if (check_node_name(node, *file_it)) {
+            bool end = end_of_path(file_it, end_it);
             if (end) {
                 return node.hash;
             }
@@ -241,7 +233,7 @@ string find_hash_in_tree(GitTree* tree_obj, typename fs::path::iterator file_it,
                 file_it++;
                 check_if_tree(node);
                 GitTree subtree;
-                read_into_object(subtree,git_path,node.hash);
+                read_into_object(subtree, git_path, node.hash);
                 return find_hash_in_tree(&subtree, file_it, end_it, git_path);
             }
         }
@@ -249,47 +241,46 @@ string find_hash_in_tree(GitTree* tree_obj, typename fs::path::iterator file_it,
     return "";
 }
 
-GitBlob find_project_file_from_tree_hash(string tree_hash, fs::path relative_path, const fs::path git_path) {
+GitBlob find_project_file_from_tree_hash(string tree_hash, fs::path relative_path,
+                                         const fs::path git_path) {
     auto path_it = relative_path.begin();
     auto end_it = relative_path.end();
     GitTree root_tree;
-    read_into_object(root_tree,git_path,tree_hash);
+    read_into_object(root_tree, git_path, tree_hash);
     string file_hash = find_hash_in_tree(&root_tree, path_it, end_it, git_path);
     GitBlob file_obj;
-    read_into_object(file_obj,git_path,file_hash);
+    read_into_object(file_obj, git_path, file_hash);
     return file_obj;
 }
 
 GitTree find_project_folder_from_tree(string tree_hash, fs::path relative_path,
-                            const fs::path git_path) {
+                                      const fs::path git_path) {
     auto path_it = relative_path.begin();
     auto end_it = relative_path.end();
     /* cout << "Starting Folder Find" << endl; */
     GitTree root_tree;
-    read_into_object(root_tree,git_path,tree_hash);
+    read_into_object(root_tree, git_path, tree_hash);
     string folder_hash = find_hash_in_tree(&root_tree, path_it, end_it, git_path);
     GitTree tree_obj;
-    read_into_object(tree_obj,git_path,tree_hash);
+    read_into_object(tree_obj, git_path, tree_hash);
     return tree_obj;
 }
 
-
 /* ********* Commit Helpers	********* */
 // will only be direct if chkout a commit without a ref
-// NOTE: instead of referencing a reference, 
+// NOTE: instead of referencing a reference,
 // just have HEAD point to a commit object instead
-string get_commit_hash_from_branch(string full_branch_name, fs::path git_path){
-    if (fs::exists(git_path / full_branch_name)){
+string get_commit_hash_from_branch(string full_branch_name, fs::path git_path) {
+    if (fs::exists(git_path / full_branch_name)) {
         return read_file(git_path / full_branch_name);
-    }
-    else{
+    } else {
         throw string("Error. Not a valid branch");
     }
 }
 
 // will return refs/heads/branch_name
 // or commit hash
-string get_current_branch_full(fs::path git_path){
+string get_current_branch_full(fs::path git_path) {
     string content = read_file(git_path / "HEAD");
     auto idx = content.find(' ');
     if (idx != string::npos) {
@@ -298,41 +289,37 @@ string get_current_branch_full(fs::path git_path){
     return content;
 }
 
-string get_full_branch_name(string branch_name){
-    return "refs/heads/" + branch_name;
-}
+string get_full_branch_name(string branch_name) { return "refs/heads/" + branch_name; }
 
 Option<GitTree> get_index_tree(fs::path git_path) {
     string tree_hash = read_file(git_path / "index");
     GitTree tree;
-    if (tree_hash == ""){
-        return Option<GitTree>{tree,false};
-    }
-    else{
-        read_into_object(tree,git_path,tree_hash);
-        return Option<GitTree>{tree,true};
+    if (tree_hash == "") {
+        return Option<GitTree>{tree, false};
+    } else {
+        read_into_object(tree, git_path, tree_hash);
+        return Option<GitTree>{tree, true};
     }
 }
 
-GitCommit get_commit_from_hash(string commit_hash, fs::path git_path){
-        GitCommit commit_obj;
-        read_into_object(commit_obj,git_path,commit_hash);
-        return commit_obj;
+GitCommit get_commit_from_hash(string commit_hash, fs::path git_path) {
+    GitCommit commit_obj;
+    read_into_object(commit_obj, git_path, commit_hash);
+    return commit_obj;
 }
 
 Option<GitTree> get_head_tree(fs::path git_path) {
     string full_branch_name = get_current_branch_full(git_path);
-    string commit_hash = get_commit_hash_from_branch(full_branch_name,git_path);
+    string commit_hash = get_commit_hash_from_branch(full_branch_name, git_path);
     GitTree tree;
-    if (commit_hash==""){
-        return Option<GitTree>{tree,false};
-    }
-    else{
+    if (commit_hash == "") {
+        return Option<GitTree>{tree, false};
+    } else {
         /* cout << "Commit Hash: " << tree_hash << endl; */
-        GitCommit commit_obj = get_commit_from_hash(commit_hash,git_path);
+        GitCommit commit_obj = get_commit_from_hash(commit_hash, git_path);
         /* cout << "Commit tree: " << (commit_obj->tree_hash) << endl; */
-        read_into_object(tree,git_path,commit_obj.tree_hash);
-        return Option<GitTree>{tree,true};
+        read_into_object(tree, git_path, commit_obj.tree_hash);
+        return Option<GitTree>{tree, true};
     }
 }
 string get_tree_hash_of_index(fs::path git_path) {

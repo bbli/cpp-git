@@ -39,8 +39,8 @@ class GitCommit : public GitObject {
     virtual std::string get_fmt(void);
     GitCommit(){};
     GitCommit(fs::path git_path, const std::string& data);
-    GitCommit(fs::path git_path, const std::string& tree_hash,
-                const std::string parent_hash, const std::string commit_message);
+    GitCommit(fs::path git_path, const std::string& tree_hash, const std::string parent_hash,
+              const std::string commit_message);
     // create a root commit without parent and any file
     GitCommit(fs::path git_path);
     void to_internal(const std::string& data);
@@ -56,7 +56,9 @@ struct GitTreeNode {
 
 class GitTree : public GitObject {
    private:
-    typename std::string::const_iterator extract_one_tree_node(typename std::string::const_iterator start_it,const std::string &data);
+    typename std::string::const_iterator extract_one_tree_node(
+        typename std::string::const_iterator start_it, const std::string& data);
+
    public:
     std::vector<GitTreeNode> directory;
     virtual std::string get_fmt(void);

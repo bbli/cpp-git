@@ -39,13 +39,12 @@ But otherwise, most of the git commands have been implemented to their full spec
 
 ## Future Work
 * Implement garbage collection `git gc` -> algorithm for this should be as follows. Keep a set of all hashes as you traversethe git DAG backwards/into each tree, with branches and tags as "sources". Afterwards, traverse the object directory and delete any file which is not in this set
-* Create "null" object so all objects can be statically allocated -> As it turns out, we **do not need runtime polymorphism(as we always know the type before retrieving from the .cpp-git/objects directory)**. But when refactoring the codebase, it turns out acessing the objects through pointers makes error checking easier b/c of `nullptr`. So once we have a "null" object, we can keep this nice error checking while making sure there are no memory leaks.
+* Create "null" object so all objects can be statically allocated -> As it turns out, we **do not need runtime polymorphism(as we always know the type before retrieving from the .cpp-git/objects directory)**. But when refactoring the codebase, it turns out acessing the objects through pointers makes error checking easier b/c of `nullptr`. So once we have a "null" object, we can keep this nice error checking while making sure there are no memory leaks. [DONE]
 
 * add compression of object files-> easy but didn't do yet for debugging reasons
 * clean up tests -> some tests do not use the newer functions/are too hardcoded.  Also remove that one test fixture(as personally I now don't believe in the usefulness of test fixtures)
 * clean up header files -> in particular in commands.hpp. Too many function are being exported right now
-* delete git path member from all the objects -> currently can't because part of test code/`write_object` relies on it
-* add context dictionary for optimizations/less arguments passed to functions -> for example, sometimes the code logic will call `get_head_tree` twice, which amounts to 2 I/Os
+* add context dictionary for optimizations/less arguments passed to functions -> for example, sometimes the code logic will call `get_head_tree` twice, which amounts to 2 I/Os [DONE]
 * make algorithms account for same content in different file case -> as of now, most algorithms assume the content in each file of the repository is unique
 
 

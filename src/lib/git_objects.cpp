@@ -1,4 +1,5 @@
 #include "git_objects.hpp"
+
 #include <helper.hpp>
 using namespace std;
 
@@ -11,12 +12,12 @@ GitCommit::GitCommit(fs::path git_path, const string& data) : GitObject(git_path
     to_internal(data);
 }
 
-GitCommit::GitCommit(fs::path git_path, const string& tree_hash,
-                const string parent_hash, const string commit_message):
-                    GitObject(git_path),
-                    tree_hash(tree_hash),
-                    parent_hash(parent_hash),
-                    commit_message(commit_message){};
+GitCommit::GitCommit(fs::path git_path, const string& tree_hash, const string parent_hash,
+                     const string commit_message)
+    : GitObject(git_path),
+      tree_hash(tree_hash),
+      parent_hash(parent_hash),
+      commit_message(commit_message){};
 
 GitCommit::GitCommit(fs::path git_path) : GitObject(git_path), parent_hash(""), commit_message("") {
     GitTree tree_obj = GitTree(git_path);
@@ -24,24 +25,16 @@ GitCommit::GitCommit(fs::path git_path) : GitObject(git_path), parent_hash(""), 
     this->tree_hash = tree_obj_hash;
 }
 
-GitTree::GitTree(fs::path git_path, const string& data) : GitObject(git_path) {
-    to_internal(data);
-}
+GitTree::GitTree(fs::path git_path, const string& data) : GitObject(git_path) { to_internal(data); }
 
 GitTree::GitTree(fs::path git_path) : GitObject(git_path), directory(vector<GitTreeNode>{}){};
 
-GitTag::GitTag(fs::path git_path, const string& data) : GitObject(git_path) {
-    to_internal(data);
-}
+GitTag::GitTag(fs::path git_path, const string& data) : GitObject(git_path) { to_internal(data); }
 
-GitTag::GitTag(fs::path git_path, const string& commit_hash, const string& tag_message):
-    GitObject(git_path),
-    commit_hash(commit_hash),
-    tag_message(tag_message) {}
+GitTag::GitTag(fs::path git_path, const string& commit_hash, const string& tag_message)
+    : GitObject(git_path), commit_hash(commit_hash), tag_message(tag_message) {}
 
-GitBlob::GitBlob(fs::path git_path, const string& data) : GitObject(git_path) {
-    to_internal(data);
-}
+GitBlob::GitBlob(fs::path git_path, const string& data) : GitObject(git_path) { to_internal(data); }
 
 void GitCommit::to_internal(const string& data) {
     // extract tree_hash
@@ -53,8 +46,7 @@ void GitCommit::to_internal(const string& data) {
     /* cout << "Tree hash length: " << tree_hash.length() << endl; */
     // extract parent hash
     tree_hash_point = tree_hash_point + 1;
-    auto parent_hash_point =
-        find_if(tree_hash_point, data.end(), [](auto x) { return x == '\n'; });
+    auto parent_hash_point = find_if(tree_hash_point, data.end(), [](auto x) { return x == '\n'; });
     if (parent_hash_point == data.end()) {
         throw string("sommething wrong with commit file");
     }
@@ -70,55 +62,59 @@ void GitCommit::to_internal(const string& data) {
 /* set_part(string &member, T range){ */
 /*     transform() */
 /* } */
-//TODO: unit test for this since throw concats
+// TODO: unit test for this since throw concats
 // ohh, concats implies throw is now a std::string rather than char*
-static void check_find_error(typename string::const_iterator point,typename string::const_iterator endpoint,string file_type){
-    if (point == endpoint){
+static void check_find_error(typename string::const_iterator point,
+                             typename string::const_iterator endpoint, string file_type) {
+    if (point == endpoint) {
         throw string("something is wrong with this " + file_type + " file");
         /* throw string("something is wrong with this file"); */
     }
 }
 
-static typename string::const_iterator extract_string(typename string::const_iterator start_it, typename string::const_iterator end_it,string& node_part){
+static typename string::const_iterator extract_string(typename string::const_iterator start_it,
+                                                      typename string::const_iterator end_it,
+                                                      string& node_part) {
     // Q: will this actually work/ I guess find_if deduces the type
     // with first two arguments, which then enforces the type of the
     // space_delimiter template
-    auto space_delimiter = [](auto x){return x==' ';};
+    auto space_delimiter = [](auto x) { return x == ' '; };
 
     // find copy endpoint
-    auto endpoint_it = std::find_if(start_it,end_it,space_delimiter);
-    check_find_error(endpoint_it,end_it,"tree");
+    auto endpoint_it = std::find_if(start_it, end_it, space_delimiter);
+    check_find_error(endpoint_it, end_it, "tree");
 
     // copy range
-    std::copy(start_it,endpoint_it,std::back_inserter(node_part));
+    std::copy(start_it, endpoint_it, std::back_inserter(node_part));
 
     return endpoint_it;
 }
 
-static typename string::const_iterator extract_hash(typename string::const_iterator start_it,typename string::const_iterator end_it,string& node_part){
-    auto new_line_delimiter = [](auto x){return x=='\n';};
+static typename string::const_iterator extract_hash(typename string::const_iterator start_it,
+                                                    typename string::const_iterator end_it,
+                                                    string& node_part) {
+    auto new_line_delimiter = [](auto x) { return x == '\n'; };
 
     // find copy endpoint
-    auto endpoint_it = std::find_if(start_it,end_it,new_line_delimiter);
+    auto endpoint_it = std::find_if(start_it, end_it, new_line_delimiter);
 
     // copy range
-    std::copy(start_it,endpoint_it,std::back_inserter(node_part));
+    std::copy(start_it, endpoint_it, std::back_inserter(node_part));
 
     return endpoint_it;
-
 }
 
-
-typename string::const_iterator GitTree::extract_one_tree_node(typename string::const_iterator start_it, const string &data){
+typename string::const_iterator GitTree::extract_one_tree_node(
+    typename string::const_iterator start_it, const string& data) {
     GitTreeNode new_tree_node;
     string type;
     string name;
     string hash;
 
-    //extract parts
-    auto type_endpoint = extract_string(start_it,data.end(),type);
-    auto name_endpoint = extract_string(++type_endpoint,data.end(),name);
-    auto hash_endpoint = extract_hash(++name_endpoint,data.end(),hash);
+    // extract parts
+    auto type_endpoint = extract_string(start_it, data.end(), type);
+    auto name_endpoint = extract_string(++type_endpoint, data.end(), name);
+    auto hash_endpoint = extract_hash(++name_endpoint, data.end(), hash);
 
     new_tree_node.type = type;
     new_tree_node.name = name;
@@ -133,17 +129,15 @@ ostream& operator<<(ostream& os, GitTreeNode& t) {
     return os;
 }
 
-void GitTree::to_internal(const string &data){
+void GitTree::to_internal(const string& data) {
     typename string::const_iterator curr_it = data.begin();
-    while (curr_it != data.end()){
-        curr_it = this->extract_one_tree_node(curr_it,data);
-        if (curr_it == data.end()){
+    while (curr_it != data.end()) {
+        curr_it = this->extract_one_tree_node(curr_it, data);
+        if (curr_it == data.end()) {
             break;
-        }
-        else if (*curr_it != '\n'){
+        } else if (*curr_it != '\n') {
             throw string("parsing error");
-        }
-        else{
+        } else {
             curr_it++;
         }
     }
@@ -205,14 +199,13 @@ string GitCommit::to_filesystem(void) {
 }
 string GitTree::to_filesystem(void) {
     string data;
-    if (directory.size()>0){
+    if (directory.size() > 0) {
         for (auto node : directory) {
             data += node.type + ' ' + node.name + ' ' + node.hash + '\n';
         }
         // to account for extra '\n'
         data.pop_back();
-    }
-    else{
+    } else {
         data = "";
     }
     return data;
