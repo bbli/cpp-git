@@ -11,17 +11,27 @@ add_compile_options(-W -Wall)
 #if(APPLE)
 #    include_directories(/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/usr/include)
 #endif()
+
+# Global Variables
+option(CLANG_TIDY "runs clang tidy on everything except the tests" ON)
+set(CLANG_TIDY_OPTIONS "clang-tidy;--checks=*,readability=*")
+
+option(CLANG_TIDY "runs clang tidy on everything except the tests" ON)
+set(CLANG_TIDY_OPTIONS "clang-tidy;--checks=*,readability=*")
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS YES)
 
 add_subdirectory(src)
 add_subdirectory(lib/sha1)
-option(PACKAGE_TESTS "Build the tests" ON)
-if(PACKAGE_TESTS)
+
+option(COMPILE_TESTS "Build the tests" ON)
+if(COMPILE_TESTS)
     enable_testing()
     add_subdirectory(lib/gtest)
     add_subdirectory(test)
     add_test(NAME test COMMAND TEST)
 endif()
+
 
 # SANTIZERS
 # Build Types
@@ -58,3 +68,4 @@ set(CMAKE_CXX_FLAGS_UBSAN
     "-fsanitize=undefined"
     CACHE STRING "Flags used by the C++ compiler during UndefinedBehaviourSanitizer builds."
     FORCE)
+
