@@ -14,7 +14,7 @@ add_compile_options(-W -Wall -g)
 
 # Global Variables
 option(CLANG_TIDY "runs clang tidy on everything except the tests" ON)
-set(CLANG_TIDY_OPTIONS "clang-tidy;--checks=*,readability=*")
+set(CLANG_TIDY_OPTIONS "clang-tidy;--checks=*,readability-*,-fuschia-default-arguments-*")
 
 option(CLANG_TIDY "runs clang tidy on everything except the tests" ON)
 set(CLANG_TIDY_OPTIONS "clang-tidy;--checks=*,readability=*")

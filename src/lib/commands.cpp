@@ -962,7 +962,10 @@ void git_show_tag() {
     fs::path repo_base_path = repo_find(fs::current_path());
     fs::path tag_path = repo_base_path / ".cpp-git" / "refs" / "tags";
     auto refs = ref_list(tag_path);
-    for (auto it = refs.begin(); it != refs.end(); ++it) cout << it->first.substr(5) << endl;
+    //for (auto it = refs.begin(); it != refs.end(); ++it){
+    for (auto & it: refs){
+        cout << it.first.substr(5) << endl;
+    } 
     cout << endl;
 }
 
@@ -972,8 +975,9 @@ void git_create_tag(string name, string object, bool if_create_object, string ta
 
     string sha = object_find(repo_base_path, object, "commit");
 
-    if (!if_create_object)
+    if (!if_create_object){
         write_file(tag_path / name, sha);
+    }
     else {
         GitTag new_tag_obj = GitTag(repo_base_path / ".cpp-git", object, tag_message);
         string new_tag_hash = write_object(&new_tag_obj);
@@ -982,15 +986,16 @@ void git_create_tag(string name, string object, bool if_create_object, string ta
 }
 
 void cmd_tag(const vector<string>& args) {
-    if (args.size() == 0) {
+    if (args.empty()) {
         // git tag: List all tags
         git_show_tag();
     } else if (args.size() == 1 || (args.size() == 2 && args[0] != "-a")) {
         // git tag NAME [OBJECT]: create a new lightweight tag NAME, pointing at HEAD (default) or
         // OBJECT
         string commit_hash;
-        if (args.size() == 2)
+        if (args.size() == 2){
             string commit_hash = args[1];
+        }
         else {
             fs::path git_path = repo_find(fs::current_path()) / ".cpp-git";
             string current_full_branch_name = get_current_branch_full(git_path);
@@ -1018,7 +1023,7 @@ void cmd_tag(const vector<string>& args) {
 
 void cmd_log(const vector<string>& args) {
     fs::path project_base_path = repo_find(fs::current_path());
-    if (args.size() == 0 || (args.size() == 2 && args[0] == "-n")) {
+    if (args.empty() || (args.size() == 2 && args[0] == "-n")) {
         int num = INT_MAX;
         if (args.size() > 0) num = std::stoi(args[1]);
         git_log(num);
@@ -1115,14 +1120,16 @@ void cmd_commit(const vector<string>& args) {
     if (args.size() != 2) {
         throw std::runtime_error("First option should be -m/--amend, second is the commit message");
     }
-    if (args[0] == "-m")
+    if (args[0] == "-m"){
         git_commit(args[1]);
-    else if (args[0] == "--amend")
+    }
+    else if (args[0] == "--amend"){
         git_amend(args[1]);
+    }
 }
 
 void cmd_reset(const vector<string>& args) {
-    if (args.size() == 0) {
+    if (args.empty()) {
         git_reset_project(false);
     } else if (args[0] == "--mixed") {
         if (args.size() == 2) {
@@ -1136,14 +1143,15 @@ void cmd_reset(const vector<string>& args) {
         } else {
             git_reset_project(true);
         }
-    } else
+    } else{
         throw std::runtime_error("git reset error.");
+    }
 }
 
 void cmd_branch(const vector<string>& args) {
     fs::path project_base_path = repo_find(fs::current_path());
     fs::path git_path = project_base_path / ".cpp-git";
-    if (args.size() == 0 || args[0] == "--list") {
+    if (args.empty() || args[0] == "--list") {
         git_branch_list();
     } else if (args[0] == "-d" && args.size() == 2) {
         string branch_name = args[1];
@@ -1154,10 +1162,10 @@ void cmd_branch(const vector<string>& args) {
         }
     } else if (args.size() == 1) {
         std::string branch_name = args[0];
-        if (fs::exists(git_path / get_full_branch_name(branch_name))) {
-            throw std::runtime_error("git branch create error. This is already an existing branch name");
-        } else {
+        if (!fs::exists(git_path / get_full_branch_name(branch_name))) {
             git_branch_new(branch_name);
+        } else {
+            throw std::runtime_error("git branch create error. This is already an existing branch name");
         }
     } else {
         throw std::runtime_error("invalid git branch usage");
