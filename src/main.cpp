@@ -64,8 +64,8 @@ int main(int argc, char **argv)
         auto parser = InputParser(argc, argv);
         parser.execute_cmd();
     }
-    catch (std::string& e)
+    catch (std::runtime_error& e)
     {
-        cout << e << endl;
+        cout << e.what() << endl;
     }
 }

@@ -8,6 +8,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <stdexcept>
 
 #include "git_objects.hpp"
 #include "helper.hpp"
@@ -29,7 +30,7 @@ static void walk_tree_and_replace(fs::path tree_write_path, GitTree tree_obj) {
             walk_tree_and_replace(tree_write_path / node.name, subtree);
         } else {
             cout << "Node should only be tree or blob" << endl;
-            throw string("Node type should only be tree or blob");
+            throw std::runtime_error("Node type should only be tree or blob");
         }
     }
 }
@@ -141,7 +142,7 @@ void git_checkout_file(fs::path file_path) {
     string commit_hash = get_commit_hash_from_branch(full_branch_name, git_path);
     Option<GitTree> option_head_tree = get_head_tree(git_path);
     if (!option_head_tree.exists) {
-        throw string("Git checkout error.Make a commit first");
+        throw std::runtime_error("Git checkout error.Make a commit first");
     }
     // Run file_it
     auto base_it = project_base_path.begin();
@@ -155,7 +156,7 @@ void git_checkout_file(fs::path file_path) {
         find_hash_in_tree(&option_head_tree.content, file_it, file_path.end(), git_path);
     if (file_hash == "") {
         /* cout << "File has not previously been checked in"; */
-        throw string("error. File has not previously been checked in");
+        throw std::runtime_error("error. File has not previously been checked in");
     } else {
         write_object_to_project_file(file_path, file_hash);
     }
@@ -178,7 +179,7 @@ void git_checkout_branch(string branch_name) {
     string full_branch_name = "refs/heads/" + branch_name;
     Option<GitTree> option_index_tree = get_index_tree(git_path);
     if (option_index_tree.exists) {
-        throw string("error. Please commit changes before changing branches");
+        throw std::runtime_error("error. Please commit changes before changing branches");
     }
 
     if (is_actually_a_hash(branch_name, git_path)) {
@@ -201,7 +202,7 @@ void git_branch_new(string branch_name) {
 
     fs::path full_branch_path = git_path / get_full_branch_name(branch_name);
     if (fs::exists(full_branch_path)) {
-        throw string("error. branch already exists");
+        throw std::runtime_error("error. branch already exists");
     }
 
     // make new branch point to current branch's commit
@@ -216,7 +217,7 @@ void git_branch_delete(string branch_name) {
 
     fs::path full_branch_path = git_path / get_full_branch_name(branch_name);
     if (!fs::exists(full_branch_path)) {
-        throw string("error. branch does not exist");
+        throw std::runtime_error("error. branch does not exist");
     }
 
     fs::remove(full_branch_path);
@@ -256,7 +257,7 @@ void git_init(fs::path project_base_path) {
     // check that .git doesn't exist or is empty directory
     fs::path git_path = project_base_path / ".cpp-git";
     if (fs::exists(git_path)) {
-        throw string("init error: Not an empty path");
+        throw std::runtime_error("init error: Not an empty path");
     }
     // create object dir
     fs::create_directories(git_path / "objects");
@@ -298,7 +299,7 @@ void git_commit(string commit_message) {
 static string get_prev_commit_hash_from_branch(string current_full_branch_name, fs::path git_path){
     string current_commit_hash = get_commit_hash_from_branch(current_full_branch_name,git_path);
     if (current_commit_hash==""){
-        throw string("git amend error. Make a commit first");
+        throw std::runtime_error("git amend error. Make a commit first");
     }
     GitCommit current_commit = get_commit_from_hash(current_commit_hash,git_path);
     return current_commit.parent_hash;
@@ -313,7 +314,7 @@ void git_amend(string commit_message) {
     string current_full_branch_name = get_current_branch_full(git_path);
     string current_commit_hash = get_commit_hash_from_branch(current_full_branch_name, git_path);
     if (current_commit_hash == "") {
-        throw string("git amend error. Make a commit first");
+        throw std::runtime_error("git amend error. Make a commit first");
     }
     GitCommit current_commit = get_commit_from_hash(current_commit_hash, git_path);
     string prev_commit_hash = current_commit.parent_hash;
@@ -421,11 +422,11 @@ string git_reset_file(fs::path file_path, bool hard) {
             new_index_tree_hash = unstager.unstage_file(index_tree, file_it, context);
         }
     } else {
-        throw string("nothing to reset in index");
+        throw std::runtime_error("nothing to reset in index");
     }
 
     if (!found) {
-        throw string("this file does not exist in the index");
+        throw std::runtime_error("this file does not exist in the index");
     }
 
     if (hard) {
@@ -521,7 +522,7 @@ string git_add_folder(const fs::path folder_path) {
         if (!option_index_tree.exists) {
             Option<GitTree> option_head_tree = get_head_tree(git_path);
             if (!option_head_tree.exists) {
-                throw string("git add error");
+                throw std::runtime_error("git add error");
             } else {
                 // SubCase 2: then base off head tree instead
                 /* cout << "DEBUG: " << "no index but yes head" << endl; */
@@ -559,7 +560,7 @@ string git_add_folder(const fs::path folder_path) {
  */
 /*         } */
 /*         else{ */
-/*             throw string("cpp-git cannot handle this file"); */
+/*             throw std::runtime_error("cpp-git cannot handle this file"); */
 /*         } */
 /*     } */
 /* } */
@@ -581,7 +582,7 @@ string git_add_folder(const fs::path folder_path) {
 /*             print_new_hashes(entry_path,diff_hashes,path_to_hash_dict,project_base_path); */
 /*         } */
 /*         else{ */
-/*             throw string("cpp-git cannot handle this file"); */
+/*             throw std::runtime_error("cpp-git cannot handle this file"); */
 /*         } */
 /*     } */
 /* } */
@@ -608,7 +609,7 @@ static void get_leaf_hashes_of_tree(GitTree* tree_obj, set<string>& index_leaf_h
             read_into_object(subtree, git_path, node.hash);
             get_leaf_hashes_of_tree(&subtree, index_leaf_hashes, git_path);
         } else {
-            throw string("cpp-git cannot handle this file");
+            throw std::runtime_error("cpp-git cannot handle this file");
         }
     }
 }
@@ -623,7 +624,7 @@ static void get_leaf_hashes_of_tree(GitTree* tree_obj, map<string, string>& leaf
             read_into_object(subtree, git_path, node.hash);
             get_leaf_hashes_of_tree(&subtree, leaf_hashes, path_name, git_path);
         } else {
-            throw string("cpp-git cannot handle this file");
+            throw std::runtime_error("cpp-git cannot handle this file");
         }
     }
 }
@@ -647,7 +648,7 @@ static void print_unstaged_project_files(fs::path directory, const set<string>& 
             print_unstaged_project_files(project_file_path, index_leaf_hashes, git_path,
                                          project_base_path);
         } else {
-            throw string("cpp-git cannot handle this file");
+            throw std::runtime_error("cpp-git cannot handle this file");
         }
     }
 }
@@ -718,7 +719,7 @@ static void print_deleted_head_nodes(GitTree* head_tree, const set<string>& dele
             read_into_object(subtree, git_path, head_node.hash);
             print_deleted_head_nodes(&subtree, delete_hashes, rel_path / head_node.name, git_path);
         } else {
-            throw string("cpp-git cannot handle this file");
+            throw std::runtime_error("cpp-git cannot handle this file");
         }
     }
 }
@@ -873,7 +874,7 @@ static void walk_working_and_calc_set_differences(fs::path current_path,
             walk_working_and_calc_set_differences(path, commit_diff_hashes, working_diff_hashes,
                                                   head_leaf_hashes, git_path);
         } else {
-            throw string("cpp-git cannot handle this file");
+            throw std::runtime_error("cpp-git cannot handle this file");
         }
     }
 }
@@ -898,7 +899,7 @@ void git_clean(bool remove) {
     }
     // Otherwise shouldn't clean
     else {
-        throw string("Cannot clean until a commit has been made");
+        throw std::runtime_error("Cannot clean until a commit has been made");
     }
 }
 
@@ -945,7 +946,7 @@ void cmd_show_ref(const vector<string>& args) { git_show_ref("refs"); }
 void cmd_hash_object(const vector<string>& args) {
     if (args.size() <= 1 || CAT_FILE_SUBCMDS.find(args[0]) == CAT_FILE_SUBCMDS.end() ||
         args[0] == "--help") {
-        throw string(HASH_OBJECT_USAGE);
+        throw std::runtime_error(HASH_OBJECT_USAGE);
     }
     git_hash_object(fs::canonical(args[1]), args[0]);
 }
@@ -1011,7 +1012,7 @@ void cmd_tag(const vector<string>& args) {
         if (args[args.size() - 2] == "-m") message = args.back();
         git_create_tag(args[1], commit_hash, true, message);
     } else {
-        throw string("WRONG GIT TAG USAGE");
+        throw std::runtime_error("WRONG GIT TAG USAGE");
     }
 }
 
@@ -1022,7 +1023,7 @@ void cmd_log(const vector<string>& args) {
         if (args.size() > 0) num = std::stoi(args[1]);
         git_log(num);
     } else
-        throw string(LOG_USAGE);
+        throw std::runtime_error(LOG_USAGE);
 }
 
 void git_log(int num) {
@@ -1063,14 +1064,14 @@ void cmd_clean(const std::vector<std::string>& args) {
 
 void cmd_init(const vector<string>& args) {
     if ((args.size() >= 1 && args[0] == "--help") || args.size() > 1) {
-        throw string(GIT_INIT_USAGE);
+        throw std::runtime_error(GIT_INIT_USAGE);
     }
     git_init(fs::current_path());
 }
 
 void cmd_add(const vector<string>& args) {
     if (args.size() != 1) {
-        throw string("git add error. specify just the file or folder to add");
+        throw std::runtime_error("git add error. specify just the file or folder to add");
     }
     fs::path path = args[0];
     path = fs::canonical(path);
@@ -1081,7 +1082,7 @@ void cmd_add(const vector<string>& args) {
         git_add_file(path);
         /* std::cout << "calling add file" << std::endl; */
     } else {
-        throw string(
+        throw std::runtime_error(
             "git add error. cannot handle this kind of file/specified file does not exist on "
             "filesystem");
     }
@@ -1090,14 +1091,14 @@ void cmd_add(const vector<string>& args) {
 void cmd_cat_file(const vector<string>& args) {
     if (args.size() <= 1 || CAT_FILE_SUBCMDS.find(args[0]) == CAT_FILE_SUBCMDS.end() ||
         args[0] == "--help") {
-        throw string(CAT_FILE_USAGE);
+        throw std::runtime_error(CAT_FILE_USAGE);
     }
     git_cat_file(fs::canonical(args[1]), args[0]);
 }
 
 void cmd_checkout(const vector<string>& args) {
     if (args.size() != 1) {
-        throw string(CHECKOUT_USAGE);
+        throw std::runtime_error(CHECKOUT_USAGE);
     }
     std::string branch_or_file = args[0];
     fs::path git_path = repo_find(fs::current_path()) / ".cpp-git";
@@ -1106,13 +1107,13 @@ void cmd_checkout(const vector<string>& args) {
     } else if (fs::exists(fs::canonical(branch_or_file))) {
         git_checkout_file(fs::canonical(branch_or_file));
     } else {
-        throw string(CHECKOUT_USAGE);
+        throw std::runtime_error(CHECKOUT_USAGE);
     }
 }
 
 void cmd_commit(const vector<string>& args) {
     if (args.size() != 2) {
-        throw string("First option should be -m/--amend, second is the commit message");
+        throw std::runtime_error("First option should be -m/--amend, second is the commit message");
     }
     if (args[0] == "-m")
         git_commit(args[1]);
@@ -1136,7 +1137,7 @@ void cmd_reset(const vector<string>& args) {
             git_reset_project(true);
         }
     } else
-        throw string("git reset error.");
+        throw std::runtime_error("git reset error.");
 }
 
 void cmd_branch(const vector<string>& args) {
@@ -1149,16 +1150,16 @@ void cmd_branch(const vector<string>& args) {
         if (fs::exists(git_path / get_full_branch_name(branch_name))) {
             git_branch_delete(branch_name);
         } else {
-            throw string("git branch delete error. This is not an existing branch name");
+            throw std::runtime_error("git branch delete error. This is not an existing branch name");
         }
     } else if (args.size() == 1) {
         std::string branch_name = args[0];
         if (fs::exists(git_path / get_full_branch_name(branch_name))) {
-            throw string("git branch create error. This is already an existing branch name");
+            throw std::runtime_error("git branch create error. This is already an existing branch name");
         } else {
             git_branch_new(branch_name);
         }
     } else {
-        throw string("invalid git branch usage");
+        throw std::runtime_error("invalid git branch usage");
     }
 }

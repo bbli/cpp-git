@@ -8,7 +8,7 @@ add_executable(cpg main.cpp)
 
 target_link_libraries(cpg PRIVATE command_library)
 if (CLANG_TIDY)
-    set_target_properties(cpg PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_OPTIONS}")
+    #set_target_properties(cpg PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_OPTIONS}")
     #set_target_properties(cpg PROPERTIES CXX_CLANG_TIDY "clang-tidy;--checks=*,readability=*")
 endif()
 

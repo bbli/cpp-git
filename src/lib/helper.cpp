@@ -40,7 +40,7 @@ string read_file(fs::path path) {
         tmp.pop_back();
         return tmp;
     } else {
-        throw string("Couldn't open the file");
+        throw std::runtime_error("Couldn't open the file");
     }
 }
 
@@ -49,7 +49,7 @@ GitObject* create_object(string type, string& data, fs::path git_path) {
     if (type == string("tree")) return new GitTree(git_path, data);
     if (type == string("tag")) return new GitTag(git_path, data);
     if (type == string("blob")) return new GitBlob(git_path, data);
-    throw string("Something is wrong with the type");
+    throw std::runtime_error("Something is wrong with the type");
 }
 
 GitObject* read_object(fs::path git_path, string hash) {
@@ -64,7 +64,7 @@ GitObject* read_object(fs::path git_path, string hash) {
     /* cout << "Split index: " << split_index << endl; */
     // if (split_index == content.length() - 1) {
     //     cout<<"FFF"<<endl;
-    //     //throw string("not a valid file");
+    //     //throw std::runtime_error("not a valid file");
     // }
     // it's too bad string_view cannot be used in STL algorithms
     /* string_view type(content.begin(),split_point); */
@@ -136,7 +136,7 @@ string read_project_folder_and_write_tree(const fs::path& adding_directory, bool
             string tree_hash = read_project_folder_and_write_tree(path);
             tree_obj.add_entry("tree", path.filename(), tree_hash);
         } else {
-            throw string("cpp-git cannot handle this file");
+            throw std::runtime_error("cpp-git cannot handle this file");
         }
     }
     string output = write_object(&tree_obj);
@@ -152,7 +152,7 @@ string read_project_folder_and_write_tree(const fs::path& adding_directory, bool
 // get back to project root
 fs::path repo_find(fs::path file_path) {
     if (file_path.parent_path() == file_path) {
-        throw string("No git directory");
+        throw std::runtime_error("No git directory");
     }
     if (fs::exists(file_path / ".cpp-git")) {
         return file_path;
@@ -177,13 +177,13 @@ bool end_of_path(typename fs::path::iterator file_it, typename fs::path::iterato
 
 void check_if_tree(GitTreeNode& node) {
     if (node.type != "tree") {
-        throw string("this isn't a tree");
+        throw std::runtime_error("this isn't a tree");
     }
 }
 
 void check_if_tree_exists(Option<GitTree> option_tree) {
     if (!option_tree.exists) {
-        throw string("tree doesn't exist");
+        throw std::runtime_error("tree doesn't exist");
     }
 }
 
@@ -274,7 +274,8 @@ string get_commit_hash_from_branch(string full_branch_name, fs::path git_path) {
     if (fs::exists(git_path / full_branch_name)) {
         return read_file(git_path / full_branch_name);
     } else {
-        throw string("Error. Not a valid branch");
+        std::cout << "Full branch name:" << full_branch_name << std::endl;
+        throw std::runtime_error("Error. Not a valid branch");
     }
 }
 
