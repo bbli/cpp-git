@@ -12,12 +12,12 @@ GitCommit::GitCommit(fs::path git_path, const string& data) : GitObject(git_path
     to_internal(data);
 }
 
-GitCommit::GitCommit(fs::path git_path, const string& tree_hash, const string parent_hash,
-                     const string commit_message)
+GitCommit::GitCommit(fs::path git_path, string tree_hash, string parent_hash,
+                     string commit_message)
     : GitObject(git_path),
-      tree_hash(tree_hash),
-      parent_hash(parent_hash),
-      commit_message(commit_message){};
+      tree_hash(std::move(tree_hash)),
+      parent_hash(std::move(parent_hash)),
+      commit_message(std::move(commit_message)){};
 
 GitCommit::GitCommit(fs::path git_path) : GitObject(git_path), parent_hash(""), commit_message("") {
     GitTree tree_obj = GitTree(git_path);

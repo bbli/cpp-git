@@ -154,22 +154,20 @@ void git_checkout_file(fs::path file_path) {
 
     string file_hash =
         find_hash_in_tree(&option_head_tree.content, file_it, file_path.end(), git_path);
-    if (file_hash == "") {
+    if (file_hash != "") {
         /* cout << "File has not previously been checked in"; */
-        throw std::runtime_error("error. File has not previously been checked in");
-    } else {
         write_object_to_project_file(file_path, file_hash);
+    } else {
+        throw std::runtime_error("error. File has not previously been checked in");
     }
 }
 bool is_actually_a_hash(string branch_name, fs::path git_path) {
     if (branch_name.length() < 4) {
         return false;
     }
-    if (fs::exists(git_path / "objects" / branch_name.substr(0, 2) / branch_name.substr(2))) {
-        return true;
-    } else {
-        return false;
-    }
+    // since git stores each object with the first 2 letters of the hash as the folder name,
+    // and the rest as the file name
+    return fs::exists(git_path / "objects" / branch_name.substr(0,2) / branch_name.substr(2));
 }
 void git_checkout_branch(string branch_name) {
     fs::path project_base_path = repo_find(fs::current_path());
@@ -182,6 +180,7 @@ void git_checkout_branch(string branch_name) {
         throw std::runtime_error("error. Please commit changes before changing branches");
     }
 
+    // if we want to check out via a hash rather than a name
     if (is_actually_a_hash(branch_name, git_path)) {
         commit_hash = branch_name;
     } else {
@@ -286,7 +285,7 @@ void git_commit(string commit_message) {
         std::cout << "Error. Nothing to commit" << std::endl;
     } else {
         GitCommit new_commit_obj =
-            GitCommit(git_path, index_tree_hash, current_commit_hash, commit_message);
+            GitCommit(git_path, std::move(index_tree_hash), std::move(current_commit_hash), std::move(commit_message));
         string new_commit_hash = write_object(&new_commit_obj);
         // move ref to new commit
         write_file(git_path / current_full_branch_name, new_commit_hash);
@@ -325,7 +324,7 @@ void git_amend(string commit_message) {
         // then grab tree from current commit
         tree_hash = current_commit.tree_hash;
     } else {
-        GitCommit new_commit_obj = GitCommit(git_path, tree_hash, prev_commit_hash, commit_message);
+        GitCommit new_commit_obj = GitCommit(git_path, std::move(tree_hash), std::move(prev_commit_hash), std::move(commit_message));
         string new_commit_hash = write_object(&new_commit_obj);
         // move ref to new commit
         write_file(git_path / current_full_branch_name, new_commit_hash);
@@ -706,23 +705,23 @@ static void walk_index_and_calc_set_differences(GitTree* tree, fs::path current_
     }
 }
 
-static void print_deleted_head_nodes(GitTree* head_tree, const set<string>& delete_hashes,
-                                     fs::path rel_path, const fs::path git_path) {
-    for (auto head_node : head_tree->directory) {
-        if (head_node.type == "blob") {
-            bool deleted = is_in_set(delete_hashes, head_node.hash);
-            if (deleted) {
-                cout << "deleted: " << (rel_path / head_node.name) << endl;
-            }
-        } else if (head_node.type == "tree") {
-            GitTree subtree;
-            read_into_object(subtree, git_path, head_node.hash);
-            print_deleted_head_nodes(&subtree, delete_hashes, rel_path / head_node.name, git_path);
-        } else {
-            throw std::runtime_error("cpp-git cannot handle this file");
-        }
-    }
-}
+//static void print_deleted_head_nodes(GitTree* head_tree, const set<string>& delete_hashes,
+                                     //fs::path rel_path, const fs::path git_path) {
+    //for (auto head_node : head_tree->directory) {
+        //if (head_node.type == "blob") {
+            //bool deleted = is_in_set(delete_hashes, head_node.hash);
+            //if (deleted) {
+                //cout << "deleted: " << (rel_path / head_node.name) << endl;
+            //}
+        //} else if (head_node.type == "tree") {
+            //GitTree subtree;
+            //read_into_object(subtree, git_path, head_node.hash);
+            //print_deleted_head_nodes(&subtree, delete_hashes, rel_path / head_node.name, git_path);
+        //} else {
+            //throw std::runtime_error("cpp-git cannot handle this file");
+        //}
+    //}
+//}
 
 static vector<string> convert_map_to_sorted_values(map<string, string> my_map) {
     vector<string> output;
@@ -953,7 +952,7 @@ void cmd_hash_object(const vector<string>& args) {
 
 void git_hash_object(fs::path file_path, const string& fmt) {
     fs::path repo = repo_find(fs::current_path());
-    string data = read_file(file_path);
+    string data = read_file(std::move(file_path));
     GitObject* obj = create_object(fmt, data, repo);
     write_object(obj, true);
 }

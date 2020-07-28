@@ -295,12 +295,16 @@ string get_full_branch_name(string branch_name) { return "refs/heads/" + branch_
 Option<GitTree> get_index_tree(fs::path git_path) {
     string tree_hash = read_file(git_path / "index");
     GitTree tree;
+    bool option;
     if (tree_hash == "") {
-        return Option<GitTree>{tree, false};
+        option = false;
+        //return Option<GitTree>{tree, false};
     } else {
         read_into_object(tree, git_path, tree_hash);
-        return Option<GitTree>{tree, true};
+        option = true;
+        //return Option<GitTree>{tree, true};
     }
+    return Option<GitTree>{tree,option};
 }
 
 GitCommit get_commit_from_hash(string commit_hash, fs::path git_path) {
@@ -313,15 +317,19 @@ Option<GitTree> get_head_tree(fs::path git_path) {
     string full_branch_name = get_current_branch_full(git_path);
     string commit_hash = get_commit_hash_from_branch(full_branch_name, git_path);
     GitTree tree;
+    bool option;
     if (commit_hash == "") {
-        return Option<GitTree>{tree, false};
+        option = false;
+        //return Option<GitTree>{tree, false};
     } else {
         /* cout << "Commit Hash: " << tree_hash << endl; */
         GitCommit commit_obj = get_commit_from_hash(commit_hash, git_path);
         /* cout << "Commit tree: " << (commit_obj->tree_hash) << endl; */
         read_into_object(tree, git_path, commit_obj.tree_hash);
-        return Option<GitTree>{tree, true};
+        option = true;
+        //return Option<GitTree>{tree, true};
     }
+    return Option<GitTree>{tree,option};
 }
 string get_tree_hash_of_index(fs::path git_path) {
     string content = read_file(git_path / "index");
