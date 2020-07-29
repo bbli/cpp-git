@@ -15,7 +15,7 @@ add_compile_options(-W -Wall -g)
 # Global Variables
 option(CLANG_TIDY "runs clang tidy on everything except the tests" ON)
 # doesn't seem to be disable the specific lints for some reason
-set(CLANG_TIDY_OPTIONS "clang-tidy;--checks=readability-*,-readability-container-size-empty,-readability-braces-around-statements,-readability-simplify-boolean-expr,clang-analyzer-*,cppcoreguidelines-*,modernize-*,-modernize-use-trailing-return-type,-modernize-redundant-void-arg,performance-*,-performance-unnecessary-value-param")
+set(CLANG_TIDY_OPTIONS "clang-tidy;--checks=readability-*,-readability-container-size-empty,-readability-braces-around-statements,-readability-simplify-boolean-expr,-readability-else-after-return,clang-analyzer-*,cppcoreguidelines-*,modernize-*,-modernize-use-trailing-return-type,-modernize-redundant-void-arg,performance-*,-performance-unnecessary-value-param")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS YES)
 

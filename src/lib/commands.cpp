@@ -19,7 +19,7 @@ static void walk_tree_and_replace(fs::path tree_write_path, GitTree tree_obj) {
 
     /* cout << "Tree listing: " << endl; */
     /* printer(tree_obj->directory); */
-    for (auto node : tree_obj.directory) {
+    for (const auto& node : tree_obj.directory) {
         if (node.type == "blob") {
             /* cout << "Write Path: "<< (tree_write_path / node.name) << endl; */
             write_object_to_project_file(tree_write_path / node.name, node.hash);
@@ -43,7 +43,7 @@ static string get_subtree_hash_for_new_file(GitTree* tree_obj, typename fs::path
 
     /* cout << "Currently at: " << *file_it << endl; */
     bool found = false;
-    for (auto node : tree_obj->directory) {
+    for (const auto& node : tree_obj->directory) {
         // Case 1: Same branch as file
         if (check_node_name(node, *file_it)) {
             // SubCase 1: file_it is at last element
@@ -89,7 +89,7 @@ static string get_subtree_hash_for_new_folder(GitTree* tree_obj,
 
     /* cout << "Pre: currently at " << *file_it << endl; */
     bool found = false;
-    for (auto node : tree_obj->directory) {
+    for (const auto & node : tree_obj->directory) {
         // Case 1: Same branch as file
         if (check_node_name(node, *file_it)) {
             // SubCase 1: node points to adding folder
@@ -228,7 +228,7 @@ void git_branch_list() {
     fs::path full_branch_name = get_current_branch_full(git_path);
 
     std::cout << "Branches:" << std::endl;
-    for (auto entry : fs::directory_iterator(git_path / "refs/heads")) {
+    for (const auto  & entry : fs::directory_iterator(git_path / "refs/heads")) {
         /* std::cout << "Full branch name's filename" << full_branch_name.filename() << std::endl;
          */
         /* std::cout << "Entry's filename" << entry.path().filename() << std::endl; */
@@ -352,7 +352,7 @@ string UnStager::unstage_file(GitTree* tree_obj, typename fs::path::iterator fil
     GitTree new_tree_obj(context.git_path);
 
 #if 1
-    for (auto node : tree_obj->directory) {
+    for (const auto & node : tree_obj->directory) {
         // Case 1: Same branch as file
         if (check_node_name(node, *file_it)) {
             bool end = end_of_path(
@@ -600,7 +600,7 @@ string git_add_folder(const fs::path folder_path) {
 /* ********* 	********* */
 static void get_leaf_hashes_of_tree(GitTree* tree_obj, set<string>& index_leaf_hashes,
                                     const fs::path git_path) {
-    for (auto node : tree_obj->directory) {
+    for (const auto & node : tree_obj->directory) {
         if (node.type == "blob") {
             index_leaf_hashes.insert(node.hash);
         } else if (node.type == "tree") {
@@ -614,7 +614,7 @@ static void get_leaf_hashes_of_tree(GitTree* tree_obj, set<string>& index_leaf_h
 }
 static void get_leaf_hashes_of_tree(GitTree* tree_obj, map<string, string>& leaf_hashes,
                                     fs::path current_path, const fs::path git_path) {
-    for (auto node : tree_obj->directory) {
+    for (const auto & node : tree_obj->directory) {
         string path_name = string(current_path / node.name);
         if (node.type == "blob") {
             leaf_hashes.insert({node.hash, path_name});
@@ -631,8 +631,8 @@ static void get_leaf_hashes_of_tree(GitTree* tree_obj, map<string, string>& leaf
 static void print_unstaged_project_files(fs::path directory, const set<string>& index_leaf_hashes,
                                          const fs::path git_path,
                                          const fs::path project_base_path) {
-    for (auto project_file : fs::directory_iterator(directory)) {
-        fs::path project_file_path = project_file.path();
+    for (const auto & project_file : fs::directory_iterator(directory)) {
+        const fs::path & project_file_path = project_file.path();
         /* cout << "file path: " << project_file_path << endl; */
         if (is_git_repo(project_file_path)) {
             continue;
@@ -657,7 +657,7 @@ static void print_new_index_nodes_and_calc_delete(GitTree* tree, set<string>& de
                                                   const fs::path git_path) {
     /* cout << "Listing:" << endl; */
     /* printer(tree->directory); */
-    for (auto index_node : tree->directory) {
+    for (const auto & index_node : tree->directory) {
         if (index_node.type == "blob") {
             bool found = is_in_set(head_leaf_hashes, index_node.hash);
             // This is not in commit set, so print
@@ -684,7 +684,7 @@ static void walk_index_and_calc_set_differences(GitTree* tree, fs::path current_
                                                 const fs::path git_path) {
     /* std::cout << "Index Tree Listing:" << std::endl; */
     /* printer(tree->directory); */
-    for (auto index_node : tree->directory) {
+    for (const auto & index_node : tree->directory) {
         fs::path new_path = current_path / index_node.name;
         if (index_node.type == "blob") {
             bool index_hash_not_common = is_in_set(head_leaf_hashes, index_node.hash);
@@ -726,7 +726,7 @@ static void walk_index_and_calc_set_differences(GitTree* tree, fs::path current_
 static vector<string> convert_map_to_sorted_values(map<string, string> my_map) {
     vector<string> output;
     output.reserve(my_map.size());
-    for (auto& pair : my_map) {
+    for (const auto& pair : my_map) {
         output.push_back(pair.second);
     }
     std::sort(output.begin(), output.end());
@@ -742,21 +742,21 @@ static void split_into_deleted_modified_new(map<string, string>& commit_diff_has
     vector<string> modified_files;
     std::set_intersection(commit_paths.begin(), commit_paths.end(), index_paths.begin(),
                           index_paths.end(), std::back_inserter(modified_files));
-    for (auto path : modified_files) {
+    for (const auto & path : modified_files) {
         cout << "modified: " << path_relative_to_project(project_base_path, path) << endl;
     }
 
     vector<string> deleted_files;
     std::set_difference(commit_paths.begin(), commit_paths.end(), index_paths.begin(),
                         index_paths.end(), std::back_inserter(deleted_files));
-    for (auto path : deleted_files) {
+    for (const auto & path : deleted_files) {
         cout << "deleted: " << path_relative_to_project(project_base_path, path) << endl;
     }
 
     vector<string> new_files;
     std::set_difference(index_paths.begin(), index_paths.end(), commit_paths.begin(),
                         commit_paths.end(), std::back_inserter(new_files));
-    for (auto path : new_files) {
+    for (const auto & path : new_files) {
         cout << "new: " << path_relative_to_project(project_base_path, path) << endl;
     }
 }
@@ -838,7 +838,7 @@ static void delete_new_files(map<string, string>& commit_diff_hashes,
     else
         std::cout << "Would Delete These Files: " << std::endl;
 
-    for (auto path : new_files) {
+    for (const auto & path : new_files) {
         cout << path_relative_to_project(project_base_path, path) << endl;
         if (remove) fs::remove(path);
     }
@@ -849,8 +849,8 @@ static void walk_working_and_calc_set_differences(fs::path current_path,
                                                   map<string, string>& working_diff_hashes,
                                                   const map<string, string>& head_leaf_hashes,
                                                   const fs::path git_path) {
-    for (auto entry : fs::directory_iterator(current_path)) {
-        fs::path path = entry.path();
+    for (const auto & entry : fs::directory_iterator(current_path)) {
+        const fs::path & path = entry.path();
         if (is_git_repo(current_path)) {
             continue;
         }
@@ -919,8 +919,8 @@ static unordered_map<string, string> ref_list(const fs::path& base_path) {
     fs::path repo_base_path = repo_find(fs::current_path());
     fs::path ref_path = repo_base_path / ".cpp-git" / "refs";
 
-    for (auto entry : fs::directory_iterator(base_path)) {
-        fs::path cur_path = entry.path();
+    for (const auto & entry : fs::directory_iterator(base_path)) {
+        const fs::path & cur_path = entry.path();
         //        cout << cur_path << endl;
         if (fs::is_directory(cur_path)) {
             unordered_map<string, string> cur_ret = ref_list(cur_path);

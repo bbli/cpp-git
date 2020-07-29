@@ -123,8 +123,8 @@ string read_project_folder_and_write_tree(const fs::path& adding_directory, bool
         cout << entry.path() << endl;
     }
 #endif
-    for (auto entry : fs::directory_iterator(adding_directory)) {
-        fs::path path = entry.path();
+    for (const auto & entry : fs::directory_iterator(adding_directory)) {
+        const fs::path & path = entry.path();
         if (is_git_repo(path)) {
             continue;
         }
@@ -169,13 +169,13 @@ bool is_git_repo(const fs::path& path) {
         return false;
     }
 }
-bool check_node_name(GitTreeNode& node, string file_it_name) { return node.name == file_it_name; }
+bool check_node_name(const GitTreeNode& node, string file_it_name) { return node.name == file_it_name; }
 bool end_of_path(typename fs::path::iterator file_it, typename fs::path::iterator end_it) {
     auto check_it = file_it;
     return (++check_it) == end_it;
 }
 
-void check_if_tree(GitTreeNode& node) {
+void check_if_tree(const GitTreeNode& node) {
     if (node.type != "tree") {
         throw std::runtime_error("this isn't a tree");
     }
@@ -222,7 +222,7 @@ bool is_in_set(const map<string, string>& map, string val) {
 /* ********* Finding Project File in GitTree	********* */
 string find_hash_in_tree(GitTree* tree_obj, typename fs::path::iterator file_it,
                          const typename fs::path::iterator end_it, const fs::path git_path) {
-    for (auto node : tree_obj->directory) {
+    for (const auto & node : tree_obj->directory) {
         if (check_node_name(node, *file_it)) {
             bool end = end_of_path(file_it, end_it);
             if (end) {
@@ -295,16 +295,16 @@ string get_full_branch_name(string branch_name) { return "refs/heads/" + branch_
 Option<GitTree> get_index_tree(fs::path git_path) {
     string tree_hash = read_file(git_path / "index");
     GitTree tree;
-    bool option;
+    //bool option;
     if (tree_hash == "") {
-        option = false;
-        //return Option<GitTree>{tree, false};
+        //option = false;
+        return Option<GitTree>{tree, false};
     } else {
         read_into_object(tree, git_path, tree_hash);
-        option = true;
-        //return Option<GitTree>{tree, true};
+        //option = true;
+        return Option<GitTree>{tree, true};
     }
-    return Option<GitTree>{tree,option};
+    //return Option<GitTree>{tree,option};
 }
 
 GitCommit get_commit_from_hash(string commit_hash, fs::path git_path) {
