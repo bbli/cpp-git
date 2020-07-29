@@ -31,8 +31,8 @@ GitTree::GitTree(fs::path git_path) : GitObject(git_path), directory(vector<GitT
 
 GitTag::GitTag(fs::path git_path, const string& data) : GitObject(git_path) { to_internal(data); }
 
-GitTag::GitTag(fs::path git_path, const string& commit_hash, const string& tag_message)
-    : GitObject(git_path), commit_hash(commit_hash), tag_message(tag_message) {}
+GitTag::GitTag(fs::path git_path, const string commit_hash, const string tag_message)
+    : GitObject(git_path), commit_hash(std::move(commit_hash)), tag_message(std::move(tag_message)) {}
 
 GitBlob::GitBlob(fs::path git_path, const string& data) : GitObject(git_path) { to_internal(data); }
 
@@ -200,7 +200,7 @@ string GitCommit::to_filesystem(void) {
 string GitTree::to_filesystem(void) {
     string data;
     if (directory.size() > 0) {
-        for (auto node : directory) {
+        for (const auto & node : directory) {
             data += node.type + ' ' + node.name + ' ' + node.hash + '\n';
         }
         // to account for extra '\n'

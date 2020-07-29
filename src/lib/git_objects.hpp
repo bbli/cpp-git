@@ -24,8 +24,8 @@ class GitObject {
     /* const static inline std::string fmt; */
     GitObject(){};
     GitObject(fs::path git_path);
-    virtual void to_internal(
-        const std::string& data) = 0;             // filesystem -> lift to internal representation
+    void to_internal(
+        const std::string& data);             // filesystem -> lift to internal representation
     virtual std::string to_filesystem(void) = 0;  // internal representation -> write to filesystem
     virtual std::string get_fmt(void) = 0;
 };
@@ -78,7 +78,7 @@ class GitTag : public GitObject {
     virtual std::string get_fmt(void);
     GitTag(){};
     GitTag(fs::path git_path, const std::string& data);
-    GitTag(fs::path git_path, const std::string& commit_hash, const std::string& tag_message);
+    GitTag(fs::path git_path, const std::string commit_hash, const std::string tag_message);
     void to_internal(const std::string& data);
     virtual std::string to_filesystem(void);
 };

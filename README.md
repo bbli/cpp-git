@@ -46,6 +46,7 @@ But otherwise, most of the git commands have been implemented to their full spec
 * clean up header files -> in particular in commands.hpp. Too many function are being exported right now
 * add context dictionary for optimizations/less arguments passed to functions -> for example, sometimes the code logic will call `get_head_tree` twice, which amounts to 2 I/Os [DONE]
 * make algorithms account for same content in different file case -> as of now, most algorithms assume the content in each file of the repository is unique
+* remove `git_path` from all git object classes -> as it really has no reason of being in there
 
 
 ## External Libraries
